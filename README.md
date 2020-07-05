@@ -26,9 +26,9 @@ Each lambda contains a `README.md` with an explanation about the service and it'
 <!-- AUTO-GENERATED-CONTENT:START (SERVERLESS_EXAMPLE_TABLE) t generated w/ `npm run docs` -->
 | Name | Runtime  |
 |:--------------------------- |:-----|
-| [Twilio to Send SMS](https://github.com/serverless/examples/tree/master/aws-dotnet-rest-api-with-dynamodb/src/DotNetServerless.Lambda) <br/> Using Twilio to send SMS | nodeJS |
-| [Twilio to Return SMS and DynamoDB to Store Them](https://github.com/serverless/examples/tree/master/aws-dotnet-rest-api-with-dynamodb/src/DotNetServerless.Lambda) <br/> Using Twilio to receive SMS and AWS DynamoDB to store recipients response  | nodeJS |
-| [Google Sheets to Send Data from Spreadsheet](https://github.com/serverless/examples/tree/master/aws-dotnet-rest-api-with-dynamodb/src/DotNetServerless.Lambda) <br/> Using Google Sheets to store data and have an endpoint | nodeJS |
+| [Twilio to Send SMS](https://github.com/puente-development-international/puente-serverless/tree/master/twilio/node-send-sms) <br/> Using Twilio to send SMS | nodeJS |
+| [Twilio to Return SMS and DynamoDB to Store Them](https://github.com/puente-development-international/puente-serverless/tree/master/twilio/node-return-response) <br/> Using Twilio to receive SMS and AWS DynamoDB to store recipients response  | nodeJS |
+| [Google Sheets to Send Data from Spreadsheet](https://github.com/puente-development-international/puente-serverless/tree/master/google/sheets-python-communitydata-endpoint) <br/> Using Google Sheets to store data and have an endpoint | nodeJS |
 
 <!-- AUTO-GENERATED-CONTENT:END -->
 
