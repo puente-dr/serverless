@@ -1,6 +1,5 @@
 import json
 import boto3
-import csv
 import smtplib
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -12,6 +11,7 @@ def lambda_handler(event, context):
     worksheet_name = event['worksheet_name']
     sheet_name = event['sheet_name']
     key = event['key']
+    bucket_name = event['bucket_name']
     print("Worksheet: "+worksheet_name+" Sheet Name: " +
           sheet_name+" bucket: "+bucket_name+" key: "+key)
 
