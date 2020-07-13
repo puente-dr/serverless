@@ -7,15 +7,10 @@ The client_test.json is an example of the required API keys provided through the
 In order to POST to the API the request body must contain:
 
 {
-
   "worksheet_name": "name-of-worksheet",
-
   "sheet_name": "sheet-name",
-
   "bucket_name": "name-of-bucket",
-
   "key": "key-name-for-s3-object"
-
 }
 
 ### s3-json-to-client
