@@ -8,6 +8,18 @@ This lambda integrates a Google Sheet API to create a JSON file from a Google Sh
 
 The client_test.json is an example of the required API keys provided through the Google Sheets API. To use this lambda function, you will need to acquire the correct credentials. An example of how to achieve this can be found here: https://medium.com/@m.ivhani/setting-up-a-project-service-accounts-and-oauth-credentials-897b35be4175 (Create and Get Access Credentials and Share the Credentials)
 
+This lambda function requires external libraries not provided in AWS. In order to include these external libraries (for Google Sheets API), a requirements.txt file has been created. To create your own function to upload to AWS Lambda, perform the following steps:
+  1. virtualeenv v-env
+  2. source v-env/bin/activate
+  3. pip install -r requirements.txt
+  4. cd v-env/lib/python3.7/sit-packages/
+  5. cp path/to/lambda.py .
+  6. cp path/to/client.json .
+  7. zip -r -X "../../../../function.zip" *
+    - This should create a zip file in the same directory that your virtual envrionment is in.
+  8. Open AWS Lambda console and upload the zip file (will not be able to see the lambda code)
+  9. You may also need to change the function handler to lambda.lambda_handler (since function name is lambda.py)
+
 In order to POST to the API the request body must contain:
 
 {
