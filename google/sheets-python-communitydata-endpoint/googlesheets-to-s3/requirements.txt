@@ -1,0 +1,5 @@
+# requirement packages for google sheets api
+google-api-python-client
+PyOpenSSL
+oauth2client
+gspread
