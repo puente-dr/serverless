@@ -29,7 +29,13 @@ In order to POST to the API the request body must contain:
   "key": "key-name-for-s3-object"
 }
 
+#### Current State
 This function is currently configured to run on a cadence every 14 days using an AWS CloudWatch rule. It will automatically collect data from our current Google Sheet that contains the Autofill information and then publish the results to AWS S3. It will run regardless of any changes to the Google Sheet.
+
+This can also be manually ran at any moment from either within the AWS console or CLI. In order to perform within the console, simply navigate to the google-sheets-to-s3 Lambda function. Click test and run the default test configuration (contains JSON information). This may take a couple tries, but you should see green success respponse after 1-2 attempts. You can ensure that the function ran successsfully by checking the object in the S3 bucket (specified in the test for the lambda function - bucket_name=S3 Bucket, key=Object).
+
+In order to stop the function from running every 14 days automitcally, navigate to CloudWatch on the console, click rules and delete the rule.
+
 
 ### s3-json-to-client
 
