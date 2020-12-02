@@ -32,7 +32,7 @@ In order to POST to the API the request body must contain:
 #### Current State
 This function is currently configured to run on a cadence every 14 days using an AWS CloudWatch rule. It will automatically collect data from our current Google Sheet that contains the Autofill information and then publish the results to AWS S3. It will run regardless of any changes to the Google Sheet.
 
-#### Manual Run
+##### Manual Run
 This can also be manually ran at any moment from either within the AWS console or CLI. In order to perform within the console
 1. Navigate to the google-sheets-to-s3 Lambda function
 2. Click the button to the left of the "Test" button (saved test events should appear)
