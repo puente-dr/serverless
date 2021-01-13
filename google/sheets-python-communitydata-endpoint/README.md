@@ -32,8 +32,22 @@ In order to POST to the API the request body must contain:
 #### Current State
 This function is currently configured to run on a cadence every 14 days using an AWS CloudWatch rule. It will automatically collect data from our current Google Sheet that contains the Autofill information and then publish the results to AWS S3. It will run regardless of any changes to the Google Sheet.
 
-This can also be manually ran at any moment from either within the AWS console or CLI. In order to perform within the console, simply navigate to the google-sheets-to-s3 Lambda function. Click test and run the default test configuration (contains JSON information). This may take a couple tries, but you should see green success respponse after 1-2 attempts. You can ensure that the function ran successsfully by checking the object in the S3 bucket (specified in the test for the lambda function - bucket_name=S3 Bucket, key=Object).
+##### Manual Run
+This can also be manually ran at any moment from either within the AWS console or CLI. In order to perform within the console
+1. Navigate to the google-sheets-to-s3 Lambda function
+2. Click the button to the left of the "Test" button (saved test events should appear)
+3. Ensure that the selected test is PuenteSheetIntegration
+  The JSON in the test should be as follows:
+  {
+    "worksheet_name": "Autofill Information",
+    "sheet_name": "community, city, province, country ",
+    "bucket_name": "google-sheets-lambda",
+    "key": "test/puente-test.json"
+  }
+4. Click Test and the function should show success message in the console. (May take 2 tries)
+5. Navigate to The correct S3 bucket, download the file and updates should be made with the recent changes.
 
+##### Stop automatic runs
 In order to stop the function from running every 14 days automitcally, navigate to CloudWatch on the console, click rules and delete the rule.
 
 
