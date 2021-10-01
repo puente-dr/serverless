@@ -4,24 +4,37 @@
 
 set -e
 
-template_file_to_package="./templates/cloudformation.yaml"
+template_file_to_package="templates/cloudformation.yaml"
 template_file_to_deploy="./templates/cloudformation.packaged.yaml"
 
-zip -r lambdas/generic-assets/generic-assets.zip lambdas/generic-assets/
-zip -r lambdas/social-assets/social-assets.zip lambdas/social-assets/
-zip -r lambdas/delete-assets/delete-assets.zip lambdas/delete-assets/
+rm lambdas/hello-world/hello-world.zip
+
+zip -r lambdas/hello-world/hello-world.zip lambdas/hello-world/index.py
+# zip -r lambdas/social-assets/social-assets.zip lambdas/social-assets/
+# zip -r lambdas/delete-assets/delete-assets.zip lambdas/delete-assets/
 
 
-stack_name=zeus-prime-social-v1
-aws_profile="${AWS_PROFILE:-red}"
-aws_region=us-east-1
+# stack_name=zeus-prime-social-v1
+# aws_profile="${AWS_PROFILE:-red}"
+# aws_region=us-east-1
+
+aws cloudformation validate-template \
+            --template-body file://${template_file_to_package}
 
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
          --output-template-file ${template_file_to_deploy} \
-         --s3-bucket "zeus-prime-social" --s3-prefix "lambdas" --profile $aws_profile
+         --s3-bucket "puente-data-exporter" --s3-prefix "lambdas" 
+        # --profile $aws_profile
 
 aws cloudformation deploy \
-         --template-file ${template_file_to_deploy} \
-         --stack-name $stack_name \
-         --profile $aws_profile --region $aws_region --capabilities CAPABILITY_IAM
+            --stack-name data-exporter \
+            --template-file ${template_file_to_deploy} \
+            --capabilities CAPABILITY_IAM
+
+
+# LEFT FOR FUTURE USE
+# aws cloudformation deploy \
+#          --template-file ${template_file_to_deploy} \
+#          --stack-name $stack_name \
+#          --profile $aws_profile --region $aws_region --capabilities CAPABILITY_IAM
