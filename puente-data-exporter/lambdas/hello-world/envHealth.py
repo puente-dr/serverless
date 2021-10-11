@@ -1,4 +1,6 @@
-from restCall import lambda_handler as restCall
+from restCall import restCall
+
+from utils import write_csv_to_s3
 
 import numpy as np
 
@@ -138,4 +140,8 @@ def envHealth(survey_org):
     #    print(col)
     #    print(df[col].unique())
 
-    return df
+    key = f"envHealth_{survey_org}.csv"
+
+    url = write_csv_to_s3(df, key)
+
+    return {"message":"Env Health Success :)", "data": df.to_json(), "url": url}

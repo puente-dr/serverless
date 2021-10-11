@@ -4,7 +4,7 @@ from pandas import json_normalize
 
 import secretz
 
-def lambda_handler(event, context):
+def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function
 
     Parameters
@@ -37,8 +37,11 @@ def lambda_handler(event, context):
     # """Only difference between calls is the specifier
     #    This function makes a REST Get call to Back4App, returning a pandas df"""
 
-    url="https://parseapi.back4app.com/classes/"
-    specifier = "SurveyData"
+    # url = event["url"]
+    # specifier = event["specifier"]
+
+    # url="https://parseapi.back4app.com/classes/"
+    # specifier = "SurveyData"
 
     # combine base url with specifier
     combined_url = url + specifier
@@ -50,7 +53,7 @@ def lambda_handler(event, context):
       "order": "-updatedAt", "limit": 200000, "where":{
           json.dumps({
             "surveyingOrganization": {
-                "$in": ['OWS']
+                "$in": [survey_org]
             }
           })
       }

@@ -1,5 +1,5 @@
-from restCall import lambda_handler as restCall
-from utils import fix_typos, calculate_age
+from restCall import restCall
+from utils import fix_typos, calculate_age, write_csv_to_s3
 
 import numpy as np
 
@@ -119,18 +119,10 @@ def mainRecords(survey_org):
     # replace any induced nan
     df = df.replace({np.nan: "N/A"})
 
-    key = f"files/mainRecords_{survey_org}.csv"
+    key = f"mainRecords_{survey_org}.csv"
 
     #need bucket name, key id, secret access key, session token
-    df.to_csv(
-        f"s3://{AWS_S3_BUCKET}/{key}",
-        index=False,
-        storage_options={
-            "key": AWS_ACCESS_KEY_ID,
-            "secret": AWS_SECRET_ACCESS_KEY,
-            "token": AWS_SESSION_TOKEN,
-        },
-    )
+    url = write_csv_to_s3(df, key)
 
 
     # print(df.dtypes)
@@ -144,4 +136,4 @@ def mainRecords(survey_org):
     #    print(col)
     #    print(df[col].unique())
 
-    return {"message": "Main Records success"}
+    return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}

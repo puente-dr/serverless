@@ -3,6 +3,21 @@ import numpy as np
 import re
 import distance
 
+import secretz
+
+def write_csv_to_s3(df, key):
+    url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
+    df.to_csv(
+        url,
+        index=False,
+        storage_options={
+            "key": secretz.AWS_ACCESS_KEY_ID,
+            "secret": secretz.AWS_SECRET_ACCESS_KEY,
+            "token": secretz.AWS_SESSION_TOKEN,
+        },
+    )
+    return url
+
 def calculate_age(born, age):
     """
     if (born[:3] == "0/0" or born[:2]=="00"):
