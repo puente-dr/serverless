@@ -1,9 +1,13 @@
+import mainRecords
+import envHealth
+
 def handler(event, context):
-  response = {
-    'isBase64Encoded': False,
-    'statusCode': 200,
-    'headers': {},
-    'multiValueHeaders': {},
-    'body': 'Hello, Puente Team!'
-  }
+  survey_org = event["surveyingOrganization"]
+  specifier = event["specifier"]
+  url = event["url"]
+
+  if specifier == "SurveyData":
+    response = mainRecords(survey_org)
+  elif specifier == "HistoryEnvironmentalHealth":
+    response = envHealth(survey_org)
   return response
