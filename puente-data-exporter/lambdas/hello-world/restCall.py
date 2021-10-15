@@ -74,4 +74,4 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
     # normalize (ie flatten) data, turns it into a pandas df
     normalized = json_normalize(json_obj["results"])
 
-    return json_obj
+    return normalized
