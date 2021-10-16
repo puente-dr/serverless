@@ -3,9 +3,8 @@ from utils import fix_typos, calculate_age, write_csv_to_s3
 
 import numpy as np
 
-def mainRecords(survey_org):
-    df = restCall(specifier="SurveyData", survey_org=survey_org)
-
+def mainRecords(df):
+    #df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
     """

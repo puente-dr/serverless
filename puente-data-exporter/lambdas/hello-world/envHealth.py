@@ -4,9 +4,9 @@ from utils import write_csv_to_s3
 
 import numpy as np
 
-def envHealth(survey_org):
+def envHealth(df):
 
-    df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
+    #df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
 
     """
     PUT ALL CLEANING HERE
