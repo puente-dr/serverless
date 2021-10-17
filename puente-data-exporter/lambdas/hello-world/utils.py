@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 import distance
+from datetime import date
 
 import secretz
 

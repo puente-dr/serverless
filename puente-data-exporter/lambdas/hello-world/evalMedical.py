@@ -3,7 +3,7 @@ from utils import write_csv_to_s3
 
 import numpy as np
 
-def evalMedical(df):
+def evalMedical(df, survey_org):
     #df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""

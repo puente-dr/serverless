@@ -2,8 +2,10 @@ from restCall import restCall
 from utils import fix_typos, calculate_age, write_csv_to_s3
 
 import numpy as np
+import pandas as pd
+import os
 
-def mainRecords(df):
+def mainRecords(df, survey_org):
     #df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
@@ -120,8 +122,21 @@ def mainRecords(df):
 
     key = f"mainRecords_{survey_org}.csv"
 
+
+
+    org_path = f"./{survey_org}"
+    out_name = "mainRecords.csv"
+
+    test_key = os.path.join(org_path, out_name)
+
+    if not os.path.exists(org_path):
+        os.mkdir(org_path)
+    else:
+        print("path exists?")
+    df.to_csv(test_key)
+
     #need bucket name, key id, secret access key, session token
-    url = write_csv_to_s3(df, key)
+    #url = write_csv_to_s3(df, key)
 
 
     # print(df.dtypes)
@@ -135,4 +150,5 @@ def mainRecords(df):
     #    print(col)
     #    print(df[col].unique())
 
-    return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
+    #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
+    return {"message": "Main Records Success :)", "data": df.to_json()}
