@@ -1,4 +1,3 @@
-from restCall import restCall
 from utils import write_csv_to_s3
 
 import numpy as np
