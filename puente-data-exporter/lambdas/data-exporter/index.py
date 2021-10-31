@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
 from mainRecords import mainRecords
 from envHealth import envHealth
 from evalMedical import evalMedical
