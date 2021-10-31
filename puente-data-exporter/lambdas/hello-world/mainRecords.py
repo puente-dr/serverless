@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 import os
 
-def mainRecords(df, survey_org):
+import boto3
+
+def mainRecords(df, survey_org, BUCKET_NAME):
     #df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
@@ -120,20 +122,27 @@ def mainRecords(df, survey_org):
     # replace any induced nan
     df = df.replace({np.nan: "N/A"})
 
-    key = f"mainRecords_{survey_org}.csv"
 
+    #writing to csv in s3
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(BUCKET_NAME)
 
-
-    org_path = f"./{survey_org}"
+    tmp_path = "/tmp/"
+    org_path = f"{survey_org}"
     out_name = "mainRecords.csv"
 
-    test_key = os.path.join(org_path, out_name)
+    temp_file = os.path.join(tmp_path, org_path, out_name)
+    key = os.path.join(org_path, out_name)
 
-    if not os.path.exists(org_path):
-        os.mkdir(org_path)
-    else:
-        print("path exists?")
-    df.to_csv(test_key)
+    df.to_csv(temp_file)
+
+    bucket.upload_file(temp_file, key)
+
+    # if not os.path.exists(org_path):
+    #     os.mkdir(org_path)
+    # else:
+    #     print("path exists?")
+    # df.to_csv(test_key)
 
     #need bucket name, key id, secret access key, session token
     #url = write_csv_to_s3(df, key)

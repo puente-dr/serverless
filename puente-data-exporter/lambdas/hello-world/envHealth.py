@@ -3,8 +3,12 @@ from restCall import restCall
 from utils import write_csv_to_s3
 
 import numpy as np
+import pandas as pd
+import os
 
-def envHealth(df, survey_org):
+import boto3
+
+def envHealth(df, survey_org, BUCKET_NAME):
 
     #df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
 
@@ -140,8 +144,22 @@ def envHealth(df, survey_org):
     #    print(col)
     #    print(df[col].unique())
 
-    key = f"envHealth_{survey_org}.csv"
+    # key = f"envHealth_{survey_org}.csv"
 
-    url = write_csv_to_s3(df, key)
+    # url = write_csv_to_s3(df, key)
+    #writing to csv in s3
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(BUCKET_NAME)
+
+    tmp_path = "/tmp/"
+    org_path = f"{survey_org}"
+    out_name = "envHealth.csv"
+
+    temp_file = os.path.join(tmp_path, org_path, out_name)
+    key = os.path.join(org_path, out_name)
+
+    df.to_csv(temp_file)
+
+    bucket.upload_file(temp_file, key)
 
     return {"message":"Env Health Success :)", "data": df.to_json(), "url": url}

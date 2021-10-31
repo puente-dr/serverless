@@ -7,11 +7,18 @@ import sys
 import json
 import os
 
+import pandas as pd
+
+import boto3 #don't need this in lambda, but might to run locally idk
+
+
 def handler(event, context=None):
-  f = open(event, )
-  event_json = json.load(f)
-  survey_org = event_json["surveyingOrganization"]
-  specifier = event_json["specifier"]
+  # f = open(event, )
+  # event_json = json.load(f)
+
+  bucket_name = event["bucket_name"]
+  survey_org = event["surveyingOrganization"]
+  specifier = event["specifier"]
   # survey_org="Puente"
   # specifier = "SurveyData"
   print(survey_org)
@@ -20,15 +27,15 @@ def handler(event, context=None):
   data = restCall(specifier, survey_org)
 
   if specifier == "SurveyData":
-    response = mainRecords(data, survey_org)
+    response = mainRecords(data, survey_org, bucket_name)
   elif specifier == "HistoryEnvironmentalHealth":
-    response = envHealth(data, survey_org)
+    response = envHealth(data, survey_org, bucket_name)
   elif specifier == "EvaluationMedical":
-    response = evalMedical(data, survey_org)
+    response = evalMedical(data, survey_org, bucket_name)
   else:
     print("Pick a valid specifier")
 
   return response
 
-if __name__ == '__main__':
-    globals()[sys.argv[1]](sys.argv[2])
+# if __name__ == '__main__':
+#     globals()[sys.argv[1]](sys.argv[2])
