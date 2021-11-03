@@ -7,10 +7,13 @@ set -e
 template_file_to_package="templates/cloudformation.yaml"
 template_file_to_deploy="./templates/cloudformation.packaged.yaml"
 
-rm lambdas/data-exporter/data-exporter.zip
+rm -f lambdas/data-exporter/data-exporter.zip
 
-cd myenv/lib/python3.7/site-packages/
-zip -r ../../../../lambdas/data-exporter/data-exporter.zip .
+cd myvenv/Lib/site-packages/
+
+#changed this line to get it to zip on windows. 7z a replaces zip
+#also removed a ../ to get it to the right place
+7z a ../../../lambdas/data-exporter/data-exporter.zip
 cd ../../../../
 
 # zip -r lambdas/data-exporter/data-exporter.zip lambdas/data-exporter/

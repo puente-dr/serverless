@@ -3,16 +3,14 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from mainRecords import mainRecords
-from envHealth import envHealth
-from evalMedical import evalMedical
-from restCall import restCall
+# from mainRecords import mainRecords
+# from envHealth import envHealth
+# from evalMedical import evalMedical
+# from restCall import restCall
 
-import sys
-import json
-import os
+#import json
 
-import pandas as pd
+#import pandas as pd
 
 import boto3 #don't need this in lambda, but might to run locally idk
 
