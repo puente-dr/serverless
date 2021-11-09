@@ -28,8 +28,7 @@ Resources:
       EndpointConfiguration:
         Types:
           - EDGE
-      Name: !Sub "lambda-api-${version}"
-      # Name: !Sub "zeus-prime-social-${version}"
+      Name: !Sub "puente-exporter-api-${version}"
   ApiGatewayResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -65,7 +64,7 @@ Resources:
       DeploymentId: !Ref ApiGatewayDeployment
       Description: Lambda API Stage v0
       RestApiId: !Ref ApiGatewayRestApi
-      StageName: 'v0'
+      StageName: !Sub "${version}"
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: ApiGatewayMethod
@@ -87,7 +86,7 @@ Resources:
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
-        - PolicyName: LambdaAccess
+        - PolicyName: !Sub "LambdaAccess-${version}"
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -99,7 +98,7 @@ Resources:
     Properties:
       Code: ../lambdas/hello-world/hello-world.zip
       Description: AWS Lambda function
-      FunctionName: 'lambda-function'
+      FunctionName: !Sub "lambda-function-${version}"
       Handler: lambdas/hello-world/index.handler
       MemorySize: 256
       Role: !GetAtt LambdaIamRole.Arn
