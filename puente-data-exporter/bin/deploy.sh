@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Delete zip only if zips exist
-rm -f puente-data-exporter/lambdas/hello-world/hello-world.zip
+rm -f puente-data-exporter/lambdas/data-exporter/data-exporter.zip
 
 # Creates and updates the stack
 
@@ -17,7 +17,7 @@ done
 template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
-zip -r puente-data-exporter/lambdas/hello-world/hello-world.zip puente-data-exporter/lambdas/hello-world/index.py
+zip -r puente-data-exporter/lambdas/data-exporter/data-exporter.zip puente-data-exporter/lambdas/data-exporter
 
 stack_name=puente-data-exporter$version
 aws_region=us-east-1
