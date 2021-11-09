@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Delete zip only if zips exist
-rm lambdas/hello-world/hello-world.zip
+rm -f lambdas/hello-world/hello-world.zip
 
 # Creates and updates the stack
 
