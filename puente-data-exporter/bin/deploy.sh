@@ -17,7 +17,7 @@ done
 template_file_to_package="./templates/cloudformation$version.yaml"
 template_file_to_deploy="./templates/cloudformation$version.packaged.yaml"
 
-zip -r lambdas/hello-world/hello-world.zip lambdas/hello-world/index.py
+zip -r puente-data-exporter/lambdas/hello-world/hello-world.zip puente-data-exporter/lambdas/hello-world/index.py
 
 stack_name=puente-data-exporter$version
 aws_region=us-east-1
