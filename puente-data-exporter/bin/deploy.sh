@@ -14,8 +14,8 @@ do
     esac
 done
 
-template_file_to_package="../templates/cloudformation$version.yaml"
-template_file_to_deploy="../templates/cloudformation$version.packaged.yaml"
+template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
+template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
 zip -r puente-data-exporter/lambdas/hello-world/hello-world.zip puente-data-exporter/lambdas/hello-world/index.py
 
