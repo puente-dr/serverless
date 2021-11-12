@@ -3,7 +3,7 @@ Description: Puente Data Exporter - API Gateway with Lambda Integrations
 Parameters:
   version:
     Type: String
-    Default: v1
+    Default: dev
   apiGatewayName:
     Type: String
     Default: my-api
@@ -28,8 +28,7 @@ Resources:
       EndpointConfiguration:
         Types:
           - EDGE
-      Name: lambda-api
-      # Name: !Sub "zeus-prime-social-${version}"
+      Name: !Sub "puente-exporter-api-${version}"
   ApiGatewayResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -65,7 +64,7 @@ Resources:
       DeploymentId: !Ref ApiGatewayDeployment
       Description: Lambda API Stage v0
       RestApiId: !Ref ApiGatewayRestApi
-      StageName: 'v0'
+      StageName: !Sub "${version}"
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: ApiGatewayMethod
@@ -87,7 +86,7 @@ Resources:
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
-        - PolicyName: LambdaAccess
+        - PolicyName: !Sub "LambdaAccess-${version}"
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -97,10 +96,10 @@ Resources:
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Code: ../lambdas/hello-world/hello-world.zip
+      Code: ../lambdas/data-exporter/data-exporter.zip
       Description: AWS Lambda function
-      FunctionName: 'lambda-function'
-      Handler: lambdas/hello-world/index.handler
+      FunctionName: !Sub "lambda-function-${version}"
+      Handler: lambdas/data-exporter/index.handler
       MemorySize: 256
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.7
