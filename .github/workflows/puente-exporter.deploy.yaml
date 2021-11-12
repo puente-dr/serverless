@@ -48,7 +48,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-venv-
     - name: Activate venv and install dependencies
-      run: python -m venv && source venv/bin/activate &&
+      run: python -m venv venv && source venv/bin/activate &&
         pip3 install -r puente-data-exporter/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
 
