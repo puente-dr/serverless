@@ -3,14 +3,14 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-# from mainRecords import mainRecords
-# from envHealth import envHealth
-# from evalMedical import evalMedical
-# from restCall import restCall
+from mainRecords import mainRecords
+from envHealth import envHealth
+from evalMedical import evalMedical
+from restCall import restCall
 
 #import json
 
-#import pandas as pd
+import pandas as pd
 
 import boto3 #don't need this in lambda, but might to run locally idk
 
@@ -37,6 +37,10 @@ def handler(event, context=None):
     response = evalMedical(data, survey_org, bucket_name)
   else:
     print("Pick a valid specifier")
+    response = {
+      "status": 200,
+      "message": "Oops, looks like you didnt include a valid specifier.."
+    }
 
   return response
 
