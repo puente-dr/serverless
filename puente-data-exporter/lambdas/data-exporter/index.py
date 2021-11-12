@@ -3,9 +3,9 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from mainRecords import mainRecords
-from envHealth import envHealth
-from evalMedical import evalMedical
+# from mainRecords import mainRecords
+# from envHealth import envHealth
+# from evalMedical import evalMedical
 # from restCall import restCall
 
 #import json
@@ -29,18 +29,18 @@ def handler(event, context=None):
 
   # data = restCall(specifier, survey_org)
 
-  if specifier == "SurveyData":
-    response = mainRecords(data, survey_org, bucket_name)
-  elif specifier == "HistoryEnvironmentalHealth":
-    response = envHealth(data, survey_org, bucket_name)
-  elif specifier == "EvaluationMedical":
-    response = evalMedical(data, survey_org, bucket_name)
-  else:
-    print("Pick a valid specifier")
-    response = {
-      "status": 200,
-      "message": "Oops, looks like you didnt include a valid specifier.."
-    }
+  # if specifier == "SurveyData":
+  #   response = mainRecords(data, survey_org, bucket_name)
+  # elif specifier == "HistoryEnvironmentalHealth":
+  #   response = envHealth(data, survey_org, bucket_name)
+  # elif specifier == "EvaluationMedical":
+  #   response = evalMedical(data, survey_org, bucket_name)
+  # else:
+  print("Pick a valid specifier")
+  response = {
+    "status": 200,
+    "message": "Oops, looks like you didnt include a valid specifier.."
+  }
 
   return response
 
