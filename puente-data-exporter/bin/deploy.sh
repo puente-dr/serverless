@@ -17,7 +17,10 @@ done
 template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
-zip -r puente-data-exporter/lambdas/data-exporter/data-exporter.zip puente-data-exporter/lambdas/data-exporter
+cd ./venv/lib/python3.7/site-packages
+zip -r9 puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
+cd ../../../../
+zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter
 
 stack_name=puente-data-exporter$version
 aws_region=us-east-1
