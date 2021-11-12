@@ -157,6 +157,7 @@ Resources:
 
 
 # LEFT FOR FUTURE USE
+
   # ApiGatewayAccount:
   #   Type: 'AWS::ApiGateway::Account'
   #   Properties:
