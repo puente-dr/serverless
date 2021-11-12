@@ -45,12 +45,12 @@ jobs:
       with:
         path: venv
         key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-
+        restore-keys: |
+          ${{ runner.os }}-venv-
     - name: Activate venv and install dependencies
       run: python -m venv && sourcec venv/bin/activate &&
         pip3 install -r puente-data-exporter/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
-      
+
     - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }}
 
