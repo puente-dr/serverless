@@ -27,7 +27,7 @@ def handler(event, context=None):
   print(survey_org)
   print(specifier)
 
-  data = restCall(specifier, survey_org)
+  # data = restCall(specifier, survey_org)
 
   if specifier == "SurveyData":
     response = mainRecords(data, survey_org, bucket_name)
