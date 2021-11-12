@@ -38,8 +38,10 @@ def handler(event, context=None):
   # else:
   print("Pick a valid specifier")
   response = {
-    "status": 200,
-    "message": "Oops, looks like you didnt include a valid specifier.."
+    "headers": {"Access-Control-Allow-Origin":"*"},
+    "statusCode": 200,
+    "isBase64Encoded": False,
+    "body": {"message": "Oops, looks like you didnt include a valid specifier.."}
   }
 
   return response
