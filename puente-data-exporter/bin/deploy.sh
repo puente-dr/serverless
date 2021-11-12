@@ -18,7 +18,7 @@ template_file_to_package="puente-data-exporter/templates/cloudformation$version.
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
 cd ./venv/lib/python3.7/site-packages
-zip -r9 puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
+zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
 cd ../../../../
 zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter
 
