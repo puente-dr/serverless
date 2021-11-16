@@ -4,16 +4,6 @@ Parameters:
   version:
     Type: String
     Default: dev
-  apiGatewayName:
-    Type: String
-    Default: my-api
-  apiGatewayStageName:
-    Type: String
-    AllowedPattern: "[a-z0-9]+"
-    Default: call
-  apiGatewayHTTPMethod:
-    Type: String
-    Default: POST
 Resources:
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
@@ -30,7 +20,8 @@ Resources:
       ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
       PathPart: 'lambda'
       RestApiId: !Ref ApiGatewayRestApi
-  ApiGatewayMethod:
+  ApiGatewayPostMethodDataExporter:
+    DependsOn: LambdaPermissionDataExporter
     Type: AWS::ApiGateway::Method
     Properties:
       ApiKeyRequired: false
@@ -68,7 +59,7 @@ Resources:
           LoggingLevel: INFO
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: ApiGatewayMethod
+    DependsOn: ApiGatewayPostMethodDataExporter
     Properties:
       Description: Lambda API Deployment
       RestApiId: !Ref ApiGatewayRestApi
@@ -133,6 +124,11 @@ Resources:
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.7
       Timeout: 60
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - W3002
   LambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -146,7 +142,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Path: '/'
-  LambdaPermissionGeneric:
+  LambdaPermissionDataExporter:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !GetAtt LambdaFunctionDataExporter.Arn
