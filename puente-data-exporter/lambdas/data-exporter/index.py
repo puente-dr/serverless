@@ -21,7 +21,7 @@ def handler(event, context=None):
   # event_json = json.load(f)
   print(event)
   print(type(event))
-  event = json.load(event)
+
   bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
