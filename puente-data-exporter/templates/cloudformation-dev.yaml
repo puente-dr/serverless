@@ -158,11 +158,11 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: 'apigateway.amazonaws.com'
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/*/*"
-  LogGroupLambdaFunction:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunction]]
-      RetentionInDays: 7 # days
+  # LogGroupLambdaFunction:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunction]]
+  #     RetentionInDays: 7 # days
   CloudWatchRole:
     Type: 'AWS::IAM::Role'
     Properties:
