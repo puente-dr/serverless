@@ -14,12 +14,12 @@ Resources:
         Types:
           - EDGE
       Name: !Sub "puente-exporter-api-${version}"
-  ApiGatewayResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
-      PathPart: 'lambda'
-      RestApiId: !Ref ApiGatewayRestApi
+  # ApiGatewayResource:
+  #   Type: AWS::ApiGateway::Resource
+  #   Properties:
+  #     ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+  #     PathPart: 'lambda'
+  #     RestApiId: !Ref ApiGatewayRestApi
   # ApiGatewayPostMethodDataExporter:
   #   DependsOn: LambdaPermissionDataExporter
   #   Type: AWS::ApiGateway::Method
@@ -38,25 +38,25 @@ Resources:
   #     OperationName: 'lambda'
   #     ResourceId: !Ref ApiGatewayResource
   #     RestApiId: !Ref ApiGatewayRestApi
-  ApiGatewayModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: 'application/json'
-      RestApiId: !Ref ApiGatewayRestApi
-      Schema: {}
-  ApiGatewayStage:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      DeploymentId: !Ref ApiGatewayDeployment
-      Description: Lambda API Stage v0
-      RestApiId: !Ref ApiGatewayRestApi
-      StageName: !Sub "${version}"
-      MethodSettings:
-        - ResourcePath: "/*"
-          HttpMethod: "*"
-          MetricsEnabled: true
-          DataTraceEnabled: false
-          LoggingLevel: INFO
+  # ApiGatewayModel:
+  #   Type: AWS::ApiGateway::Model
+  #   Properties:
+  #     ContentType: 'application/json'
+  #     RestApiId: !Ref ApiGatewayRestApi
+  #     Schema: {}
+  # ApiGatewayStage:
+  #   Type: AWS::ApiGateway::Stage
+  #   Properties:
+  #     DeploymentId: !Ref ApiGatewayDeployment
+  #     Description: Lambda API Stage v0
+  #     RestApiId: !Ref ApiGatewayRestApi
+  #     StageName: !Sub "${version}"
+  #     MethodSettings:
+  #       - ResourcePath: "/*"
+  #         HttpMethod: "*"
+  #         MetricsEnabled: true
+  #         DataTraceEnabled: false
+  #         LoggingLevel: INFO
   # ApiGatewayDeployment:
   #   Type: AWS::ApiGateway::Deployment
   #   DependsOn: ApiGatewayPostMethodDataExporter
@@ -85,34 +85,34 @@ Resources:
   #             - Effect: 'Allow'
   #               Action: 'lambda:*'
   #               Resource: !GetAtt LambdaFunctionDataExporter.Arn
-  ApiGatewayOptionsMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      AuthorizationType: NONE
-      RestApiId: !Ref ApiGatewayRestApi
-      ResourceId: !Ref ApiGatewayResource
-      HttpMethod: OPTIONS
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-        - StatusCode: "200"
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-            method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-            method.response.header.Access-Control-Allow-Origin: "'*'"
-          ResponseTemplates:
-            application/json: ''
-        PassthroughBehavior: WHEN_NO_MATCH
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-      - StatusCode: "200"
-        ResponseModels:
-          application/json: 'Empty'
-        ResponseParameters:
-          method.response.header.Access-Control-Allow-Headers: false
-          method.response.header.Access-Control-Allow-Methods: false
-          method.response.header.Access-Control-Allow-Origin: false
+  # ApiGatewayOptionsMethod:
+  #   Type: AWS::ApiGateway::Method
+  #   Properties:
+  #     AuthorizationType: NONE
+  #     RestApiId: !Ref ApiGatewayRestApi
+  #     ResourceId: !Ref ApiGatewayResource
+  #     HttpMethod: OPTIONS
+  #     Integration:
+  #       Type: MOCK
+  #       IntegrationResponses:
+  #       - StatusCode: "200"
+  #         ResponseParameters:
+  #           method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+  #           method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+  #           method.response.header.Access-Control-Allow-Origin: "'*'"
+  #         ResponseTemplates:
+  #           application/json: ''
+  #       PassthroughBehavior: WHEN_NO_MATCH
+  #       RequestTemplates:
+  #         application/json: '{"statusCode": 200}'
+  #     MethodResponses:
+  #     - StatusCode: "200"
+  #       ResponseModels:
+  #         application/json: 'Empty'
+  #       ResponseParameters:
+  #         method.response.header.Access-Control-Allow-Headers: false
+  #         method.response.header.Access-Control-Allow-Methods: false
+          # method.response.header.Access-Control-Allow-Origin: false
   # LambdaFunctionDataExporter:
   #   Type: AWS::Lambda::Function
   #   Properties:
