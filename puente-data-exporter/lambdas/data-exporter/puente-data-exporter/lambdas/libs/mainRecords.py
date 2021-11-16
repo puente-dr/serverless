@@ -1,4 +1,4 @@
-from utils import fix_typos, calculate_age, write_csv_to_s3
+from libs.utils import fix_typos, calculate_age, write_csv_to_s3
 
 import numpy as np
 import pandas as pd

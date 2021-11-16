@@ -2,12 +2,7 @@ import requests
 import json
 from pandas import json_normalize
 
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-
-from secretz import secretz
+from libs import secretz
 
 def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function

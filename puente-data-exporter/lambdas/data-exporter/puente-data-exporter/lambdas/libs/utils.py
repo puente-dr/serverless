@@ -4,7 +4,7 @@ import re
 import distance
 from datetime import date
 
-import secretz
+from libs import secretz
 
 def write_csv_to_s3(df, key):
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"

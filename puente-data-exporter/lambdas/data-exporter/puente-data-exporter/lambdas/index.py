@@ -3,10 +3,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from mainRecords import mainRecords
-from envHealth import envHealth
-from evalMedical import evalMedical
-from restCall import restCall
+from libs import envHealth,evalMedical,mainRecords,restCall
 
 import json
 
