@@ -19,7 +19,9 @@ import boto3 #don't need this in lambda, but might to run locally idk
 def handler(event, context=None):
   # f = open(event, )
   # event_json = json.load(f)
-  event = json.dumps(event)
+  print(event)
+  print(type(event))
+  event = json.load(event)
   bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
