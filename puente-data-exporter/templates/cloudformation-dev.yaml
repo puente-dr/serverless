@@ -152,7 +152,26 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: 'apigateway.amazonaws.com'
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/POST/lambda-function-${version}"
-
+  LogGroupLambdaFunctionGenericAssets:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunction]]
+      RetentionInDays: 7 # days
+  CloudWatchRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - >-
+          arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
 
 
 
@@ -302,23 +321,3 @@ Resources:
   #               Resource: "*"
   #     ManagedPolicyArns:
   #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  # LogGroupLambdaFunctionGenericAssets:
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionGenericAssets]]
-  #     RetentionInDays: 7 # days
-  # CloudWatchRole:
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - apigateway.amazonaws.com
-  #           Action: 'sts:AssumeRole'
-  #     Path: /
-  #     ManagedPolicyArns:
-  #       - >-
-  #         arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
