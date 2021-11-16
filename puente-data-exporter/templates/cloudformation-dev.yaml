@@ -57,12 +57,12 @@ Resources:
           MetricsEnabled: true
           DataTraceEnabled: false
           LoggingLevel: INFO
-  ApiGatewayDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn: ApiGatewayPostMethodDataExporter
-    Properties:
-      Description: Lambda API Deployment
-      RestApiId: !Ref ApiGatewayRestApi
+  # ApiGatewayDeployment:
+  #   Type: AWS::ApiGateway::Deployment
+  #   DependsOn: ApiGatewayPostMethodDataExporter
+  #   Properties:
+  #     Description: Lambda API Deployment
+  #     RestApiId: !Ref ApiGatewayRestApi
   # ApiGatewayIamRole:
   #   Type: AWS::IAM::Role
   #   Properties:
