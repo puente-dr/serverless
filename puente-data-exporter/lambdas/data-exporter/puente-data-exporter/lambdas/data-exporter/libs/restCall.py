@@ -2,7 +2,7 @@ import requests
 import json
 from pandas import json_normalize
 
-# from libs import secretz
+from libs import secretz
 
 def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function
@@ -61,8 +61,8 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
 
     headers = {
         "Content-Type": "application/json",
-        "X-Parse-Application-Id": 'vBdTHqQU31IyLW5uYRDIWb8Ew8zCZGBzMqChugjr',
-        "X-Parse-REST-API-Key": 'fwVE2ZaFfOY3RsDRLyljaA9LVG3eBTkdSp0ygw3W',
+        "X-Parse-Application-Id": secretz.APP_ID,
+        "X-Parse-REST-API-Key": secretz.REST_API_KEY,
     }
 
     # GET operation
