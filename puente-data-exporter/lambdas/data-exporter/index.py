@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 #import json
 
 import pandas as pd
+import json
 
 import boto3 #don't need this in lambda, but might to run locally idk
 
@@ -41,7 +42,7 @@ def handler(event, context=None):
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
     "isBase64Encoded": False,
-    "body": {"message": "Oops, looks like you didnt include a valid specifier.."}
+    "body": json.dumps({"message": "Oops, looks like you didnt include a valid specifier.."})
   }
 
   return response
