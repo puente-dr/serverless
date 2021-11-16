@@ -20,6 +20,7 @@ template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.p
 cd ./venv/lib/python3.7/site-packages
 zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
 cd ../../../../
+zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter/secretz.py
 zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter
 
 stack_name=puente-data-exporter$version
