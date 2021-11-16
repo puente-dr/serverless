@@ -1,9 +1,12 @@
-import sys
-import os
+# import sys
+# import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__)))
+# sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from libs import envHealth,evalMedical,mainRecords,restCall
+from libs.envHealth import envHealth
+from libs.evalMedical import evalMedical
+from libs.mainRecords import mainRecords
+from libs.restCall import restCall
 
 import json
 
