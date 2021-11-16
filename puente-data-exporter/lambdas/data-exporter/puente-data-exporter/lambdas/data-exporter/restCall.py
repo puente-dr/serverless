@@ -2,7 +2,7 @@ import requests
 import json
 from pandas import json_normalize
 
-from secretz import secretz
+import secretz
 
 def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function
