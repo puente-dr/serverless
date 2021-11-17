@@ -2,7 +2,8 @@ import requests
 import json
 from pandas import json_normalize
 
-from libs import secretz
+from dotenv import load_dotenv
+import os
 
 def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function
@@ -43,6 +44,11 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
     # url="https://parseapi.back4app.com/classes/"
     # specifier = "SurveyData"
 
+    # load .env
+    load_dotenv('./prod.env')
+    APP_ID = os.getenv('APP_ID')
+    REST_API_KEY = os.getenv('REST_API_KEY')
+    
     # combine base url with specifier
     combined_url = url + specifier
 
@@ -61,8 +67,8 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
 
     headers = {
         "Content-Type": "application/json",
-        "X-Parse-Application-Id": secretz.APP_ID,
-        "X-Parse-REST-API-Key": secretz.REST_API_KEY,
+        "X-Parse-Application-Id": APP_ID,
+        "X-Parse-REST-API-Key": REST_API_KEY,
     }
 
     # GET operation
