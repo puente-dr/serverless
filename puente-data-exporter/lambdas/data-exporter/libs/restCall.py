@@ -1,8 +1,6 @@
 import requests
 import json
 from pandas import json_normalize
-
-from dotenv import load_dotenv
 import os
 
 def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
@@ -43,9 +41,7 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
 
     # url="https://parseapi.back4app.com/classes/"
     # specifier = "SurveyData"
-
-    # load .env
-    load_dotenv(dotenv_path='./.prod.env')
+    
     APP_ID = os.getenv('APP_ID')
     REST_API_KEY = os.getenv('REST_API_KEY')
     

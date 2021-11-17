@@ -9,11 +9,14 @@ from libs.mainRecords import mainRecords
 from libs.restCall import restCall
 
 import json
+from dotenv import load_dotenv
 
 def handler(event, context=None):
   if 'queryStringParameters' in event.keys():
     event = event["queryStringParameters"]
 
+  load_dotenv(dotenv_path='./libs/.prod.env')
+  
   bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
