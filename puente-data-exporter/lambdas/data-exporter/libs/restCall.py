@@ -45,7 +45,7 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
     # specifier = "SurveyData"
 
     # load .env
-    load_dotenv('./prod.env')
+    load_dotenv(dotenv_path='./.prod.env')
     APP_ID = os.getenv('APP_ID')
     REST_API_KEY = os.getenv('REST_API_KEY')
     
