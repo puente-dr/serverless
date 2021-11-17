@@ -11,7 +11,8 @@ from libs.restCall import restCall
 import json
 
 def handler(event, context=None):
-  event = event["queryStringParameters"]
+  if event['queryStringParameters']:
+    event = event["queryStringParameters"]
 
   bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
