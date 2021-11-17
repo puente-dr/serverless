@@ -44,7 +44,7 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
     
     APP_ID = os.getenv('APP_ID')
     REST_API_KEY = os.getenv('REST_API_KEY')
-    
+    print(APP_ID, REST_API_KEY)
     # combine base url with specifier
     combined_url = url + specifier
 
