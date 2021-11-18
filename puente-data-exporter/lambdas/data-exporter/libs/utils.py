@@ -7,8 +7,6 @@ from datetime import date
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-
 # from libs import secretz
 
 def write_csv_to_s3(df, key):
@@ -72,6 +70,7 @@ def split(delimiters, string, maxsplit=0):
 
 
 def update_comm_cities_provinces():
+    sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     # read in all correct community/city/province combos
     all_data = pd.read_csv("../data/Communities_Cities_Provinces.csv", encoding="latin1")
