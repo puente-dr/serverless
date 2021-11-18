@@ -104,7 +104,8 @@ def mainRecords(df, survey_org, BUCKET_NAME):
     # community, city, province using distance metric for finding typos
     # less than 3 edits
     #print("old communities: ", df["communityname"].value_counts())
-    df = fix_typos(df, "communityname", "city", "province")
+    # commented out for now took 60 seconds to ran and lambda timed out
+    # df = fix_typos(df, "communityname", "city", "province")
 
     #print("communities: ", df["communityname"].value_counts())
 
