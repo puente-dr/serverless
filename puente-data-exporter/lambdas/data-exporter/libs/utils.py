@@ -73,7 +73,7 @@ def update_comm_cities_provinces():
     sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     # read in all correct community/city/province combos
-    all_data = pd.read_csv("../data/Communities_Cities_Provinces.csv", encoding="latin1")
+    all_data = pd.read_csv("puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv", encoding="latin1")
     # only where city exists
     all_data_filtered = all_data.loc[~all_data["City"].isnull()]
 
