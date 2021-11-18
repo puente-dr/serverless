@@ -4,6 +4,11 @@ import re
 import distance
 from datetime import date
 
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
 # from libs import secretz
 
 def write_csv_to_s3(df, key):
