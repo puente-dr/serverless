@@ -3,7 +3,6 @@ from libs.utils import fix_typos, calculate_age, write_csv_to_s3
 import numpy as np
 import pandas as pd
 import os
-import sys
 
 import boto3
 
@@ -134,8 +133,6 @@ def mainRecords(df, survey_org, BUCKET_NAME):
 
     temp_file = os.path.join(tmp_path, org_path, out_name)
     key = os.path.join(org_path, out_name)
-
-    sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     df.to_csv(temp_file)
 
