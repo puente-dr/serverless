@@ -50,5 +50,5 @@ jobs:
         pip3 install -r puente-data-exporter/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
 
-    - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} {{env.APP_ID}} {{env.REST_API_KEY}}
+    - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} -a ${{ env.APP_ID }} -k ${{ env.REST_API_KEY }}
 
