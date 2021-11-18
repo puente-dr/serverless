@@ -22,7 +22,7 @@ template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.p
 cd ./venv/lib/python3.7/site-packages
 zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
 cd ../../../../
-echo 'APP_ID='$app_id'\nREST_API_KEY='$rest_api_key > puente-data-exporter/lambdas/data-exporter/libs/secretz.py
+echo "APP_ID='${app_id}'\nREST_API_KEY='$rest_api_key'" > puente-data-exporter/lambdas/data-exporter/libs/secretz.py
 zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter
 
 stack_name=puente-data-exporter$version
