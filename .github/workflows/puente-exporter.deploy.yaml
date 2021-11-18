@@ -5,6 +5,8 @@ env:
   AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION            : ${{ secrets.AWS_REGION }}
+  REST_API_KEY          : ${{ secrets.REST_API_KEY }}
+  APP_ID                : ${{ secrets.APP_ID }}
 
 on:
   push:
@@ -48,5 +50,5 @@ jobs:
         pip3 install -r puente-data-exporter/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
 
-    - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }}
+    - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} {{env.APP_ID}} {{env.REST_API_KEY}}
 
