@@ -9,6 +9,8 @@ from libs.mainRecords import mainRecords
 from libs.restCall import restCall
 from libs.utils import write_csv_to_s3
 
+import libs.secretz as secretz
+
 import json
 
 def handler(event, context=None):
@@ -20,6 +22,9 @@ def handler(event, context=None):
   specifier = event["specifier"]
   print(survey_org)
   print(specifier)
+  print(secretz.AWS_ACCESS_KEY_ID,secretz.AWS_SECRET_ACCESS_KEY)
+  print(secretz.APP_ID, secretz.REST_API_KEY)
+
 
   data = restCall(specifier, survey_org)
   url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
