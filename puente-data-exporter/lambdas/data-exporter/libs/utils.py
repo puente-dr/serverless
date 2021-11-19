@@ -7,6 +7,8 @@ from datetime import date
 import sys
 import os
 
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
 import secretz
 
 def write_csv_to_s3(df, key):
