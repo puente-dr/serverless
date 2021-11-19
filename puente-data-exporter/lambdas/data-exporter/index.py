@@ -22,20 +22,20 @@ def handler(event, context=None):
 
   data = restCall(specifier, survey_org)
 
-  if specifier == "SurveyData":
-    response = mainRecords(data, survey_org, bucket_name)
-  elif specifier == "HistoryEnvironmentalHealth":
-    response = envHealth(data, survey_org, bucket_name)
-  elif specifier == "EvaluationMedical":
-    response = evalMedical(data, survey_org, bucket_name)
-  else:
-    response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+  # if specifier == "SurveyData":
+  #   response = mainRecords(data, survey_org, bucket_name)
+  # elif specifier == "HistoryEnvironmentalHealth":
+  #   response = envHealth(data, survey_org, bucket_name)
+  # elif specifier == "EvaluationMedical":
+  #   response = evalMedical(data, survey_org, bucket_name)
+  # else:
+  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
   
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
     "isBase64Encoded": False,
-    "body": json.dumps(response)
+    "body": json.dumps(data)
   }
 
 # if __name__ == '__main__':
