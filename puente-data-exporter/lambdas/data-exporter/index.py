@@ -22,7 +22,7 @@ def handler(event, context=None):
   print(specifier)
 
   data = restCall(specifier, survey_org)
-  url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier/specifier+'.csv')
+  url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
 
   # if specifier == "SurveyData":
   #   response = mainRecords(data, survey_org, bucket_name)
@@ -36,7 +36,7 @@ def handler(event, context=None):
   response = {
     "s3_url": url
   }
-  
+
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
