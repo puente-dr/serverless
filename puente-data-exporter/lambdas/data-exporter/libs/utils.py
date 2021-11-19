@@ -14,12 +14,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 import secretz
 
 def write_csv_to_s3(df, key):
+    print(secretz.AWS_ACCESS_KEY_ID,secretz.AWS_SECRET_ACCESS_KEY)
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
         )
-        
+
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(
