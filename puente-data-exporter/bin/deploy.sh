@@ -14,8 +14,8 @@ do
         a) app_id=${OPTARG};;
         k) rest_api_key=${OPTARG};;
         s) s3_bucket=${OPTARG};;
-        y) aws_access_key_id=${{OPTARG}};;
-        z) aws_secret_access_key=${{OPTARG}};;
+        y) aws_access_key_id=${OPTARG};;
+        z) aws_secret_access_key=${OPTARG};;
     esac
 done
 
