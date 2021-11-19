@@ -30,7 +30,7 @@ def handler(event, context=None):
   #   response = evalMedical(data, survey_org, bucket_name)
   # else:
   #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
-  
+
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
