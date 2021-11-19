@@ -7,15 +7,15 @@ rm -f puente-data-exporter/lambdas/data-exporter/data-exporter.zip
 
 set -e
 
-while getopts e:v:a:k:s:y:z: flag
+while getopts e:v:a:k:s:m:n: flag
 do
     case "${flag}" in
         v) version=${OPTARG};;
         a) app_id=${OPTARG};;
         k) rest_api_key=${OPTARG};;
         s) s3_bucket=${OPTARG};;
-        y) aws_access_key_id=${OPTARG};;
-        z) aws_secret_access_key=${OPTARG};;
+        m) aws_access_key_id=${OPTARG};;
+        n) aws_secret_access_key=${OPTARG};;
     esac
 done
 

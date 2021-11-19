@@ -22,8 +22,9 @@ def handler(event, context=None):
   specifier = event["specifier"]
   print(survey_org)
   print(specifier)
-  print(secretz.AWS_ACCESS_KEY_ID,secretz.AWS_SECRET_ACCESS_KEY)
-  print(secretz.APP_ID, secretz.REST_API_KEY)
+  print("bucket",secretz.AWS_S3_BUCKET)
+  print("aws access key",secretz.AWS_ACCESS_KEY_ID,"aws secret",secretz.AWS_SECRET_ACCESS_KEY)
+  print("app id",secretz.APP_ID,"rest api", secretz.REST_API_KEY)
 
 
   data = restCall(specifier, survey_org)
