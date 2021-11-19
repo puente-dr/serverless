@@ -3,27 +3,20 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-# from mainRecords import mainRecords
-# from envHealth import envHealth
-# from evalMedical import evalMedical
-# from restCall import restCall
+from libs.envHealth import envHealth
+from libs.evalMedical import evalMedical
+from libs.mainRecords import mainRecords
+from libs.restCall import restCall
 
-#import json
-
-#import pandas as pd
-
-import boto3 #don't need this in lambda, but might to run locally idk
-
+import json
 
 def handler(event, context=None):
-  # f = open(event, )
-  # event_json = json.load(f)
+  if 'queryStringParameters' in event.keys():
+    event = event["queryStringParameters"]
 
   bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
-  # survey_org="Puente"
-  # specifier = "SurveyData"
   print(survey_org)
   print(specifier)
 
@@ -36,9 +29,14 @@ def handler(event, context=None):
   elif specifier == "EvaluationMedical":
     response = evalMedical(data, survey_org, bucket_name)
   else:
-    print("Pick a valid specifier")
-
-  return response
+    response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+  
+  return {
+    "headers": {"Access-Control-Allow-Origin":"*"},
+    "statusCode": 200,
+    "isBase64Encoded": False,
+    "body": json.dumps(response)
+  }
 
 # if __name__ == '__main__':
 #     globals()[sys.argv[1]](sys.argv[2])

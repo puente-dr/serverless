@@ -7,17 +7,23 @@ rm -f puente-data-exporter/lambdas/data-exporter/data-exporter.zip
 
 set -e
 
-while getopts e:v: flag
+while getopts e:v:a:k: flag
 do
     case "${flag}" in
         v) version=${OPTARG};;
+        a) app_id=${OPTARG};;
+        k) rest_api_key=${OPTARG};;
     esac
 done
 
 template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
-zip -r puente-data-exporter/lambdas/data-exporter/data-exporter.zip puente-data-exporter/lambdas/data-exporter
+cd ./venv/lib/python3.7/site-packages
+zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
+cd ../../../../
+echo "APP_ID='${app_id}'\nREST_API_KEY='$rest_api_key'" > puente-data-exporter/lambdas/data-exporter/libs/secretz.py
+zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-data-exporter/lambdas/data-exporter
 
 stack_name=puente-data-exporter$version
 aws_region=us-east-1

@@ -4,19 +4,23 @@ import re
 import distance
 from datetime import date
 
-import secretz
+import sys
+import os
+
+# from libs import secretz
 
 def write_csv_to_s3(df, key):
-    url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    df.to_csv(
-        url,
-        index=False,
-        storage_options={
-            "key": secretz.AWS_ACCESS_KEY_ID,
-            "secret": secretz.AWS_SECRET_ACCESS_KEY,
-            "token": secretz.AWS_SESSION_TOKEN,
-        },
-    )
+    # url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
+    # df.to_csv(
+    #     url,
+    #     index=False,
+    #     storage_options={
+    #         "key": secretz.AWS_ACCESS_KEY_ID,
+    #         "secret": secretz.AWS_SECRET_ACCESS_KEY,
+    #         "token": secretz.AWS_SESSION_TOKEN,
+    #     },
+    # )
+    url = ''
     return url
 
 def calculate_age(born, age):
@@ -66,9 +70,10 @@ def split(delimiters, string, maxsplit=0):
 
 
 def update_comm_cities_provinces():
+    sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     # read in all correct community/city/province combos
-    all_data = pd.read_csv("./data/Communities_Cities_Provinces.csv", encoding="latin1")
+    all_data = pd.read_csv("puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv", encoding="latin1")
     # only where city exists
     all_data_filtered = all_data.loc[~all_data["City"].isnull()]
 
