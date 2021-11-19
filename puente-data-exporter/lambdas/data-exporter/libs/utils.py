@@ -7,19 +7,19 @@ from datetime import date
 import sys
 import os
 
-# from libs import secretz
+import secretz
 
 def write_csv_to_s3(df, key):
-    # url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    # df.to_csv(
-    #     url,
-    #     index=False,
-    #     storage_options={
-    #         "key": secretz.AWS_ACCESS_KEY_ID,
-    #         "secret": secretz.AWS_SECRET_ACCESS_KEY,
-    #         "token": secretz.AWS_SESSION_TOKEN,
-    #     },
-    # )
+    url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
+    df.to_csv(
+        url,
+        index=False,
+        storage_options={
+            "key": secretz.AWS_ACCESS_KEY_ID,
+            "secret": secretz.AWS_SECRET_ACCESS_KEY,
+            # "token": secretz.AWS_SESSION_TOKEN,
+        },
+    )
     url = ''
     return url
 

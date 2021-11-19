@@ -7,6 +7,7 @@ from libs.envHealth import envHealth
 from libs.evalMedical import evalMedical
 from libs.mainRecords import mainRecords
 from libs.restCall import restCall
+from libs.utils import write_csv_to_s3
 
 import json
 
@@ -21,6 +22,7 @@ def handler(event, context=None):
   print(specifier)
 
   data = restCall(specifier, survey_org)
+  url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier/specifier+'.csv')
 
   # if specifier == "SurveyData":
   #   response = mainRecords(data, survey_org, bucket_name)
@@ -31,11 +33,15 @@ def handler(event, context=None):
   # else:
   #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
 
+  response = {
+    "s3_url": url
+  }
+  
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
     "isBase64Encoded": False,
-    "body": json.dumps(data)
+    "body": json.dumps(response)
   }
 
 # if __name__ == '__main__':
