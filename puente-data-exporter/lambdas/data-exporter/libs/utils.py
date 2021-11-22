@@ -125,12 +125,12 @@ def update_comm_cities_provinces():
     # read in all correct community/city/province combos
     #all_data = pd.read_csv("../data/Communities_Cities_Provinces.csv", encoding="latin1")
     # only where city exists
-    all_data_filtered = all_data.loc[~all_data["City"].isnull()]
+    all_data = all_data.loc[~all_data["City"].isnull()]
 
     # unique values only
-    communities = all_data_filtered["Communities"].unique()
-    cities = all_data_filtered["City"].unique()
-    provinces = all_data_filtered["Province"].unique()
+    communities = all_data["Communities"].unique()
+    cities = all_data["City"].unique()
+    provinces = all_data["Province"].unique()
 
     return communities, cities, provinces
 
@@ -161,16 +161,7 @@ def fix_typos(df, col1, col2, col3):
          other_na_replace_dict
          )
 
-    # get similarity between two strings
-    def dist(str1, str2):
-        return distance.levenshtein(str1, str2)
-
-    def closest(col, correct_col):
-        # get the true lists for the column
-        correct_list = correct_dict[correct_col]
-
-        # a few common mispellings that get missed by dist<=3
-        spm_mispellings = [
+    spm_mispellings = [
             "spm",
             "spn",
             "macori",
@@ -184,25 +175,63 @@ def fix_typos(df, col1, col2, col3):
             "san pedro f",
             "samoedro",
         ]
-        constanza_mispellings = ["comstanza", "const", "con", "cosntanza"]
+    constanza_mispellings = ["comstanza", "const", "con", "cosntanza"]
 
-        #nan_mispellings = ["", " ", "N/A"]
+    spm = "San Pedro de Macoris"
+    constanza = "Constanza"
 
-        mispellings = spm_mispellings + constanza_mispellings# + nan_mispellings
+    spm_dict = {mis:spm for mis in spm_mispellings}
+    const_dict = {mis:constanza for mis in constanza_mispellings}
+
+    misspelling_dict = {**spm_dict, **const_dict}
+
+
+    df[[col1,col2,col3]] = df[[col1,col2,col3]].replace(
+        misspelling_dict
+    )
+
+    # get similarity between two strings
+    def dist(str1, str2):
+        return distance.levenshtein(str1, str2)
+
+    def closest(col, correct_col):
+        # get the true lists for the column
+        correct_list = correct_dict[correct_col]
+
+        # a few common mispellings that get missed by dist<=3
+        # spm_mispellings = [
+        #     "spm",
+        #     "spn",
+        #     "macori",
+        #     "macoris",
+        #     "s p m",
+        #     "sp.",
+        #     "pedro d",
+        #     "smp",
+        #     "sampedro",
+        #     "san pefro ",
+        #     "san pedro f",
+        #     "samoedro",
+        # ]
+        # constanza_mispellings = ["comstanza", "const", "con", "cosntanza"]
+
+        # #nan_mispellings = ["", " ", "N/A"]
+
+        # mispellings = spm_mispellings + constanza_mispellings# + nan_mispellings
 
         spm = "San Pedro de Macoris"
         constanza = "Constanza"
-        #other_nan = "Other/NA"
+        other_nan = "Other/NA"
 
-        replacements = [spm] * len(spm_mispellings) + [constanza] * len(constanza_mispellings)# + [other_nan] * len(nan_mispellings)
+        # replacements = [spm] * len(spm_mispellings) + [constanza] * len(constanza_mispellings)# + [other_nan] * len(nan_mispellings)
 
-        col.replace(to_replace = mispellings, value = replacements, inplace=True)
+        # col.replace(to_replace = mispellings, value = replacements, inplace=True)
 
         col_val_dict = {}
         mismatches = {}
         # for each unique value in the column
         for col_val in np.unique(col):
-            if col_val in [spm, constanza]:#, other_nan]:
+            if col_val in [spm, constanza, other_nan]:
                 continue
 
             # # things that clearly aren't community/city/province names
