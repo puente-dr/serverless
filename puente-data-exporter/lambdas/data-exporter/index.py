@@ -33,11 +33,13 @@ def handler(event, context=None):
   url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
 
   # if specifier == "SurveyData":
-  #   response = mainRecords(data, survey_org, bucket_name)
+  #   response = mainRecords(data, survey_org)
   # elif specifier == "HistoryEnvironmentalHealth":
-  #   response = envHealth(data, survey_org, bucket_name)
+  #   response = envHealth(data, survey_org)
   # elif specifier == "EvaluationMedical":
-  #   response = evalMedical(data, survey_org, bucket_name)
+  #   response = evalMedical(data, survey_org)
+  # elif specifier == "Vitals":
+  #   response = vitals(data, survey_org)
   # else:
   #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
 

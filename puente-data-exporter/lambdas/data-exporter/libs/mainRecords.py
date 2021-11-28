@@ -6,7 +6,7 @@ import os
 
 import boto3
 
-def mainRecords(df, survey_org, BUCKET_NAME):
+def mainRecords(df, survey_org):
     #df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
@@ -124,19 +124,22 @@ def mainRecords(df, survey_org, BUCKET_NAME):
 
 
     #writing to csv in s3
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(BUCKET_NAME)
+    specifier = "SurveyData"
+    key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+    url = write_csv_to_s3(df, key)
+    # s3 = boto3.resource('s3')
+    # bucket = s3.Bucket(BUCKET_NAME)
 
-    tmp_path = "/tmp/"
-    org_path = f"{survey_org}"
-    out_name = "mainRecords.csv"
+    # tmp_path = "/tmp/"
+    # org_path = f"{survey_org}"
+    # out_name = "mainRecords.csv"
 
-    temp_file = os.path.join(tmp_path, org_path, out_name)
-    key = os.path.join(org_path, out_name)
+    # temp_file = os.path.join(tmp_path, org_path, out_name)
+    # key = os.path.join(org_path, out_name)
 
-    df.to_csv(temp_file)
+    # df.to_csv(temp_file)
 
-    bucket.upload_file(temp_file, key)
+    # bucket.upload_file(temp_file, key)
 
     # if not os.path.exists(org_path):
     #     os.mkdir(org_path)
@@ -160,4 +163,4 @@ def mainRecords(df, survey_org, BUCKET_NAME):
     #    print(df[col].unique())
 
     #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
-    return {"message": "Main Records Success :)", "data": df.to_json()}
+    return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
