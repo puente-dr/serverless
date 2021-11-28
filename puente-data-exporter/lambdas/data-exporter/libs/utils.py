@@ -231,7 +231,7 @@ def fix_typos(df, col1, col2, col3):
         mismatches = {}
         # for each unique value in the column
         for col_val in np.unique(col):
-            if col_val in [spm, constanza, other_nan]:
+            if col_val in [spm, constanza, other_nan]+correct_list:
                 continue
 
             # # things that clearly aren't community/city/province names
