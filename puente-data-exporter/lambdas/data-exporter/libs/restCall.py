@@ -1,6 +1,7 @@
 import requests
 import json
 from pandas import json_normalize
+import pandas as pd
 
 import sys
 import os
@@ -78,5 +79,18 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
 
     # normalize (ie flatten) data, turns it into a pandas df
     normalized = json_normalize(json_obj["results"])
+
+    # join non surveyData forms to surveyData
+    if specifier != 'SurveyData':
+        combined_url = url + 'SurveyData'
+        response_survey_data = requests.get(combined_url, params=params, headers=headers)
+        json_obj_survey_data = response_survey_data.json()
+        normalized_survey_data = json_normalize(json_obj_survey_data["results"])
+
+        normalized = normalized.rename(columns= {'objectId':specifier+'Id','client.objectId':'objectId','surveyingUser':'surveyingUserSupplementary'})
+        merged_df = pd.merge(normalized_survey_data, normalized, on="objectId")
+
+        return merged_df
+
 
     return normalized
