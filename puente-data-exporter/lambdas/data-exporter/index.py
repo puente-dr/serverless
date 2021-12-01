@@ -17,15 +17,8 @@ def handler(event, context=None):
   if 'queryStringParameters' in event.keys():
     event = event["queryStringParameters"]
 
-  bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
-  print(survey_org)
-  print(specifier)
-  print("bucket",secretz.AWS_S3_BUCKET)
-  print("aws access key",secretz.AWS_ACCESS_KEY_ID,"aws secret",secretz.AWS_SECRET_ACCESS_KEY)
-  print("app id",secretz.APP_ID,"rest api", secretz.REST_API_KEY)
-
 
   data = restCall(specifier, survey_org)
   url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
