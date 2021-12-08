@@ -3,40 +3,25 @@ Description: Puente Data Exporter - API Gateway with Lambda Integrations
 Parameters:
   version:
     Type: String
-    Default: v1
-  apiGatewayName:
-    Type: String
-    Default: my-api
-  apiGatewayStageName:
-    Type: String
-    AllowedPattern: "[a-z0-9]+"
-    Default: call
-  apiGatewayHTTPMethod:
-    Type: String
-    Default: POST
-  lambdaFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Default: my-function
-
+    Default: dev
 Resources:
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      ApiKeySourceType: HEADER
+      # ApiKeySourceType: HEADER
       Description: An API Gateway with a Lambda Integration
       EndpointConfiguration:
         Types:
           - EDGE
-      Name: lambda-api
-      # Name: !Sub "zeus-prime-social-${version}"
+      Name: !Sub "puente-exporter-api-${version}"
   ApiGatewayResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
       PathPart: 'lambda'
       RestApiId: !Ref ApiGatewayRestApi
-  ApiGatewayMethod:
+  ApiGatewayPostMethodDataExporter:
+    DependsOn: LambdaPermissionDataExporter
     Type: AWS::ApiGateway::Method
     Properties:
       ApiKeyRequired: false
@@ -49,7 +34,7 @@ Resources:
         PassthroughBehavior: WHEN_NO_MATCH
         TimeoutInMillis: 29000
         Type: AWS_PROXY
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionDataExporter.Arn}/invocations'
       OperationName: 'lambda'
       ResourceId: !Ref ApiGatewayResource
       RestApiId: !Ref ApiGatewayRestApi
@@ -65,10 +50,16 @@ Resources:
       DeploymentId: !Ref ApiGatewayDeployment
       Description: Lambda API Stage v0
       RestApiId: !Ref ApiGatewayRestApi
-      StageName: 'v0'
+      StageName: !Sub "${version}"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          MetricsEnabled: true
+          DataTraceEnabled: false
+          LoggingLevel: INFO
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: ApiGatewayMethod
+    DependsOn: ApiGatewayPostMethodDataExporter
     Properties:
       Description: Lambda API Deployment
       RestApiId: !Ref ApiGatewayRestApi
@@ -87,24 +78,57 @@ Resources:
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
-        - PolicyName: LambdaAccess
+        - PolicyName: !Sub "LambdaAccess-${version}"
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: 'Allow'
                 Action: 'lambda:*'
-                Resource: !GetAtt LambdaFunction.Arn
-  LambdaFunction:
+                Resource: !GetAtt LambdaFunctionDataExporter.Arn
+  ApiGatewayOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: "200"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: "200"
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: false
+          method.response.header.Access-Control-Allow-Methods: false
+          method.response.header.Access-Control-Allow-Origin: false
+  LambdaFunctionDataExporter:
     Type: AWS::Lambda::Function
     Properties:
-      Code: ../lambdas/hello-world/hello-world.zip
+      Code: ../lambdas/data-exporter/data-exporter.zip
       Description: AWS Lambda function
-      FunctionName: 'lambda-function'
-      Handler: lambdas/hello-world/index.handler
+      FunctionName: !Sub "lambda-function-${version}"
+      Handler: puente-data-exporter/lambdas/data-exporter/index.handler
       MemorySize: 256
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.7
       Timeout: 60
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - W3002
   LambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -118,10 +142,39 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Path: '/'
+  LambdaPermissionDataExporter:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LambdaFunctionDataExporter.Arn
+      Action: lambda:InvokeFunction
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*"
+  LogGroupLambdaFunctionDataExporter:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionDataExporter]]
+      RetentionInDays: 7 # days
+  CloudWatchRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - >-
+          arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
 
 
 
 # LEFT FOR FUTURE USE
+
   # ApiGatewayAccount:
   #   Type: 'AWS::ApiGateway::Account'
   #   Properties:
@@ -165,34 +218,8 @@ Resources:
   #     OperationName: generic
   #     ResourceId: !Ref ApiGatewayResourceGeneric
   #     RestApiId: !Ref ApiGatewayRestApi
-  # ApiGatewayOptionsMethod:
-  #   Type: AWS::ApiGateway::Method
-  #   Properties:
-  #     AuthorizationType: NONE
-  #     RestApiId: !Ref ApiGatewayRestApi
-  #     ResourceId: !Ref ApiGatewayResourceGeneric
-  #     HttpMethod: OPTIONS
-  #     Integration:
-  #       Type: MOCK
-  #       IntegrationResponses:
-  #       - StatusCode: "200"
-  #         ResponseParameters:
-  #           method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-  #           method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-  #           method.response.header.Access-Control-Allow-Origin: "'*'"
-  #         ResponseTemplates:
-  #           application/json: ''
-  #       PassthroughBehavior: WHEN_NO_MATCH
-  #       RequestTemplates:
-  #         application/json: '{"statusCode": 200}'
-  #     MethodResponses:
-  #     - StatusCode: "200"
-  #       ResponseModels:
-  #         application/json: 'Empty'
-  #       ResponseParameters:
-  #         method.response.header.Access-Control-Allow-Headers: false
-  #         method.response.header.Access-Control-Allow-Methods: false
-  #         method.response.header.Access-Control-Allow-Origin: false
+
+
   # ApiGatewayModel:
   #   Type: 'AWS::ApiGateway::Model'
   #   Properties:
@@ -249,29 +276,24 @@ Resources:
   #             - Effect: Allow
   #               Action: 'lambda:*'
   #               Resource: !GetAtt LambdaFunctionDeleteAssets.Arn
-  # LambdaPermissionGeneric:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     FunctionName: !GetAtt LambdaFunctionGenericAssets.Arn
-  #     Action: lambda:InvokeFunction
-  #     Principal: 'apigateway.amazonaws.com'
-  #     SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/*/*"
-  # LambdaFunctionGenericAssets:
-  #     Type: 'AWS::Lambda::Function'
-  #     Properties:
-  #       Code: ../lambdas/generic-assets/generic-assets.zip
-  #       Description: Lambda function for pulling generic assets and storing them in s3
-  #       FunctionName: !Sub "zeus-prime-generic-asset-uploading-${version}"
-  #       Handler: lambdas/generic-assets/index.handler
-  #       MemorySize: 256
-  #       Role: !GetAtt LambdaIamRole.Arn
-  #       Runtime: nodejs14.x
-  #       Timeout: 60
-  #     Metadata:
-  #       cfn-lint:
-  #         config:
-  #           ignore_checks:
-  #           - W3002
+  
+    # LambdaFunctionGenericAssets:
+    #   Type: 'AWS::Lambda::Function'
+    #   Properties:
+    #     Code: ../lambdas/generic-assets/generic-assets.zip
+    #     Description: Lambda function for pulling generic assets and storing them in s3
+    #     FunctionName: !Sub "zeus-prime-generic-asset-uploading-${version}"
+    #     Handler: lambdas/generic-assets/index.handler
+    #     MemorySize: 256
+    #     Role: !GetAtt LambdaIamRole.Arn
+    #     Runtime: nodejs14.x
+    #     Timeout: 60
+    #   Metadata:
+    #     cfn-lint:
+    #       config:
+    #         ignore_checks:
+    #         - W3002
+
   # LambdaIamRole:
   #   Type: AWS::IAM::Role
   #   Properties:
@@ -297,23 +319,3 @@ Resources:
   #               Resource: "*"
   #     ManagedPolicyArns:
   #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  # LogGroupLambdaFunctionGenericAssets:
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionGenericAssets]]
-  #     RetentionInDays: 7 # days
-  # CloudWatchRole:
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - apigateway.amazonaws.com
-  #           Action: 'sts:AssumeRole'
-  #     Path: /
-  #     ManagedPolicyArns:
-  #       - >-
-  #         arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
