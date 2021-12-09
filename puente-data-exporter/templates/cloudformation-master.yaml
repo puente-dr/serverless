@@ -167,7 +167,7 @@ Resources:
   LogGroupLambdaFunctionDataExporter:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionDataExporter]]
+      LogGroupName: !Join ['/', ['/aws/lambda',!GetAtt LambdaFunctionDataExporter.FunctionName]]
       RetentionInDays: 7 # days
   CloudWatchRole:
     Type: 'AWS::IAM::Role'
