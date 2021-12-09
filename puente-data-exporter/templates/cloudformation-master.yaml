@@ -4,21 +4,6 @@ Parameters:
   version:
     Type: String
     Default: prod
-  apiGatewayName:
-    Type: String
-    Default: my-api
-  apiGatewayStageName:
-    Type: String
-    AllowedPattern: "[a-z0-9]+"
-    Default: call
-  apiGatewayHTTPMethod:
-    Type: String
-    Default: POST
-  lambdaFunctionName:
-    Type: String
-    AllowedPattern: "[a-zA-Z0-9]+[a-zA-Z0-9-]+[a-zA-Z0-9]+"
-    Default: my-function
-
 Resources:
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
@@ -167,7 +152,7 @@ Resources:
   LogGroupLambdaFunctionDataExporter:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda',!GetAtt LambdaFunctionDataExporter.FunctionName]]
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionDataExporter]]
       RetentionInDays: 7 # days
   CloudWatchRole:
     Type: 'AWS::IAM::Role'
