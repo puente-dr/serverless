@@ -141,7 +141,13 @@ Resources:
                 - 'lambda.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      Policies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
               - 'logs:PutLogEvents'
+            Resource: '*'
       Path: '/'
   LambdaPermissionDataExporter:
     Type: AWS::Lambda::Permission
