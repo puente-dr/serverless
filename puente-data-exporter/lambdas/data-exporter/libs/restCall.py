@@ -81,6 +81,15 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
     # join non surveyData forms to surveyData
     if specifier != 'SurveyData':
         combined_url = url + 'SurveyData'
+        params = {
+            "order": "-updatedAt", "limit": 200000, "where":{
+                json.dumps({
+                    "surveyingOrganization": {
+                        "$in": [survey_org]
+                    }
+                })
+            }
+        }
         response_survey_data = requests.get(combined_url, params=params, headers=headers)
         json_obj_survey_data = response_survey_data.json()
         normalized_survey_data = json_normalize(json_obj_survey_data["results"])
