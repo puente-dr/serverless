@@ -139,11 +139,9 @@ Resources:
             Principal:
               Service:
                 - 'lambda.amazonaws.com'
-                - 'logs:CreateLogGroup'
-                - 'logs:CreateLogStream'
-                - 'logs:PutLogEvents'
             Action:
               - 'sts:AssumeRole'
+              - 'logs:PutLogEvents'
       Path: '/'
   LambdaPermissionDataExporter:
     Type: AWS::Lambda::Permission
