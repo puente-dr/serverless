@@ -5,6 +5,8 @@ from time import gmtime, strftime
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
+#test comment
+
 from libs.envHealth import envHealth
 from libs.evalMedical import evalMedical
 from libs.mainRecords import mainRecords
@@ -22,6 +24,7 @@ def handler(event, context=None):
 
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
+
   custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
   print("2",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
@@ -35,6 +38,19 @@ def handler(event, context=None):
   
   print("4",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
   url = write_csv_to_s3(data, s3_bucket_key)
+
+ 
+  # if specifier == "SurveyData":
+  #   response = mainRecords(data, survey_org)
+  # elif specifier == "HistoryEnvironmentalHealth":
+  #   response = envHealth(data, survey_org)
+  # elif specifier == "EvaluationMedical":
+  #   response = evalMedical(data, survey_org)
+  # elif specifier == "Vitals":
+  #   response = vitals(data, survey_org)
+  # else:
+  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+
 
   response = {
     "s3_url": url

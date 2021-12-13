@@ -5,7 +5,7 @@ import os
 
 import boto3
 
-def envHealth(df, survey_org, BUCKET_NAME):
+def envHealth(df, survey_org):
 
     #df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
 
@@ -142,21 +142,22 @@ def envHealth(df, survey_org, BUCKET_NAME):
     #    print(df[col].unique())
 
     # key = f"envHealth_{survey_org}.csv"
-
-    # url = write_csv_to_s3(df, key)
+    specifier = "HistoryEnvironmentalHealth"
+    key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+    url = write_csv_to_s3(df, key)
     #writing to csv in s3
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(BUCKET_NAME)
+    # s3 = boto3.resource('s3')
+    # bucket = s3.Bucket(BUCKET_NAME)
 
-    tmp_path = "/tmp/"
-    org_path = f"{survey_org}"
-    out_name = "envHealth.csv"
+    # tmp_path = "/tmp/"
+    # org_path = f"{survey_org}"
+    # out_name = "envHealth.csv"
 
-    temp_file = os.path.join(tmp_path, org_path, out_name)
-    key = os.path.join(org_path, out_name)
+    # temp_file = os.path.join(tmp_path, org_path, out_name)
+    # key = os.path.join(org_path, out_name)
 
-    df.to_csv(temp_file)
+    # df.to_csv(temp_file)
 
-    bucket.upload_file(temp_file, key)
+    # bucket.upload_file(temp_file, key)
 
     return {"message":"Env Health Success :)", "data": df.to_json(), "url": url}

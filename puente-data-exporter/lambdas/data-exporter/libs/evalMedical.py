@@ -5,7 +5,7 @@ import pandas as pd
 import boto3
 import os
 
-def evalMedical(df, survey_org, BUCKET_NAME):
+def evalMedical(df, survey_org):
     #df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""
@@ -107,19 +107,22 @@ def evalMedical(df, survey_org, BUCKET_NAME):
     # url = write_csv_to_s3(df, key)
 
     #writing to csv in s3
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(BUCKET_NAME)
+    specifier = "EvaluationMedical"
+    key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+    url = write_csv_to_s3(df, key)
+    # s3 = boto3.resource('s3')
+    # bucket = s3.Bucket(BUCKET_NAME)
 
-    tmp_path = "/tmp/"
-    org_path = f"{survey_org}"
-    out_name = "evalMedical.csv"
+    # tmp_path = "/tmp/"
+    # org_path = f"{survey_org}"
+    # out_name = "evalMedical.csv"
 
-    temp_file = os.path.join(tmp_path, org_path, out_name)
-    key = os.path.join(org_path, out_name)
+    # temp_file = os.path.join(tmp_path, org_path, out_name)
+    # key = os.path.join(org_path, out_name)
 
-    df.to_csv(temp_file)
+    # df.to_csv(temp_file)
 
-    bucket.upload_file(temp_file, key)
+    # bucket.upload_file(temp_file, key)
 
     # for col in ['received_treatment_notes', "received_treatment_description", "part_of_body", "part_of_body_description", 'AssessmentandEvaluation',
     #           'AssessmentandEvaluation_Surgical','AssessmentandEvaluation_Surgical_Guess']:
