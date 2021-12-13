@@ -35,7 +35,7 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
 
     # combine base url with specifier
     combined_url = url + specifier
-    params = Dict()
+    params = dict()
 
     if specifier != 'FormResults':
         params = {
