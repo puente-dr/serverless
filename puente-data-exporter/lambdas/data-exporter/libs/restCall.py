@@ -1,3 +1,4 @@
+from typing import Dict
 import requests
 import json
 from pandas import json_normalize
@@ -10,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import secretz
 
-def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"):
+def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4app.com/classes/"):
     """Sample pure Lambda function
 
     Parameters
@@ -32,38 +33,35 @@ def restCall(specifier, survey_org, url="https://parseapi.back4app.com/classes/"
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-    # def restCall(specifier, url="https://parseapi.back4app.com/classes/"):
-    # """Only difference between calls is the specifier
-    #    This function makes a REST Get call to Back4App, returning a pandas df"""
-
-    # url = event["url"]
-    # specifier = event["specifier"]
-
-    # url="https://parseapi.back4app.com/classes/"
-    # specifier = "SurveyData"
-
     # combine base url with specifier
     combined_url = url + specifier
+    params = Dict()
 
-    # REST stuff to make sure you get data
-    #HAD PROBLEMS WITH PAYLOAD SIZE, LOWERING LIMIT FIXED
-    #increase payload?
-    params = {
-      "order": "-updatedAt", "limit": 200000, "where":{
-          json.dumps({
-            "surveyingOrganization": {
-                "$in": [survey_org]
+    if specifier != 'FormResults':
+        params = {
+            "order": "-updatedAt", "limit": 200000, "where":{
+                json.dumps({
+                    "surveyingOrganization": {
+                        "$in": [survey_org]
+                    }
+                })
             }
-          })
-      }
-}
+        }
+    else:
+        # custom forms need to ensure that the correct custom form results are returned
+        params = {
+            "order": "-updatedAt", "limit": 200000, "where":{
+                json.dumps({
+                    "surveyingOrganization": {
+                        "$in": [survey_org]
+                    },
+                    "formSpecificationsId": {
+                        "$in": [custom_form_id]
+                    }
+                })
+            }
+        }
+
 
     headers = {
         "Content-Type": "application/json",

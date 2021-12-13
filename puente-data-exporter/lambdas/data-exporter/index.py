@@ -19,18 +19,17 @@ def handler(event, context=None):
 
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
+  custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
 
-  data = restCall(specifier, survey_org)
-  url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
 
-  # if specifier == "SurveyData":
-  #   response = mainRecords(data, survey_org, bucket_name)
-  # elif specifier == "HistoryEnvironmentalHealth":
-  #   response = envHealth(data, survey_org, bucket_name)
-  # elif specifier == "EvaluationMedical":
-  #   response = evalMedical(data, survey_org, bucket_name)
-  # else:
-  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+  data = restCall(specifier, survey_org, custom_form_id)
+  
+  if specifier != "FormResults":
+    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+  else:
+    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
+  
+  url = write_csv_to_s3(data, s3_bucket_key)
 
   response = {
     "s3_url": url
