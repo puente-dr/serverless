@@ -139,6 +139,9 @@ Resources:
             Principal:
               Service:
                 - 'lambda.amazonaws.com'
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
             Action:
               - 'sts:AssumeRole'
       Path: '/'
