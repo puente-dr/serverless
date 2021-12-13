@@ -142,12 +142,16 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: 'Allow'
-            Action:
-              - 'logs:PutLogEvents'
-            Resource: '*'
+        - PolicyName: CloudWatchLogGroupPolicy
+        PolicyDocument: 
+          Version: '2012-10-17'
+          Statement:
+            - Effect: 'Allow'
+              Action:
+                - 'logs:PutLogEvents'
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream*'
+              Resource: '*'
       Path: '/'
   LambdaPermissionDataExporter:
     Type: AWS::Lambda::Permission
