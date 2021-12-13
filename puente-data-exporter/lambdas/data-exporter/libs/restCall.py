@@ -72,13 +72,13 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
     print("2-B",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     # GET operation
     response = requests.get(combined_url, params=params, headers=headers)
-
+    print("2-C",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     # turn it into json
     json_obj = response.json()
-
+    print("2-D",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     # normalize (ie flatten) data, turns it into a pandas df
     normalized = json_normalize(json_obj["results"])
-    print("2-C",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    print("2-E",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     # join non surveyData forms to surveyData
     if specifier != 'SurveyData':
         combined_url = url + 'SurveyData'
@@ -91,14 +91,14 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
                 })
             }
         }
-        print("2-D",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+        print("2-F",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
         response_survey_data = requests.get(combined_url, params=params, headers=headers)
         json_obj_survey_data = response_survey_data.json()
         normalized_survey_data = json_normalize(json_obj_survey_data["results"])
-        print("2-E",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+        print("2-G",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
         normalized = normalized.rename(columns= {'objectId':specifier+'Id','client.objectId':'objectId','surveyingUser':'surveyingUserSupplementary'})
         merged_df = pd.merge(normalized_survey_data, normalized, on="objectId")
-        print("2-F",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+        print("2-H",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
         return merged_df
 
 
