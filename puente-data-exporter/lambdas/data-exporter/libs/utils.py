@@ -3,6 +3,7 @@ import numpy as np
 import re
 import distance
 from datetime import date
+from time import gmtime, strftime
 
 import sys
 import os
@@ -14,13 +15,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 import secretz
 
 def write_csv_to_s3(df, key):
-    print(secretz.AWS_ACCESS_KEY_ID,secretz.AWS_SECRET_ACCESS_KEY)
+    print("4-A",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
         )
-
+    print("4-B",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(
@@ -28,25 +29,16 @@ def write_csv_to_s3(df, key):
             Key=key,
             Body=csv_buffer.getvalue()
         )
-    
+    print("4-C",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-
+    print("4-D",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     if status == 200:
         print(f"Successful S3 put_object response. Status - {status}")
     else:
         print(f"Unsuccessful S3 put_object response. Status - {status}")
 
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    # df.to_csv(
-    #     url,
-    #     index=False,
-    #     storage_options={
-    #         "key": secretz.AWS_ACCESS_KEY_ID,
-    #         "secret": secretz.AWS_SECRET_ACCESS_KEY,
-    #         # "token": secretz.AWS_SESSION_TOKEN,
-    #     },
-    # )
-    # url = ''
+    print("4-E",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     return url
 
 
