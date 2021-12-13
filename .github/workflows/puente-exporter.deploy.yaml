@@ -12,7 +12,6 @@ env:
 on:
   push:
     branches:    
-      - master
       - dev
 jobs:
   cloudformation-deployer:
