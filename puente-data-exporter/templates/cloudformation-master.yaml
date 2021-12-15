@@ -120,7 +120,7 @@ Resources:
       Description: AWS Lambda function
       FunctionName: !Sub "lambda-function-${version}"
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
-      MemorySize: 4096
+      MemorySize: 1024
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.7
       Timeout: 60
