@@ -120,7 +120,7 @@ Resources:
       Description: AWS Lambda function
       FunctionName: !Sub "lambda-function-${version}"
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
-      MemorySize: 256
+      MemorySize: 1028
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.7
       Timeout: 60
@@ -142,7 +142,7 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Policies:
-        - PolicyName: CloudWatchLogGroupPolicy
+        - PolicyName: !Sub "CloudWatchLogGroupPolicy-${version}"
           PolicyDocument: 
             Version: '2012-10-17'
             Statement:
