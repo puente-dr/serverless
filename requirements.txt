@@ -1,7 +1,0 @@
-requests==2.25.1
-numpy==1.20.3
-Distance==0.1.3
-pandas==1.3.1
-boto3==1.18.62
-gspread==4.0.1
-oauth2client==4.1.3
