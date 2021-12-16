@@ -23,7 +23,7 @@ def handler(event, context=None):
 
   data = restCall(specifier, survey_org, custom_form_id)
   
-  if specifier != "FormResults":
+  if specifier != "FormResults" and specifier != 'FormAssetResults':
     s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
   else:
     s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
