@@ -36,7 +36,7 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
     combined_url = url + specifier
     params = dict()
 
-    if specifier != 'FormResults':
+    if specifier != 'FormResults' and specifier != 'FormAssetResults':
         params = {
             "order": "-updatedAt", "limit": 200000, "where":{
                 json.dumps({
@@ -75,8 +75,8 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
     normalized = json_normalize(json_obj["results"])
 
     # join non surveyData forms to surveyData
-    if specifier != 'SurveyData':
-        combined_url = url + 'SurveyData'
+    if specifier != 'SurveyData' and specifier != 'Assets':
+        combined_url = url + 'SurveyData' if specifier != 'FormAssetResults' else url + 'Assets'
         params = {
             "order": "-updatedAt", "limit": 200000, "where":{
                 json.dumps({
