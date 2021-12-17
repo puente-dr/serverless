@@ -3,8 +3,6 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-#test comment
-#test comment 2
 
 from libs.envHealth import envHealth
 from libs.evalMedical import evalMedical
@@ -22,6 +20,7 @@ def handler(event, context=None):
 
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
+
   custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
 
   data = restCall(specifier, survey_org, custom_form_id)
@@ -32,6 +31,19 @@ def handler(event, context=None):
     s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
   
   url = write_csv_to_s3(data, s3_bucket_key)
+
+ 
+  # if specifier == "SurveyData":
+  #   response = mainRecords(data, survey_org)
+  # elif specifier == "HistoryEnvironmentalHealth":
+  #   response = envHealth(data, survey_org)
+  # elif specifier == "EvaluationMedical":
+  #   response = evalMedical(data, survey_org)
+  # elif specifier == "Vitals":
+  #   response = vitals(data, survey_org)
+  # else:
+  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+
 
   response = {
     "s3_url": url
