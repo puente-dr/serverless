@@ -6,21 +6,36 @@ from datetime import date
 
 import sys
 import os
+import boto3
+import io
 
-# from libs import secretz
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+import secretz
 
 def write_csv_to_s3(df, key):
-    # url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    # df.to_csv(
-    #     url,
-    #     index=False,
-    #     storage_options={
-    #         "key": secretz.AWS_ACCESS_KEY_ID,
-    #         "secret": secretz.AWS_SECRET_ACCESS_KEY,
-    #         "token": secretz.AWS_SESSION_TOKEN,
-    #     },
-    # )
-    url = ''
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
+        )
+
+    with io.StringIO() as csv_buffer:
+        df.to_csv(csv_buffer, index=False)
+        response = s3_client.put_object(
+            Bucket=secretz.AWS_S3_BUCKET,
+            Key=key,
+            Body=csv_buffer.getvalue()
+        )
+
+    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    
+    if status == 200:
+        print(f"Successful S3 put_object response. Status - {status}")
+    else:
+        print(f"Unsuccessful S3 put_object response. Status - {status}")
+
+    url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
     return url
 
 def calculate_age(born, age):
