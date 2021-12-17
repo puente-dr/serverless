@@ -3,6 +3,9 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
+#test comment
+#test comment 2
+
 from libs.envHealth import envHealth
 from libs.evalMedical import evalMedical
 from libs.mainRecords import mainRecords
@@ -17,27 +20,18 @@ def handler(event, context=None):
   if 'queryStringParameters' in event.keys():
     event = event["queryStringParameters"]
 
-  bucket_name = event["bucket_name"]
   survey_org = event["surveyingOrganization"]
   specifier = event["specifier"]
-  print(survey_org)
-  print(specifier)
-  print("bucket",secretz.AWS_S3_BUCKET)
-  print("aws access key",secretz.AWS_ACCESS_KEY_ID,"aws secret",secretz.AWS_SECRET_ACCESS_KEY)
-  print("app id",secretz.APP_ID,"rest api", secretz.REST_API_KEY)
+  custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
 
-
-  data = restCall(specifier, survey_org)
-  url = write_csv_to_s3(data, 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv')
-
-  # if specifier == "SurveyData":
-  #   response = mainRecords(data, survey_org, bucket_name)
-  # elif specifier == "HistoryEnvironmentalHealth":
-  #   response = envHealth(data, survey_org, bucket_name)
-  # elif specifier == "EvaluationMedical":
-  #   response = evalMedical(data, survey_org, bucket_name)
-  # else:
-  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+  data = restCall(specifier, survey_org, custom_form_id)
+  
+  if specifier != "FormResults" and specifier != 'FormAssetResults':
+    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+  else:
+    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
+  
+  url = write_csv_to_s3(data, s3_bucket_key)
 
   response = {
     "s3_url": url
@@ -49,6 +43,3 @@ def handler(event, context=None):
     "isBase64Encoded": False,
     "body": json.dumps(response)
   }
-
-# if __name__ == '__main__':
-#     globals()[sys.argv[1]](sys.argv[2])
