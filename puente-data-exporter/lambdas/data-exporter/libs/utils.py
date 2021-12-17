@@ -14,7 +14,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 import secretz
 
 def write_csv_to_s3(df, key):
-    print(secretz.AWS_ACCESS_KEY_ID,secretz.AWS_SECRET_ACCESS_KEY)
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
@@ -28,25 +27,15 @@ def write_csv_to_s3(df, key):
             Key=key,
             Body=csv_buffer.getvalue()
         )
-    
-    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
 
+    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+    
     if status == 200:
         print(f"Successful S3 put_object response. Status - {status}")
     else:
         print(f"Unsuccessful S3 put_object response. Status - {status}")
 
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    # df.to_csv(
-    #     url,
-    #     index=False,
-    #     storage_options={
-    #         "key": secretz.AWS_ACCESS_KEY_ID,
-    #         "secret": secretz.AWS_SECRET_ACCESS_KEY,
-    #         # "token": secretz.AWS_SESSION_TOKEN,
-    #     },
-    # )
-    # url = ''
     return url
 
 def calculate_age(born, age):
