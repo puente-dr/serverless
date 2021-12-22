@@ -27,7 +27,6 @@ def evalMedical(df):
         "AssessmentandEvaluation_Surgical_Guess",
         "immediate_follow_up",
         "planOfAction",
-        "createdAt",
     ]
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
