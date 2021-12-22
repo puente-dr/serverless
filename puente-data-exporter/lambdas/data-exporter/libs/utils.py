@@ -13,6 +13,27 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import secretz
 
+def read_csv_from_s3(key):
+    s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
+            )
+
+    response = s3_client.get_object(Bucket=secretz.AWS_S3_BUCKET, Key=key)
+
+    status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+
+    if status == 200:
+        print(f"Successful S3 get_object response. Status - {status}")
+        df = pd.read_csv(response.get("Body"))
+        return df
+    else:
+        print(f"Unsuccessful S3 get_object response. Status - {status}")
+        return status
+    
+    
+
 def write_csv_to_s3(df, key):
     s3_client = boto3.client(
         "s3",
