@@ -1,4 +1,4 @@
-from libs.utils import fix_typos, calculate_age, write_csv_to_s3
+from libs.utils import fix_typos, calculate_age, write_csv_to_s3, read_csv_from_s3
 
 import numpy as np
 import pandas as pd
@@ -133,6 +133,8 @@ def mainRecords(df, survey_org):
     # s3 = boto3.resource('s3')
     # bucket = s3.Bucket(BUCKET_NAME)
 
+    read_in_df = read_csv_from_s3(key)
+
     # tmp_path = "/tmp/"
     # org_path = f"{survey_org}"
     # out_name = "mainRecords.csv"
@@ -166,4 +168,4 @@ def mainRecords(df, survey_org):
     #    print(df[col].unique())
 
     #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
-    return {"message": "Main Records Success :)", "data": df.to_json(), "s3_url": url}
+    return {"message": "Main Records Success :)", "data": df.to_json(), "s3_url": url, "read_in_data": read_in_df.head().to_json()}
