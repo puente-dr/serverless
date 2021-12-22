@@ -79,7 +79,7 @@ def mainRecords(df):
     df["surveyingOrganization"] = df["surveyingOrganization"].str.strip()
     #renaming
     surv_org_replace_dict = {"": "Other/NA",
-                            np.nan : "Other/NA",
+                            pd.np.nan : "Other/NA",
                             "puente": "Puente",
                             "Rayjon":"Rayjon Share Care"}
     df["surveyingOrganization"] = df["surveyingOrganization"].replace(surv_org_replace_dict)
