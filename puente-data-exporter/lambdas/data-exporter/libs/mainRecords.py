@@ -166,4 +166,4 @@ def mainRecords(df, survey_org):
     #    print(df[col].unique())
 
     #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
-    return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
+    return {"message": "Main Records Success :)", "data": df.to_json(), "s3_url": url}

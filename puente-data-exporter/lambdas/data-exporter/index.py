@@ -7,6 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 from libs.envHealth import envHealth
 from libs.evalMedical import evalMedical
 from libs.mainRecords import mainRecords
+from libs.vitals import vitals
 from libs.restCall import restCall
 from libs.utils import write_csv_to_s3
 
@@ -25,29 +26,29 @@ def handler(event, context=None):
 
   data = restCall(specifier, survey_org, custom_form_id)
   
-  if specifier != "FormResults" and specifier != 'FormAssetResults':
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
-  else:
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
+  # if specifier != "FormResults" and specifier != 'FormAssetResults':
+  #   s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+  # else:
+  #   s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
   
-  url = write_csv_to_s3(data, s3_bucket_key)
+  #url = write_csv_to_s3(data, s3_bucket_key)
 
  
-  # if specifier == "SurveyData":
-  #   response = mainRecords(data, survey_org)
-  # elif specifier == "HistoryEnvironmentalHealth":
-  #   response = envHealth(data, survey_org)
-  # elif specifier == "EvaluationMedical":
-  #   response = evalMedical(data, survey_org)
-  # elif specifier == "Vitals":
-  #   response = vitals(data, survey_org)
-  # else:
-  #   response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
+  if specifier == "SurveyData":
+    response = mainRecords(data, survey_org)
+  elif specifier == "HistoryEnvironmentalHealth":
+    response = envHealth(data, survey_org)
+  elif specifier == "EvaluationMedical":
+    response = evalMedical(data, survey_org)
+  elif specifier == "Vitals":
+    response = vitals(data, survey_org)
+  else:
+    response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
 
 
-  response = {
-    "s3_url": url
-  }
+  # response = {
+  #   "s3_url": url
+  # }
 
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},
