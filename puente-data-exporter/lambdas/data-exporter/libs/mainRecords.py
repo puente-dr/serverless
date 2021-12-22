@@ -1,46 +1,12 @@
-from libs.utils import fix_typos, calculate_age, write_csv_to_s3
+from libs.utils import  calculate_age
 
-import numpy as np
 import pandas as pd
-import os
 
-import boto3
-
-def mainRecords(df, survey_org, BUCKET_NAME):
+def mainRecords(df):
     #df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
     """
-
-    # filter columns
-    columns = [
-        "objectId",
-        "fname",
-        "lname",
-        "nickname",
-        "relationship",
-        "sex",
-        "dob",
-        "telephoneNumber",
-        "educationLevel",
-        "occupation",
-        "communityname",
-        "city",
-        "province",
-        "insuranceNumber",
-        "insuranceProvider",
-        "clinicProvider",
-        "cedulaNumber",
-        "surveyingUser",
-        "surveyingOrganization",
-        "latitude",
-        "longitude",
-        "createdAt",
-        "updatedAt",
-        "age",
-    ]
-
-    df = df[columns]
 
     # remove duplicate rows
     duplicate_subset = [
@@ -69,7 +35,7 @@ def mainRecords(df, survey_org, BUCKET_NAME):
     """ALL DATA CLEANING HERE"""
 
     # replace nan
-    df = df.replace({np.nan: ""})
+    df = df.replace({pd.np.nan: ""})
 
     # age calculation
     df["age"] = df.apply(lambda x: calculate_age(x["dob"], x["age"]), axis=1)
@@ -97,7 +63,7 @@ def mainRecords(df, survey_org, BUCKET_NAME):
         "someCollege": "Some College",
         "college": "College",
         "someHighSchool": "Some High School",
-        "": np.nan,
+        "": pd.np.nan,
     }
     df["educationLevel"].replace(education_replace_dict, inplace=True)
 
@@ -120,44 +86,6 @@ def mainRecords(df, survey_org, BUCKET_NAME):
 
 
     # replace any induced nan
-    df = df.replace({np.nan: "N/A"})
+    df = df.replace({pd.np.nan: "N/A"})
 
-
-    #writing to csv in s3
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(BUCKET_NAME)
-
-    tmp_path = "/tmp/"
-    org_path = f"{survey_org}"
-    out_name = "mainRecords.csv"
-
-    temp_file = os.path.join(tmp_path, org_path, out_name)
-    key = os.path.join(org_path, out_name)
-
-    df.to_csv(temp_file)
-
-    bucket.upload_file(temp_file, key)
-
-    # if not os.path.exists(org_path):
-    #     os.mkdir(org_path)
-    # else:
-    #     print("path exists?")
-    # df.to_csv(test_key)
-
-    #need bucket name, key id, secret access key, session token
-    #url = write_csv_to_s3(df, key)
-
-
-    # print(df.dtypes)
-
-    # for col in ["age", "city", "province"]:
-    #    print(col)
-    #    print(df[col].unique())
-    # use the below couple of lines to check on results of fix_typos function
-
-    # for col in ["communityname", "city", "province"]:
-    #    print(col)
-    #    print(df[col].unique())
-
-    #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
-    return {"message": "Main Records Success :)", "data": df.to_json()}
+    return df
