@@ -130,4 +130,4 @@ def evalMedical(df, survey_org):
     #    print(df[col].unique())
     #print(df.shape)
     #print(len(df["medicalEvaluationId"].unique()))
-    return {"Message": "Eval Medical Success :)", "data": df.to_json(), "url": url}
+    return {"Message": "Eval Medical Success :)", "data": df.to_json(), "s3_url": url}

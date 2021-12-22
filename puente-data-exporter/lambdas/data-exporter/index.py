@@ -26,12 +26,12 @@ def handler(event, context=None):
 
   data = restCall(specifier, survey_org, custom_form_id)
   
-  if specifier != "FormResults" and specifier != 'FormAssetResults':
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
-  else:
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
+  # if specifier != "FormResults" and specifier != 'FormAssetResults':
+  #   s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+  # else:
+  #   s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
   
-  url = write_csv_to_s3(data, s3_bucket_key)
+  #url = write_csv_to_s3(data, s3_bucket_key)
 
  
   if specifier == "SurveyData":
@@ -46,9 +46,9 @@ def handler(event, context=None):
     response = {"message": "Oops, look like you didnt inlude a valid specifier..."}
 
 
-  response = {
-    "s3_url": url
-  }
+  # response = {
+  #   "s3_url": url
+  # }
 
   return {
     "headers": {"Access-Control-Allow-Origin":"*"},

@@ -160,4 +160,4 @@ def envHealth(df, survey_org):
 
     # bucket.upload_file(temp_file, key)
 
-    return {"message":"Env Health Success :)", "data": df.to_json(), "url": url}
+    return {"message":"Env Health Success :)", "data": df.to_json(), "s3_url": url}
