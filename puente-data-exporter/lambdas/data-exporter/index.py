@@ -55,6 +55,6 @@ def handler(event, context=None):
     "headers": {"Access-Control-Allow-Origin":"*"},
     "statusCode": 200,
     "isBase64Encoded": False,
-    "body": json.dumps(response["s3_url"],
-    "read_in_data": json.dumpts(response["read_in_data"]))
+    "body": json.dumps(response["s3_url"]),
+    "read_in_data": json.dumps(response["read_in_data"])
   }
