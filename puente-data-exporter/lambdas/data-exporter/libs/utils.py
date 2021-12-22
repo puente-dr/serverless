@@ -199,3 +199,17 @@ def fix_typos(df, col1, col2, col3):
     df[[col1, col2, col3]] = df[[col1, col2, col3]].apply(lambda x: closest(x, x.name))
 
     return df
+
+def alter_multiselect_fields(fields):
+    for index in fields.index:
+        new_values = []
+        for field in fields.loc[index]:
+            if 'answer' in field.keys() and isinstance(field['answer'], list):
+                for answer in field['answer']:
+                    new_values.append({
+                        'title': field['title'] + '_' + answer,
+                        'answer' : 'Yes'
+                    })
+            else:
+                new_values.append(field)
+        fields.loc[index] = new_values
