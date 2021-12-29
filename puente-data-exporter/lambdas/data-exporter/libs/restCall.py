@@ -95,6 +95,9 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
             'createdAt':'createdAtSupplementary'
             })
         
+        print("primary: ", normalized_primary.head(), normalized_primary.columns)
+        print("secondary: ", normalized.head(), normalized.columns)
+        
         return normalized_primary, normalized
 
 
