@@ -89,5 +89,5 @@ def mainRecords(df):
     df = df.replace({pd.np.nan: "N/A"})
     
     del df['searchIndex']
-
+    
     return df

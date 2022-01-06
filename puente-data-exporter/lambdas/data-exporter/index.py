@@ -21,53 +21,62 @@ import libs.secretz as secretz
 import json
 
 def handler(event, context=None):
-  if 'queryStringParameters' in event.keys():
-    event = event["queryStringParameters"]
+  try:
+    if 'queryStringParameters' in event.keys():
+      event = event["queryStringParameters"]
 
-  survey_org = event["surveyingOrganization"]
-  specifier = event["specifier"]
-  custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
+    survey_org = event["surveyingOrganization"]
+    specifier = event["specifier"]
+    custom_form_id = event["customFormId"] if "customFormId" in event.keys() else ""
 
-  primary_data, specifier_data = restCall(specifier, survey_org, custom_form_id)
-  
-  if specifier != "FormResults" and specifier != 'FormAssetResults':
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
-  else:
-    s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
-  
-  # cleaning
-  if specifier == "SurveyData":
-    primary_data = mainRecords(primary_data)
-  elif specifier == "HistoryEnvironmentalHealth":
-    primary_data = mainRecords(primary_data)
-    specifier_data = envHealth(specifier_data)
-  elif specifier == "EvaluationMedical":
-    primary_data = mainRecords(primary_data)
-    specifier_data = evalMedical(specifier_data)
-  elif specifier == "Vitals":
-    primary_data = mainRecords(primary_data)
-    specifier_data = vitals(specifier_data)
-  elif specifier == 'Assets':
-    primary_data = assets(primary_data)
-  elif specifier == 'FormAssetResults':
-    primary_data = assets(primary_data)
-    specifier_data = assetSupplementary(specifier_data)
+    primary_data, specifier_data = restCall(specifier, survey_org, custom_form_id)
+    
+    if specifier != "FormResults" and specifier != 'FormAssetResults':
+      s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'.csv'
+    else:
+      s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
+    
+    # cleaning
+    if specifier == "SurveyData":
+      primary_data = mainRecords(primary_data)
+    elif specifier == "HistoryEnvironmentalHealth":
+      primary_data = mainRecords(primary_data)
+      specifier_data = envHealth(specifier_data)
+    elif specifier == "EvaluationMedical":
+      primary_data = mainRecords(primary_data)
+      specifier_data = evalMedical(specifier_data)
+    elif specifier == "Vitals":
+      primary_data = mainRecords(primary_data)
+      specifier_data = vitals(specifier_data)
+    elif specifier == 'Assets':
+      primary_data = assets(primary_data)
+    elif specifier == 'FormAssetResults':
+      primary_data = assets(primary_data)
+      specifier_data = assetSupplementary(specifier_data)
 
-  if specifier_data is not None:
-    data = pd.merge(specifier_data, primary_data, on="objectId")
-    data = data.replace({pd.np.nan: ''})
-  else:
-    data = primary_data
+    if specifier_data is not None:
+      data = pd.merge(specifier_data, primary_data,left_on='' ,right_on="objectId")
+      data = data.replace({pd.np.nan: ''})
+    else:
+      data = primary_data
 
-  url = write_csv_to_s3(data, s3_bucket_key)
+    url = write_csv_to_s3(data, s3_bucket_key)
 
-  response = {
-    "s3_url": url
-  }
+    response = {
+      "s3_url": url
+    }
 
-  return {
-    "headers": {"Access-Control-Allow-Origin":"*"},
-    "statusCode": 200,
-    "isBase64Encoded": False,
-    "body": json.dumps(response)
-  }
+    return {
+      "headers": {"Access-Control-Allow-Origin":"*"},
+      "statusCode": 200,
+      "isBase64Encoded": False,
+      "body": json.dumps(response)
+    }
+
+  except:
+    return {
+      "headers": {"Access-Control-Allow-Origin":"*"},
+      "statusCode": 400,
+      "isBase64Encoded": False,
+      "body": json.dumps({"error": "Oops.. it appears your request did not run as expected, please try again."})
+    }
