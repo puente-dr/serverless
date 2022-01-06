@@ -56,7 +56,7 @@ def handler(event, context=None):
     s3_bucket_key = 'clients/'+survey_org+'/data/'+specifier+'/'+specifier+'-'+custom_form_id+'.csv'
   
   try:
-    if specifier in ["SurveyData", "HistoryEnvironmentalHealth", "EvaluationMedical", "Vitals"]:
+    if specifier in ["SurveyData", "HistoryEnvironmentalHealth", "EvaluationMedical", "Vitals", "FormResults"]:
       primary_data = mainRecords(primary_data)
     elif specifier in ["Assets", "FormAssetResults"]:
       primary_data = assets(primary_data)
