@@ -87,5 +87,7 @@ def mainRecords(df):
 
     # replace any induced nan
     df = df.replace({pd.np.nan: "N/A"})
+    
+    del df['searchIndex']
 
     return df
