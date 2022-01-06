@@ -54,7 +54,7 @@ def handler(event, context=None):
     specifier_data = assetSupplementary(specifier_data)
 
   if specifier_data is not None:
-    data = pd.merge(primary_data, specifier_data, on="objectId")
+    data = pd.merge(specifier_data, primary_data, on="objectId")
     data = data.replace({pd.np.nan: ''})
   else:
     data = primary_data
