@@ -55,7 +55,7 @@ def handler(event, context=None):
       specifier_data = assetSupplementary(specifier_data)
 
     if specifier_data is not None:
-      data = pd.merge(specifier_data, primary_data,left_on='' ,right_on="objectId")
+      data = pd.merge(specifier_data, primary_data, on="objectId")
       data = data.replace({pd.np.nan: ''})
     else:
       data = primary_data
@@ -73,7 +73,8 @@ def handler(event, context=None):
       "body": json.dumps(response)
     }
 
-  except:
+  except Exception:
+    print(Exception)
     return {
       "headers": {"Access-Control-Allow-Origin":"*"},
       "statusCode": 400,
