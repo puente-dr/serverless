@@ -3,7 +3,6 @@ import numpy as np
 import re
 import distance
 from datetime import date
-from time import gmtime, strftime
 
 import sys
 import os
@@ -15,13 +14,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 import secretz
 
 def write_csv_to_s3(df, key):
-    print("4-A",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
         )
-    print("4-B",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(
@@ -29,16 +27,15 @@ def write_csv_to_s3(df, key):
             Key=key,
             Body=csv_buffer.getvalue()
         )
-    print("4-C",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
     status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-    print("4-D",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    
     if status == 200:
         print(f"Successful S3 put_object response. Status - {status}")
     else:
         print(f"Unsuccessful S3 put_object response. Status - {status}")
 
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
-    print("4-E",strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     return url
 
 def calculate_age(born, age):
@@ -202,3 +199,61 @@ def fix_typos(df, col1, col2, col3):
     df[[col1, col2, col3]] = df[[col1, col2, col3]].apply(lambda x: closest(x, x.name))
 
     return df
+
+def alter_multiselect_fields(fields):
+    for index in fields.index:
+        new_values = []
+        for field in fields.loc[index]:
+            if 'answer' in field.keys() and isinstance(field['answer'], list):
+                for answer in field['answer']:
+                    new_values.append({
+                        'title': field['title'] + '_' + answer,
+                        'answer' : 'Yes'
+                    })
+            else:
+                new_values.append(field)
+        fields.loc[index] = new_values
+
+# function to convert 'fields' columns to actual csv separated fields in the dataframe 
+# used for custom and supplementary asset forms
+def convert_fields_to_columns(df):
+    fields = df['fields']
+    fields_dict = {}
+    for index, item in fields.iteritems():
+        for val in item:
+            # check if new column already exists
+            if val['title'] in fields_dict.keys():
+                # check there are no missing values and add answer
+                if index == len(fields_dict[val['title']]):
+                    fields_dict[val['title']] = [*fields_dict[val['title']], *[val['answer']]]
+                else:
+                    # add missing values and anwer
+                    missing_values = []
+                    for i in range(index - len(fields_dict[val['title']])):
+                        missing_values = [*missing_values, *[""]]
+                    fields_dict[val['title']] = [*fields_dict[val['title']], *missing_values, *[val['answer']]]
+            else:
+                # create new field is this is the first record
+                if index == 0:
+                    fields_dict[val['title']] = [val['answer']]
+                else:
+                    # add additional missing values prior if this is not first record
+                    missing_values = []
+                    for i in range(index):
+                        missing_values = [*missing_values, *[""]]
+                    fields_dict[val['title']] = [*missing_values, *[val['answer']]]
+
+    # add any additional missing values to end to ensure all are same length
+    for key, value in fields_dict.items():
+        if len(value) != len(fields):
+            for i in range(len(fields) - len(value)):
+                fields_dict[key] = [*fields_dict[key], *[""]]
+
+    # remove current 'fields' from df and replace with new columns
+    del df['fields']
+
+    for key, value in fields_dict.items():
+        df[key] = value
+            
+    return df
+
