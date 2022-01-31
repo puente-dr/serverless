@@ -6,8 +6,9 @@ import os
 
 import boto3
 
+
 def mainRecords(df, survey_org, BUCKET_NAME):
-    #df = restCall(specifier="SurveyData", survey_org=survey_org)
+    # df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
     """
@@ -103,28 +104,30 @@ def mainRecords(df, survey_org, BUCKET_NAME):
 
     # community, city, province using distance metric for finding typos
     # less than 3 edits
-    #print("old communities: ", df["communityname"].value_counts())
+    # print("old communities: ", df["communityname"].value_counts())
     # commented out for now took 60 seconds to ran and lambda timed out
     # df = fix_typos(df, "communityname", "city", "province")
 
-    #print("communities: ", df["communityname"].value_counts())
+    # print("communities: ", df["communityname"].value_counts())
 
     # remove whitespace from org
     df["surveyingOrganization"] = df["surveyingOrganization"].str.strip()
-    #renaming
-    surv_org_replace_dict = {"": "Other/NA",
-                            np.nan : "Other/NA",
-                            "puente": "Puente",
-                            "Rayjon":"Rayjon Share Care"}
-    df["surveyingOrganization"] = df["surveyingOrganization"].replace(surv_org_replace_dict)
-
+    # renaming
+    surv_org_replace_dict = {
+        "": "Other/NA",
+        np.nan: "Other/NA",
+        "puente": "Puente",
+        "Rayjon": "Rayjon Share Care",
+    }
+    df["surveyingOrganization"] = df["surveyingOrganization"].replace(
+        surv_org_replace_dict
+    )
 
     # replace any induced nan
     df = df.replace({np.nan: "N/A"})
 
-
-    #writing to csv in s3
-    s3 = boto3.resource('s3')
+    # writing to csv in s3
+    s3 = boto3.resource("s3")
     bucket = s3.Bucket(BUCKET_NAME)
 
     tmp_path = "/tmp/"
@@ -144,9 +147,8 @@ def mainRecords(df, survey_org, BUCKET_NAME):
     #     print("path exists?")
     # df.to_csv(test_key)
 
-    #need bucket name, key id, secret access key, session token
-    #url = write_csv_to_s3(df, key)
-
+    # need bucket name, key id, secret access key, session token
+    # url = write_csv_to_s3(df, key)
 
     # print(df.dtypes)
 
@@ -159,5 +161,5 @@ def mainRecords(df, survey_org, BUCKET_NAME):
     #    print(col)
     #    print(df[col].unique())
 
-    #return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
+    # return {"message": "Main Records Success :)", "data": df.to_json(), "url": url}
     return {"message": "Main Records Success :)", "data": df.to_json()}

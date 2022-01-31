@@ -1,1 +1,4 @@
 *.packaged.yaml
+.env
+.idea/
+__pycache__/

@@ -5,8 +5,9 @@ import pandas as pd
 import boto3
 import os
 
+
 def evalMedical(df, survey_org, BUCKET_NAME):
-    #df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
+    # df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""
 
@@ -106,8 +107,8 @@ def evalMedical(df, survey_org, BUCKET_NAME):
     # key = r"evalMedical_{survey_org}.csv"
     # url = write_csv_to_s3(df, key)
 
-    #writing to csv in s3
-    s3 = boto3.resource('s3')
+    # writing to csv in s3
+    s3 = boto3.resource("s3")
     bucket = s3.Bucket(BUCKET_NAME)
 
     tmp_path = "/tmp/"
@@ -125,6 +126,6 @@ def evalMedical(df, survey_org, BUCKET_NAME):
     #           'AssessmentandEvaluation_Surgical','AssessmentandEvaluation_Surgical_Guess']:
     #    print(col)
     #    print(df[col].unique())
-    #print(df.shape)
-    #print(len(df["medicalEvaluationId"].unique()))
+    # print(df.shape)
+    # print(len(df["medicalEvaluationId"].unique()))
     return {"Message": "Eval Medical Success :)", "data": df.to_json(), "url": url}
