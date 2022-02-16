@@ -1,13 +1,11 @@
-from libs.utils import write_csv_to_s3
-import numpy as np
-import pandas as pd
 import os
-
 import boto3
+import numpy as np
+
 
 def envHealth(df, survey_org, BUCKET_NAME):
-
-    #df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
+    # TODO: Do we need to keep this?
+    # df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
 
     """
     PUT ALL CLEANING HERE
@@ -137,6 +135,7 @@ def envHealth(df, survey_org, BUCKET_NAME):
 
     df.rename(columns=rename_dict, inplace=True)
 
+    # TODO: Do we need to keep this?
     # for col in ['conditionoFloorinyourhouse','conditionoRoofinyourhouse', 'numberofIndividualsLivingintheHouse']:
     #    print(col)
     #    print(df[col].unique())
@@ -144,8 +143,9 @@ def envHealth(df, survey_org, BUCKET_NAME):
     # key = f"envHealth_{survey_org}.csv"
 
     # url = write_csv_to_s3(df, key)
-    #writing to csv in s3
-    s3 = boto3.resource('s3')
+
+    # writing to csv in s3
+    s3 = boto3.resource("s3")
     bucket = s3.Bucket(BUCKET_NAME)
 
     tmp_path = "/tmp/"
@@ -159,4 +159,5 @@ def envHealth(df, survey_org, BUCKET_NAME):
 
     bucket.upload_file(temp_file, key)
 
-    return {"message":"Env Health Success :)", "data": df.to_json(), "url": url}
+    # TODO: Unresolved reference to "url" here
+    return {"message": "Env Health Success :)", "data": df.to_json(), "url": url}

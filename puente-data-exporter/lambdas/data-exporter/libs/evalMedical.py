@@ -1,12 +1,11 @@
-from libs.utils import write_csv_to_s3
-
-import numpy as np
-import pandas as pd
-import boto3
 import os
+import boto3
+import numpy as np
+
 
 def evalMedical(df, survey_org, BUCKET_NAME):
-    #df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
+    # TODO: Do we need to keep this?
+    # df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""
 
@@ -103,11 +102,12 @@ def evalMedical(df, survey_org, BUCKET_NAME):
         inplace=True,
     )
 
+    # TODO: Do we need to keep this?
     # key = r"evalMedical_{survey_org}.csv"
     # url = write_csv_to_s3(df, key)
 
-    #writing to csv in s3
-    s3 = boto3.resource('s3')
+    # writing to csv in s3
+    s3 = boto3.resource("s3")
     bucket = s3.Bucket(BUCKET_NAME)
 
     tmp_path = "/tmp/"
@@ -121,10 +121,21 @@ def evalMedical(df, survey_org, BUCKET_NAME):
 
     bucket.upload_file(temp_file, key)
 
-    # for col in ['received_treatment_notes', "received_treatment_description", "part_of_body", "part_of_body_description", 'AssessmentandEvaluation',
-    #           'AssessmentandEvaluation_Surgical','AssessmentandEvaluation_Surgical_Guess']:
+    # TODO: Do we need to keep this?
+    # col_list = [
+    #     "received_treatment_notes",
+    #     "received_treatment_description",
+    #     "part_of_body",
+    #     "part_of_body_description",
+    #     "AssessmentandEvaluation",
+    #     "AssessmentandEvaluation_Surgical",
+    #     "AssessmentandEvaluation_Surgical_Guess"
+    # ]
+    # for col in col_list:
     #    print(col)
     #    print(df[col].unique())
-    #print(df.shape)
-    #print(len(df["medicalEvaluationId"].unique()))
+    # print(df.shape)
+    # print(len(df["medicalEvaluationId"].unique()))
+
+    # TODO: Unresolved reference to "url" here
     return {"Message": "Eval Medical Success :)", "data": df.to_json(), "url": url}

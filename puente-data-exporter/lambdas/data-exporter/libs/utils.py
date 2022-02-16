@@ -1,35 +1,31 @@
+from datetime import date
+import io
+import os
+import re
+import sys
+import boto3
+import distance
 import pandas as pd
 import numpy as np
-import re
-import distance
-from datetime import date
-
-import sys
-import os
-import boto3
-import io
-
 sys.path.append(os.path.join(os.path.dirname(__file__)))
-
 import secretz
+
 
 def write_csv_to_s3(df, key):
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
-        )
+        aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY,
+    )
 
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(
-            Bucket=secretz.AWS_S3_BUCKET,
-            Key=key,
-            Body=csv_buffer.getvalue()
+            Bucket=secretz.AWS_S3_BUCKET, Key=key, Body=csv_buffer.getvalue()
         )
 
     status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-    
+
     if status == 200:
         print(f"Successful S3 put_object response. Status - {status}")
     else:
@@ -37,6 +33,7 @@ def write_csv_to_s3(df, key):
 
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
     return url
+
 
 def calculate_age(born, age):
     """
@@ -79,6 +76,7 @@ def calculate_age(born, age):
     else:
         return age
 
+
 def split(delimiters, string, maxsplit=0):
     regexPattern = "|".join(map(re.escape, delimiters))
     return re.split(regexPattern, string, maxsplit)
@@ -88,7 +86,10 @@ def update_comm_cities_provinces():
     sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     # read in all correct community/city/province combos
-    all_data = pd.read_csv("puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv", encoding="latin1")
+    all_data = pd.read_csv(
+        "puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv",
+        encoding="latin1",
+    )
     # only where city exists
     all_data_filtered = all_data.loc[~all_data["City"].isnull()]
 
@@ -103,9 +104,11 @@ def update_comm_cities_provinces():
 def fix_typos(df, col1, col2, col3):
 
     # get correct community/city/province to compare against
-    correct_communities, correct_cities, correct_provinces = (
-        update_comm_cities_provinces()
-    )
+    (
+        correct_communities,
+        correct_cities,
+        correct_provinces,
+    ) = update_comm_cities_provinces()
 
     # make dict of them
     correct_dict = {
