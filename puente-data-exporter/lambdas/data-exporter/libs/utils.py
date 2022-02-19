@@ -13,23 +13,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import secretz
 
+
 def write_csv_to_s3(df, key):
     s3_client = boto3.client(
         "s3",
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY
-        )
+        aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY,
+    )
 
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(
-            Bucket=secretz.AWS_S3_BUCKET,
-            Key=key,
-            Body=csv_buffer.getvalue()
+            Bucket=secretz.AWS_S3_BUCKET, Key=key, Body=csv_buffer.getvalue()
         )
 
     status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-    
+
     if status == 200:
         print(f"Successful S3 put_object response. Status - {status}")
     else:
@@ -37,6 +36,7 @@ def write_csv_to_s3(df, key):
 
     url = f"s3://{secretz.AWS_S3_BUCKET}/{key}"
     return url
+
 
 def calculate_age(born, age):
     """
@@ -79,6 +79,7 @@ def calculate_age(born, age):
     else:
         return age
 
+
 def split(delimiters, string, maxsplit=0):
     regexPattern = "|".join(map(re.escape, delimiters))
     return re.split(regexPattern, string, maxsplit)
@@ -88,7 +89,10 @@ def update_comm_cities_provinces():
     sys.path.append(os.path.join(os.path.dirname(__file__)))
 
     # read in all correct community/city/province combos
-    all_data = pd.read_csv("puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv", encoding="latin1")
+    all_data = pd.read_csv(
+        "puente-data-exporter/lambdas/data-exporter/data/Communities_Cities_Provinces.csv",
+        encoding="latin1",
+    )
     # only where city exists
     all_data_filtered = all_data.loc[~all_data["City"].isnull()]
 
@@ -103,9 +107,11 @@ def update_comm_cities_provinces():
 def fix_typos(df, col1, col2, col3):
 
     # get correct community/city/province to compare against
-    correct_communities, correct_cities, correct_provinces = (
-        update_comm_cities_provinces()
-    )
+    (
+        correct_communities,
+        correct_cities,
+        correct_provinces,
+    ) = update_comm_cities_provinces()
 
     # make dict of them
     correct_dict = {
@@ -200,48 +206,56 @@ def fix_typos(df, col1, col2, col3):
 
     return df
 
+
 def alter_multiselect_fields(fields):
     for index in fields.index:
         new_values = []
         for field in fields.loc[index]:
-            if 'answer' in field.keys() and isinstance(field['answer'], list):
-                for answer in field['answer']:
-                    new_values.append({
-                        'title': field['title'] + '_' + answer,
-                        'answer' : 'Yes'
-                    })
+            if "answer" in field.keys() and isinstance(field["answer"], list):
+                for answer in field["answer"]:
+                    new_values.append(
+                        {"title": field["title"] + "_" + answer, "answer": "Yes"}
+                    )
             else:
                 new_values.append(field)
         fields.loc[index] = new_values
 
-# function to convert 'fields' columns to actual csv separated fields in the dataframe 
+
+# function to convert 'fields' columns to actual csv separated fields in the dataframe
 # used for custom and supplementary asset forms
 def convert_fields_to_columns(df):
-    fields = df['fields']
+    fields = df["fields"]
     fields_dict = {}
     for index, item in fields.iteritems():
         for val in item:
             # check if new column already exists
-            if val['title'] in fields_dict.keys():
+            if val["title"] in fields_dict.keys():
                 # check there are no missing values and add answer
-                if index == len(fields_dict[val['title']]):
-                    fields_dict[val['title']] = [*fields_dict[val['title']], *[val['answer']]]
+                if index == len(fields_dict[val["title"]]):
+                    fields_dict[val["title"]] = [
+                        *fields_dict[val["title"]],
+                        *[val["answer"]],
+                    ]
                 else:
                     # add missing values and anwer
                     missing_values = []
-                    for i in range(index - len(fields_dict[val['title']])):
+                    for i in range(index - len(fields_dict[val["title"]])):
                         missing_values = [*missing_values, *[""]]
-                    fields_dict[val['title']] = [*fields_dict[val['title']], *missing_values, *[val['answer']]]
+                    fields_dict[val["title"]] = [
+                        *fields_dict[val["title"]],
+                        *missing_values,
+                        *[val["answer"]],
+                    ]
             else:
                 # create new field is this is the first record
                 if index == 0:
-                    fields_dict[val['title']] = [val['answer']]
+                    fields_dict[val["title"]] = [val["answer"]]
                 else:
                     # add additional missing values prior if this is not first record
                     missing_values = []
                     for i in range(index):
                         missing_values = [*missing_values, *[""]]
-                    fields_dict[val['title']] = [*missing_values, *[val['answer']]]
+                    fields_dict[val["title"]] = [*missing_values, *[val["answer"]]]
 
     # add any additional missing values to end to ensure all are same length
     for key, value in fields_dict.items():
@@ -250,10 +264,9 @@ def convert_fields_to_columns(df):
                 fields_dict[key] = [*fields_dict[key], *[""]]
 
     # remove current 'fields' from df and replace with new columns
-    del df['fields']
+    del df["fields"]
 
     for key, value in fields_dict.items():
         df[key] = value
-            
-    return df
 
+    return df

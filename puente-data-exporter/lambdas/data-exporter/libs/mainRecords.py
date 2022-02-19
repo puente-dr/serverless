@@ -1,9 +1,10 @@
-from libs.utils import  calculate_age
+from libs.utils import calculate_age
 
 import pandas as pd
 
+
 def mainRecords(df):
-    #df = restCall(specifier="SurveyData", survey_org=survey_org)
+    # df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
     """
@@ -69,25 +70,28 @@ def mainRecords(df):
 
     # community, city, province using distance metric for finding typos
     # less than 3 edits
-    #print("old communities: ", df["communityname"].value_counts())
+    # print("old communities: ", df["communityname"].value_counts())
     # commented out for now took 60 seconds to ran and lambda timed out
     # df = fix_typos(df, "communityname", "city", "province")
 
-    #print("communities: ", df["communityname"].value_counts())
+    # print("communities: ", df["communityname"].value_counts())
 
     # remove whitespace from org
     df["surveyingOrganization"] = df["surveyingOrganization"].str.strip()
-    #renaming
-    surv_org_replace_dict = {"": "Other/NA",
-                            pd.np.nan : "Other/NA",
-                            "puente": "Puente",
-                            "Rayjon":"Rayjon Share Care"}
-    df["surveyingOrganization"] = df["surveyingOrganization"].replace(surv_org_replace_dict)
-
+    # renaming
+    surv_org_replace_dict = {
+        "": "Other/NA",
+        pd.np.nan: "Other/NA",
+        "puente": "Puente",
+        "Rayjon": "Rayjon Share Care",
+    }
+    df["surveyingOrganization"] = df["surveyingOrganization"].replace(
+        surv_org_replace_dict
+    )
 
     # replace any induced nan
     df = df.replace({pd.np.nan: "N/A"})
-    
-    del df['searchIndex']
-    
+
+    del df["searchIndex"]
+
     return df

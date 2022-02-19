@@ -1,7 +1,8 @@
 import pandas as pd
 
+
 def evalMedical(df):
-    #df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
+    # df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""
 
@@ -31,7 +32,9 @@ def evalMedical(df):
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 
-    df['surveyingOrganizationSuuplementary'] = df['surveyingOrganizationSupplementary'].str.strip()
+    df["surveyingOrganizationSuuplementary"] = df[
+        "surveyingOrganizationSupplementary"
+    ].str.strip()
 
     # several yes/no columns
     yes_no_cols = [
