@@ -1,15 +1,13 @@
+from datetime import date
+import io
+import os
+import re
+import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+import boto3
+import distance
 import pandas as pd
 import numpy as np
-import re
-import distance
-from datetime import date
-
-import sys
-import os
-import boto3
-import io
-
-sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import secretz
 

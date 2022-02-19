@@ -2,6 +2,7 @@ import pandas as pd
 
 
 def evalMedical(df):
+    # TODO: Do we need to keep this?
     # df = restCall(specifier="EvaluationMedical", survey_org=survey_org)
 
     """ALL CLEANING HERE"""
@@ -32,6 +33,7 @@ def evalMedical(df):
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 
+    # TODO: Is this a typo?
     df["surveyingOrganizationSuuplementary"] = df[
         "surveyingOrganizationSupplementary"
     ].str.strip()

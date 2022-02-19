@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 
 def vitals(df):
@@ -49,13 +48,13 @@ def vitals(df):
 
     # new data frame with split value columns
 
-    # making seperate first name column from new data frame
+    # making separate first name column from new data frame
     df["Systolic"] = new[0]
 
-    # making seperate last name column from new data frame
+    # making separate last name column from new data frame
     df["Diastolic"] = new[1]
 
-    # a few bloodPressures are len 5 with no slash, I think its the first three are systolic and last 2 are diastolic
+    # a few bloodPressures are len 5 with no slash, I think it's the first three are systolic and last 2 are diastolic
     df.loc[
         ~(df["bloodPressure"].fillna("").str.contains("/"))
         & (df["bloodPressure"].str.len() == 5),
@@ -83,7 +82,7 @@ def vitals(df):
     ]
 
     # replace commas and any non-digits (using regex)
-    df[float_cols] = df[float_cols].replace({",": "", "\D+": ""}, regex=True)
+    df[float_cols] = df[float_cols].replace({",": "", "\\D+": ""}, regex=True)
     # turn columns into floats
     df[float_cols] = df[float_cols].apply(pd.to_numeric)
 

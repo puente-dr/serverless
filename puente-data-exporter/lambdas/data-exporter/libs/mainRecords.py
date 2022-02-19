@@ -1,9 +1,9 @@
-from libs.utils import calculate_age
-
 import pandas as pd
+from libs.utils import calculate_age
 
 
 def mainRecords(df):
+    # TODO: Do we need to keep this?
     # df = restCall(specifier="SurveyData", survey_org=survey_org)
     """
     Clean
@@ -68,6 +68,7 @@ def mainRecords(df):
     }
     df["educationLevel"].replace(education_replace_dict, inplace=True)
 
+    # TODO: Do we need to keep this?
     # community, city, province using distance metric for finding typos
     # less than 3 edits
     # print("old communities: ", df["communityname"].value_counts())
