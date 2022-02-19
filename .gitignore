@@ -1,4 +1,5 @@
 *.packaged.yaml
+.DS_Store
 .env
 .idea/
 __pycache__/
