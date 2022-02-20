@@ -1,16 +1,25 @@
 import json
 import os
 import pprint
+import string
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from dotenv import load_dotenv
 import requests
 import pandas as pd
-load_dotenv()
+import shortuuid
+from dotenv import load_dotenv; load_dotenv()
+from tabulate import tabulate
 
 pd.options.display.max_columns = 100
-pd.options.display.max_colwidth = 400
+pd.options.display.max_colwidth = 40
 pd.options.display.max_rows = 100
+
+alphabet = string.ascii_lowercase + string.digits
+su = shortuuid.ShortUUID(alphabet=alphabet)
+
+
+def shortuuid_random():
+    return su.random(length=8)
 
 
 def rest_call(
@@ -52,6 +61,8 @@ def rest_call(
         "limit": 200000,
     }
 
+    params = {}
+
     # if specifier != "FormResults" and specifier != "FormAssetResults":
     #     params = {
     #         **common_params,
@@ -84,17 +95,15 @@ def rest_call(
     )
     response.raise_for_status()
 
-    # normalize (ie flatten) data, turns it into a pandas df
     print('RESPONSE JSON')
     response_json = response.json()['results'][0]
-    #
-    # cols = list(response_json.keys())
-    # rows = []
-    # for col in cols:
-    #     rows.extend(str(response_json.get(col)))
-    # df = pd.DataFrame(rows, columns=cols)
 
-    fields = response_json.get('fields')
+    denormalize_questions(response_json)
+
+
+def denormalize_questions(data: dict):
+    fields = data.get('fields')
+    print('fields: ', fields)
     field_keys = []
     for field in fields:
         for fk in list(field.keys()):
@@ -104,62 +113,17 @@ def rest_call(
 
     rows = []
     for item in fields:
-        row = []
+        row = [shortuuid_random()]
         for k in field_keys:
             row.append(item.get(k, ''))
         rows.append(row)
 
-    df = pd.DataFrame(rows, columns=field_keys)
-    print(df)
+    # Prepend column for IDs
+    cols = field_keys.insert(0, 'question_id')
+    pprint.pprint(cols)
 
-    # df = pd.json_normalize(response_json[0], max_level=1)
-    # print(df)
-
-
-    # normalized = pd.json_normalize(response_json)
-    # print('NORMALIZED 1')
-    # print(normalized)
-
-    # # join non surveyData forms to surveyData
-    # if specifier != "SurveyData" and specifier != "Assets":
-    #     combined_url = (
-    #         url + "SurveyData" if specifier != "FormAssetResults" else url + "Assets"
-    #     )
-    #     params = {
-    #         **common_params,
-    #         "where": {
-    #             json.dumps(
-    #                 {
-    #                     "surveyingOrganization": {"$in": [survey_org]}
-    #                 }
-    #             )
-    #         },
-    #     }
-    #
-    #     response_primary = requests.get(combined_url, params=params, headers=headers)
-    #     json_obj_primary = response_primary.json()
-    #     print('RESPONSE JSON PRIMARY')
-    #     pprint.pprint(json_obj_primary)
-    #
-    #     normalized_primary = json_normalize(json_obj_primary["results"])
-    #     normalized = normalized.rename(
-    #         columns={
-    #             "objectId": "objectIdSupplementary",
-    #             "client.objectId": "objectId",
-    #             "surveyingUser": "surveyingUserSupplementary",
-    #             "surveyingOrganization": "surveyingOrganizationSupplementary",
-    #             "createdAt": "createdAtSupplementary",
-    #         }
-    #     )
-    #     print('NORMALIZED 2')
-    #     print(normalized.head())
-    #
-    #     print('NORMALIZED 3')
-    #     print(normalized_primary.head())
-    #
-    #     return normalized_primary, normalized
-
-    # return normalized, None
+    df = pd.DataFrame(rows, columns=cols)
+    print(tabulate(df))
 
 
 if __name__ == '__main__':
