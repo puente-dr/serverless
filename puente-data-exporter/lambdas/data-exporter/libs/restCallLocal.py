@@ -98,32 +98,94 @@ def rest_call(
     print('RESPONSE JSON')
     response_json = response.json()['results'][0]
 
-    denormalize_questions(response_json)
+    questions_df = denormalize_questions(response_json)
+
+    answers_df = denormalize_answers(questions_df)
+
+    print('len(questions_df) ', len(questions_df))
+    print('len(answers_df) ', len(answers_df))
+
+    form_schema_df = questions_df \
+        .drop(columns='question_options') \
+        .merge(answers_df, on='question_id')
+
+    print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
 
 def denormalize_questions(data: dict):
     fields = data.get('fields')
-    print('fields: ', fields)
-    field_keys = []
+
+    cols = []
     for field in fields:
         for fk in list(field.keys()):
-            if fk not in field_keys:
-                field_keys.append(fk)
-    pprint.pprint(field_keys)
+            if fk not in cols:
+                cols.append(fk)
+
+    header = get_section_header(fields)
 
     rows = []
     for item in fields:
-        row = [shortuuid_random()]
-        for k in field_keys:
-            row.append(item.get(k, ''))
+        row = [header, shortuuid_random()]
+        for col in cols:
+            row.append(item.get(col))
         rows.append(row)
 
-    # Prepend column for IDs
-    cols = field_keys.insert(0, 'question_id')
-    pprint.pprint(cols)
+    # Prepend column for IDs and section Header
+    # Format column names and add columns for Question ID and Answer ID
+    cols_renamed = [f'question_{i}' for i in cols]
+    cols_renamed.insert(0, 'form_header')
+    cols_renamed.insert(1, 'question_id')
 
-    df = pd.DataFrame(rows, columns=cols)
-    print(tabulate(df))
+    df = pd.DataFrame(rows, columns=cols_renamed)
+
+    # print('Denormalized Questions: ')
+    # print(tabulate(df, headers=cols_renamed))
+
+    return df
+
+
+def denormalize_answers(questions_df):
+    tmp_df = questions_df[['question_id', 'question_options']]
+
+    # Exclude fieldTypes "header" and "numberInput"
+    tmp_df = tmp_df[tmp_df['question_options'].notnull()]
+
+    cols = []
+    for options_list in tmp_df['question_options']:
+        if options_list is not None:
+            for option in options_list:
+                # Get cols
+                for fk in list(option.keys()):
+                    if fk not in cols:
+                        cols.append(fk)
+
+    rows = []
+    for q_id, options_list in zip(tmp_df['question_id'], tmp_df['question_options']):
+        if options_list is not None:
+            for option in options_list:
+                row = [q_id, shortuuid_random()]
+                for col in cols:
+                    row.append(option.get(col))
+                rows.append(row)
+
+    # Format column names and add columns for Question ID and Answer ID
+    cols_renamed = [f'answer_{i}' for i in cols]
+    cols_renamed.insert(0, 'question_id')
+    cols_renamed.insert(1, 'answer_id')
+    pprint.pprint(cols_renamed)
+
+    df = pd.DataFrame(rows, columns=cols_renamed)
+
+    # print('Denormalized Answers: ')
+    # print(tabulate(df, headers=cols_renamed))
+
+    return df
+
+
+def get_section_header(fields_dict):
+    for item in fields_dict:
+        if item.get('fieldType') == 'header':
+            return item.get('label')
 
 
 if __name__ == '__main__':
@@ -136,4 +198,3 @@ if __name__ == '__main__':
     # rest_call('FormResults', 'Cevicos', 'QDJ0uNloic')
 
     rest_call('FormSpecificationsV2', 'Cevicos', 'QDJ0uNloic')
-
