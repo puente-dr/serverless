@@ -31,30 +31,10 @@ def restCall(
 
     """
 
-    # combine base url with specifier
+    #
+    # Build Request URL, Headers, and Parameters
+    #
     combined_url = url + specifier
-    params = dict()
-
-    if specifier != "FormResults" and specifier != "FormAssetResults":
-        params = {
-            "order": "-updatedAt",
-            "limit": 200000,
-            "where": {json.dumps({"surveyingOrganization": {"$in": [survey_org]}})},
-        }
-    else:
-        # custom forms need to ensure that the correct custom form results are returned
-        params = {
-            "order": "-updatedAt",
-            "limit": 200000,
-            "where": {
-                json.dumps(
-                    {
-                        "surveyingOrganization": {"$in": [survey_org]},
-                        "formSpecificationsId": {"$in": [custom_form_id]},
-                    }
-                )
-            },
-        }
 
     headers = {
         "Content-Type": "application/json",
@@ -62,7 +42,38 @@ def restCall(
         "X-Parse-REST-API-Key": secretz.REST_API_KEY,
     }
 
-    response = requests.get(combined_url, params=params, headers=headers)
+    common_params = {
+        "order": "-updatedAt",
+        "limit": 200000,
+    }
+
+    params = dict()
+
+    if specifier != "FormResults" and specifier != "FormAssetResults":
+        params = {
+            **common_params,
+            "where": {json.dumps({
+                "surveyingOrganization": {"$in": [survey_org]}}
+            )},
+        }
+    else:
+        # custom forms need to ensure that the correct custom form results are returned
+        params = {
+            **common_params,
+            "where": {json.dumps({
+                "surveyingOrganization": {"$in": [survey_org]},
+                "formSpecificationsId": {"$in": [custom_form_id]}}
+            )}
+        }
+
+    #
+    # MAKE REST API CALL
+    #
+    response = requests.get(
+        combined_url,
+        params=params,
+        headers=headers
+    )
     response.raise_for_status()
 
     json_obj = response.json()
@@ -75,8 +86,7 @@ def restCall(
             url + "SurveyData" if specifier != "FormAssetResults" else url + "Assets"
         )
         params = {
-            "order": "-updatedAt",
-            "limit": 200000,
+            **common_params,
             "where": {json.dumps({"surveyingOrganization": {"$in": [survey_org]}})},
         }
         response_primary = requests.get(combined_url, params=params, headers=headers)

@@ -1,6 +1,7 @@
 import json
 import os
 import pprint
+import re
 import string
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
@@ -10,45 +11,27 @@ import shortuuid
 from dotenv import load_dotenv; load_dotenv()
 from tabulate import tabulate
 
-pd.options.display.max_columns = 100
-pd.options.display.max_colwidth = 40
-pd.options.display.max_rows = 100
-
 alphabet = string.ascii_lowercase + string.digits
 su = shortuuid.ShortUUID(alphabet=alphabet)
 
 
-def shortuuid_random():
-    return su.random(length=8)
-
-
-def rest_call(
-    specifier, survey_org, custom_form_id, url="https://parseapi.back4app.com/classes/"
-):
+def get_custom_form_schema(custom_form_id: str):
     """
     Parameters
     ----------
-    specifier: string, required
-        Parse model to query
+    custom_form_id: string, required
+        Custom Form ID, which is represented in the FormSpecificationsV2 class as "objectId"
 
-    survey_org: string, required
-        Organization to query results for
-
-    custom_form_id: string, not required
-        Custom form object id
-
-    url: string, required
-        Parse endpoint
     Returns
     ------
-    Pandas dataframe with query results
+    Pandas dataframe with Custom Form Schema
 
     """
 
     #
     # Build Request URL, Headers, and Parameters
     #
-    combined_url = url + specifier
+    url = "https://parseapi.back4app.com/classes/FormSpecificationsV2"
 
     headers = {
         "Content-Type": "application/json",
@@ -56,64 +39,70 @@ def rest_call(
         "X-Parse-REST-API-Key": os.getenv('PARSE_REST_API_KEY'),
     }
 
-    common_params = {
+    params = {
         "order": "-updatedAt",
         "limit": 200000,
+        "where": {json.dumps({
+            "objectId": {"$in": [custom_form_id]}}
+        )}
     }
 
-    params = {}
-
-    # if specifier != "FormResults" and specifier != "FormAssetResults":
-    #     params = {
-    #         **common_params,
-    #         "where": {json.dumps({
-    #             "surveyingOrganization": {"$in": [survey_org]}}
-    #         )},
-    #     }
-    # else:
-    #     # custom forms need to ensure that the correct custom form results are returned
-    #     params = {
-    #         **common_params,
-    #         "where": {json.dumps({
-    #             "surveyingOrganization": {"$in": [survey_org]},
-    #             "formSpecificationsId": {"$in": [custom_form_id]}}
-    #         )}
-    #     }
-
-    if specifier == 'FormSpecificationsV2':
-        params = {
-            **common_params,
-            "where": {json.dumps({
-                "objectId": {"$in": [custom_form_id]}}
-            )}
-        }
-
+    #
+    # Make REST API Call
+    #
     response = requests.get(
-        combined_url,
+        url,
         params=params,
         headers=headers
     )
     response.raise_for_status()
 
-    print('RESPONSE JSON')
     response_json = response.json()['results'][0]
+    print('RESPONSE JSON')
+    pprint.pprint(response_json)
 
+    #
+    # Denormalize Custom Form JSON
+    #
+    form_df = denormalize_custom_form(response_json)
     questions_df = denormalize_questions(response_json)
-
     answers_df = denormalize_answers(questions_df)
 
-    print('len(questions_df) ', len(questions_df))
-    print('len(answers_df) ', len(answers_df))
-
-    form_schema_df = questions_df \
+    form_schema_df = form_df \
+        .merge(questions_df, on='custom_form_id') \
         .drop(columns='question_options') \
         .merge(answers_df, on='question_id')
 
     print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
 
+def denormalize_custom_form(data: dict):
+
+    # Remove fields, which are denormalized elsewhere, and location, which we do not need
+    form_data = data.copy()
+    form_data.pop('fields')
+    form_data.pop('location')
+
+    df = pd.json_normalize(form_data) \
+        .rename(columns={'objectId': 'id'}) \
+        .add_prefix('custom_form_')
+
+    # Rename and snake_case columns
+    cols_dict = dict(zip(
+        list(df.columns),
+        to_snake_case(list(df.columns))
+    ))
+    df = df.rename(columns=cols_dict)
+
+    print('Denormalized Custom Form: ')
+    print(tabulate(df, headers=df.columns))
+
+    return df
+
+
 def denormalize_questions(data: dict):
     fields = data.get('fields')
+    custom_form_id = data.get('objectId')
 
     cols = []
     for field in fields:
@@ -125,7 +114,7 @@ def denormalize_questions(data: dict):
 
     rows = []
     for item in fields:
-        row = [header, shortuuid_random()]
+        row = [custom_form_id, header, shortuuid_random()]
         for col in cols:
             row.append(item.get(col))
         rows.append(row)
@@ -133,13 +122,15 @@ def denormalize_questions(data: dict):
     # Prepend column for IDs and section Header
     # Format column names and add columns for Question ID and Answer ID
     cols_renamed = [f'question_{i}' for i in cols]
-    cols_renamed.insert(0, 'form_header')
-    cols_renamed.insert(1, 'question_id')
+    cols_renamed.insert(0, 'custom_form_id')
+    cols_renamed.insert(1, 'custom_form_header')
+    cols_renamed.insert(2, 'question_id')
+    cols_formatted = to_snake_case(cols_renamed)
 
-    df = pd.DataFrame(rows, columns=cols_renamed)
+    df = pd.DataFrame(rows, columns=cols_formatted)
 
     # print('Denormalized Questions: ')
-    # print(tabulate(df, headers=cols_renamed))
+    # print(tabulate(df, headers=cols_formatted))
 
     return df
 
@@ -172,14 +163,25 @@ def denormalize_answers(questions_df):
     cols_renamed = [f'answer_{i}' for i in cols]
     cols_renamed.insert(0, 'question_id')
     cols_renamed.insert(1, 'answer_id')
-    pprint.pprint(cols_renamed)
+    cols_formatted = to_snake_case(cols_renamed)
 
-    df = pd.DataFrame(rows, columns=cols_renamed)
+    df = pd.DataFrame(rows, columns=cols_formatted)
 
     # print('Denormalized Answers: ')
-    # print(tabulate(df, headers=cols_renamed))
+    # print(tabulate(df, headers=cols_formatted))
 
     return df
+
+
+def shortuuid_random():
+    return su.random(length=8)
+
+
+def to_snake_case(cols: list) -> list:
+    return [
+        re.sub(r'(?<!^)(?=[A-Z])', '_', col).lower()
+        for col in cols
+    ]
 
 
 def get_section_header(fields_dict):
@@ -189,12 +191,5 @@ def get_section_header(fields_dict):
 
 
 if __name__ == '__main__':
-    # FORM RESULTS PARAMS
-    # specifier = 'FormResults'
-    # survey_org = 'Puente'
-    # custom_form_id = 'c570vfTSVy'
-
-    # rest_call('FormResults', 'Puente', 'c570vfTSVy')
-    # rest_call('FormResults', 'Cevicos', 'QDJ0uNloic')
-
-    rest_call('FormSpecificationsV2', 'Cevicos', 'QDJ0uNloic')
+    # get_custom_form_schema('c570vfTSVy')
+    get_custom_form_schema('QDJ0uNloic')
