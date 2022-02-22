@@ -7,6 +7,7 @@ import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import requests
 import pandas as pd
+from pymongo import MongoClient
 import shortuuid
 from dotenv import load_dotenv; load_dotenv()
 from tabulate import tabulate
@@ -15,23 +16,123 @@ alphabet = string.ascii_lowercase + string.digits
 su = shortuuid.ShortUUID(alphabet=alphabet)
 
 
-def get_custom_form_schema(custom_form_id: str):
+class PuenteTables:
+    ROLE = 'Role'
+    SESSION = 'Session'
+    USER = 'User'
+    ALLERGIES = 'Allergies'
+    ASSETS = 'Assets'
+    B4A_CUSTOM_FIELD = 'B4aCustomField'
+    B4A_MENU_ITEM = 'B4aMenuItem'
+    B4A_SETTING = 'B4aSetting'
+    EVALUATION_MEDICAL = 'EvaluationMedical'
+    FORM_ASSET_RESULTS = 'FormAssetResults'
+    FORM_RESULTS = 'FormResults'
+    FORM_SPECIFICATIONS = 'FormSpecificationsV2'
+    HISTORY_ENVIRONMENTAL_HEALTH = 'HistoryEnvironmentalHealth'
+    HISTORY_MEDICAL = 'HistoryMedical'
+    HOUSEHOLD = 'Household'
+    SURVEY_DATA = 'SurveyData'
+    VITALS = 'Vitals'
+    OFFLINE_FORM = 'offlineForm'
+    OFFLINE_FORM_REQUEST = 'offlineFormRequest'
+
+
+def init_mongo_connection():
+    # Initialize MongoDB Client
+    client = MongoClient(os.getenv('DATABASE_URI'))
+    print('\n\n')
+    print('Mongo Client...')
+    print(client)
+    # pprint.pprint(vars(client))
+
+    # Make Connection to Database
+    #
+    # The name that Back4App gives its databases can be found
+    # after the last slash in MongoDB URI string
+    db_name = client.get_default_database().name
+    db = client[db_name]
+    print('\n\n')
+    print('Default Database...')
+    print(db)
+    # pprint.pprint(vars(db))
+
+    collections_list = db.list_collection_names()
+
+    for table_name in collections_list:
+        # Use this as limiter during development
+        if table_name == PuenteTables.FORM_SPECIFICATIONS:
+            with open(f'{table_name}.json', 'wb') as f:
+                f.write()
+
+            table = db[table_name]
+            for item in table.find():
+                print(list(item.keys()))
+                print()
+
+    table = db[PuenteTables.FORM_SPECIFICATIONS]
+    print('\n\n')
+    print('Form Specifications Table...')
+    print(table)
+
+    print('\n\n')
+    print('Items in Form Specifications Table...')
+    for item in table.find():
+        print(list(item.keys()))
+        print()
+
+
+# def export_named_table(puente_table: str, mongo_db):
+#
+#     collections_list = mongo_db.list_collection_names()
+#     table = (c for c in collections_list if c == puente_table)
+#     print
+#
+#
+#     for c in collections_list:
+#         print(c)
+
+    # db_names = client.list_database_names()
+    # pprint.pprint(db_names)
+
+    #
+    # print('Mongo Table...')
+    # table = mc[PuenteTables.FORM_SPECIFICATIONS]
+    # print(type(table), table)
+    # # pprint.pprint(vars(table))
+    #
+    # q = table.find_one({'objectId': 'QDJ0uNloic'})
+    # print('q: ', q)
+    # pprint.pprint(vars(q))
+
+    # print('Mongo Database...')
+    # db = mc['puente-staging']
+    # pprint.pprint(vars(db))
+    #
+    # print('\n\n LIST COLLECTION NAMES')
+    # print(db.list_collection_names())
+
+
+# def export_mongodb():
+
+
+def batch_export(puente_table):
     """
     Parameters
     ----------
-    custom_form_id: string, required
-        Custom Form ID, which is represented in the FormSpecificationsV2 class as "objectId"
+    puente_table: Class Variable, PuenteTables class, required
+        Back4App Table Name
 
     Returns
     ------
-    Pandas dataframe with Custom Form Schema
+    Results from table
 
     """
 
     #
     # Build Request URL, Headers, and Parameters
     #
-    url = "https://parseapi.back4app.com/classes/FormSpecificationsV2"
+    url = f"https://parseapi.back4app.com/classes/{puente_table}"
 
     headers = {
         "Content-Type": "application/json",
@@ -42,9 +143,9 @@ def get_custom_form_schema(custom_form_id: str):
     params = {
         "order": "-updatedAt",
         "limit": 200000,
-        "where": {json.dumps({
-            "objectId": {"$in": [custom_form_id]}}
-        )}
+        # "where": {json.dumps({
+        #     "objectId": {"$in": [custom_form_id]}}
+        # )}
     }
 
     #
@@ -52,17 +153,19 @@ def get_custom_form_schema(custom_form_id: str):
     #
     response = requests.get(
         url,
-        params=params,
+        # params=params,
         headers=headers
     )
     response.raise_for_status()
 
-    print('RESPONSE')
-    pprint.pprint(vars(response))
+    print(f'Response Status: {response.status_code}')
+    print(f'Next Page: {str(response.next)}')
 
-    # response_json = response.json()['results'][0]
-    # print('RESPONSE JSON')
-    # pprint.pprint(response_json)
+    response_json = response.json()['results']
+    print(f'Number of items in {puente_table}: {len(response_json)}')
+
+    print('RESPONSE JSON')
+    pprint.pprint(response_json)
 
     #
     # Denormalize Custom Form JSON
@@ -194,5 +297,5 @@ def get_section_header(fields_dict):
 
 
 if __name__ == '__main__':
-    # get_custom_form_schema('c570vfTSVy')
-    get_custom_form_schema('QDJ0uNloic')
+    init_mongo_connection()
+    # batch_export(PuenteTables.HISTORY_MEDICAL)
