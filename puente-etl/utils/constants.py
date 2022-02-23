@@ -1,3 +1,10 @@
+class Outputs:
+    JSON = 'json'
+    PICKLE_DICT = 'pickle_dict'
+    PICKLE_DATAFRAME = 'pickle_df'
+    PICKLE_LIST = 'pickle_list'
+
+
 class PuenteTables:
     ROLE = 'Role'
     SESSION = 'Session'

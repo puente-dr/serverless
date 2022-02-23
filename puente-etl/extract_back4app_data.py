@@ -1,27 +1,17 @@
-import os
-
-import boto3
-from dotenv import load_dotenv; load_dotenv()
-from pymongo import MongoClient
-
-from utils.db_schema import PuenteTables
+from utils.clients import Clients
+from utils.constants import Outputs
 from load_to_s3 import \
     export_to_s3_as_json, \
     export_to_s3_as_pickle_dataframe, \
-    export_to_s3_as_pickle_dict
+    export_to_s3_as_pickle_dict, \
+    export_to_s3_as_pickle_list
 
 
-class BatchOutputs:
-    JSON = 'json'
-    PICKLE_DICT = 'pickle_dict'
-    PICKLE_DATAFRAME = 'pickle_df'
-
-
-def batch_export(serialization: str, named_puente_table=None):
+def extract_back4app_data(serialization: str, named_puente_table=None):
     """
     Parameters
     ----------
-    serialization: Class Variable, BatchOutputs, required
+    serialization: Class Variable, Outputs, required
         Choose a data serialization method
 
     named_puente_table: Class Variable, PuenteTables class, optional
@@ -33,49 +23,37 @@ def batch_export(serialization: str, named_puente_table=None):
 
     """
 
-    # Initialize AWS S3 Client
-    s3_session = boto3.client(
-        "s3",
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    )
-
-    # Initialize MongoDB Client
-    client = MongoClient(os.getenv('DATABASE_URI'))
-
     #
-    # Make Connection to Database
+    # Initialize AWS S3 and MongoDB Clients
     #
-    # The name that Back4App gives its databases can be found
-    # after the last slash in MongoDB URI string
-    db_name = client.get_default_database().name
-    db = client[db_name]
+    s3_client = Clients.S3
+    mongo_client = Clients.MONGO
 
-    # Export all tables
+    # Marshal inputs to execute given one table or all tables as input
     if named_puente_table is None:
-        all_tables = remove_back4app_tables(
-            db.list_collection_names()
-        )
-        for table_name in all_tables:
-            export_table(serialization, s3_session, db, table_name)
-
-    # Export one named table
+        all_tables = remove_back4app_tables(mongo_client.list_collection_names())
     else:
-        export_table(serialization, s3_session, db, named_puente_table)
+        all_tables = list(named_puente_table)
 
+    #
+    # Execute the extract and load to S3 based on output type
+    #
+    for table_name in all_tables:
+        
+        if serialization == Outputs.JSON:
+            export_to_s3_as_json(s3_client, mongo_client, table_name)
 
-def export_table(output_type: str, s3_client, database, table_name: str):
-    if output_type == BatchOutputs.JSON:
-        export_to_s3_as_json(s3_client, database, table_name)
+        elif serialization == Outputs.PICKLE_DATAFRAME:
+            export_to_s3_as_pickle_dataframe(s3_client, mongo_client, table_name)
 
-    elif output_type == BatchOutputs.PICKLE_DATAFRAME:
-        export_to_s3_as_pickle_dataframe(s3_client, database, table_name)
+        elif serialization == Outputs.PICKLE_DICT:
+            export_to_s3_as_pickle_dict(s3_client, mongo_client, table_name)
 
-    elif output_type == BatchOutputs.PICKLE_DICT:
-        export_to_s3_as_pickle_dict(s3_client, database, table_name)
+        elif serialization == Outputs.PICKLE_LIST:
+            export_to_s3_as_pickle_list(s3_client, mongo_client, table_name)
 
-    else:
-        print('im a little teapot')
+        else:
+            print('im a little teapot')
 
 
 def remove_back4app_tables(all_tables: list) -> list:
@@ -96,9 +74,7 @@ def remove_back4app_tables(all_tables: list) -> list:
 
 
 if __name__ == '__main__':
-    batch_export(
-        serialization=BatchOutputs.PICKLE_DATAFRAME,
-        named_puente_table=PuenteTables.FORM_SPECIFICATIONS
-    )
-    # batch_export(PuenteTables.SURVEY_DATA)
-    # batch_export()
+    # extract_back4app_data(Outputs.JSON)
+    # extract_back4app_data(Outputs.PICKLE_DICT)
+    # extract_back4app_data(Outputs.PICKLE_DATAFRAME)
+    extract_back4app_data(Outputs.PICKLE_LIST)
