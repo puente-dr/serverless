@@ -8,7 +8,7 @@ import pandas as pd
 from dotenv import load_dotenv; load_dotenv()
 from tabulate import tabulate
 
-from utils import shortuuid_random, to_snake_case
+from utils.helpers import shortuuid_random, to_snake_case
 
 
 def get_custom_form_schema(custom_form_id: str):
@@ -56,23 +56,21 @@ def get_custom_form_schema(custom_form_id: str):
     print('RESPONSE')
     pprint.pprint(vars(response))
 
-    # response_json = response.json()['results'][0]
-    # print('RESPONSE JSON')
-    # pprint.pprint(response_json)
+    response_json = response.json()['results'][0]
+    print('RESPONSE JSON')
+    pprint.pprint(response_json)
 
-    #
     # Denormalize Custom Form JSON
-    #
-    # form_df = denormalize_custom_form(response_json)
-    # questions_df = denormalize_questions(response_json)
-    # answers_df = denormalize_answers(questions_df)
-    #
-    # form_schema_df = form_df \
-    #     .merge(questions_df, on='custom_form_id') \
-    #     .drop(columns='question_options') \
-    #     .merge(answers_df, on='question_id')
-    #
-    # print(tabulate(form_schema_df, headers=form_schema_df.columns))
+    form_df = denormalize_custom_form(response_json)
+    questions_df = denormalize_questions(response_json)
+    answers_df = denormalize_answers(questions_df)
+
+    form_schema_df = form_df \
+        .merge(questions_df, on='custom_form_id') \
+        .drop(columns='question_options') \
+        .merge(answers_df, on='question_id')
+
+    print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
 
 def denormalize_custom_form(data: dict):

@@ -2,39 +2,14 @@ from datetime import date
 import io
 import os
 import re
-import string
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import boto3
 import distance
 import pandas as pd
 import numpy as np
-import shortuuid
 
 import secretz
-
-alphabet = string.ascii_lowercase + string.digits
-su = shortuuid.ShortUUID(alphabet=alphabet)
-
-
-def shortuuid_random():
-    return su.random(length=8)
-
-
-def to_snake_case(words):
-
-    regex_pattern = r'(?<!^)(?=[A-Z])'
-
-    if isinstance(words, str):
-        return re.sub(regex_pattern, '_', words.strip('_')).lower()
-
-    elif isinstance(words, list):
-        return [
-            re.sub(regex_pattern, '_', word).lower()
-            for word in words
-        ]
-    else:
-        print('Helper to_snake_case function received bad input. Expected String or List.')
 
 
 def write_csv_to_s3(df, key):

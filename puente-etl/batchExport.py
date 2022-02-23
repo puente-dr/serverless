@@ -4,9 +4,11 @@ import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 import time
 
 import boto3
+import pandas as pd
 from bson.json_util import dumps as mongo_dumps
 from dotenv import load_dotenv; load_dotenv()
 from pymongo import MongoClient
+from tabulate import tabulate
 
 from db_schema import PuenteTables
 from utils import to_snake_case
@@ -66,10 +68,11 @@ def export_database_table(s3_client, database, named_table):
     table = database[named_table]
 
     # records = serialize_records_as_json_bytestream(table)
-    records = serialize_records_as_python_dict(table)
+    # records = serialize_records_as_python_dict(table)
+    records = serialize_records_as_pandas_dataframe(table)
 
     # write_json_to_s3(s3_client, records, named_table)
-    write_pickles_to_s3(s3_client, records, named_table)
+    # write_pickles_to_s3(s3_client, records, named_table)
 
     print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
 
@@ -115,6 +118,19 @@ def write_pickles_to_s3(s3_client, data: bytes, table_name: str):
     )
 
     print(f'Writing to S3: \t\t S3://{os.getenv("AWS_S3_BUCKET")}/{file_name}')
+
+
+def serialize_records_as_pandas_dataframe(mongodb_contents):
+    dict_store = dict()
+    for record in mongodb_contents.find():
+        dict_store[record['_id']] = record
+
+    df = pd.json_normalize(dict_store)
+
+    print('Denormalized Custom Form: ')
+    print(tabulate(df.head(), headers=df.columns))
+
+    return df
 
 
 def remove_back4app_tables(all_tables: list) -> list:
