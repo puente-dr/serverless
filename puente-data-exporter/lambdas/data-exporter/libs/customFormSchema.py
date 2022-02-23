@@ -1,18 +1,14 @@
 import json
 import os
 import pprint
-import re
-import string
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import requests
 import pandas as pd
-import shortuuid
 from dotenv import load_dotenv; load_dotenv()
 from tabulate import tabulate
 
-alphabet = string.ascii_lowercase + string.digits
-su = shortuuid.ShortUUID(alphabet=alphabet)
+from utils import shortuuid_random, to_snake_case
 
 
 def get_custom_form_schema(custom_form_id: str):
@@ -174,17 +170,6 @@ def denormalize_answers(questions_df):
     # print(tabulate(df, headers=cols_formatted))
 
     return df
-
-
-def shortuuid_random():
-    return su.random(length=8)
-
-
-def to_snake_case(cols: list) -> list:
-    return [
-        re.sub(r'(?<!^)(?=[A-Z])', '_', col).lower()
-        for col in cols
-    ]
 
 
 def get_section_header(fields_dict):
