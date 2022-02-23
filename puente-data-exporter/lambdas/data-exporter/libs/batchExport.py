@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 import time
 
@@ -64,16 +65,24 @@ def export_database_table(s3_client, database, named_table):
 
     table = database[named_table]
 
-    records = serialize_records_as_json_bytestream(table)
+    # records = serialize_records_as_json_bytestream(table)
+    records = serialize_records_as_python_dict(table)
 
-    write_json_to_s3(s3_client, records, named_table)
+    # write_json_to_s3(s3_client, records, named_table)
+    write_pickles_to_s3(s3_client, records, named_table)
 
     print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
 
 
+def serialize_records_as_json_bytestream(mongodb_contents):
+    return mongo_dumps(
+        mongodb_contents.find()
+    ).encode('utf-8')
+
+
 def write_json_to_s3(s3_client, data: bytes, table_name: str):
 
-    file_name = f'{to_snake_case(table_name)}.json'
+    file_name = f'store_json/{to_snake_case(table_name)}.json'
 
     s3_client.put_object(
         Bucket=os.getenv('AWS_S3_BUCKET'),
@@ -84,10 +93,28 @@ def write_json_to_s3(s3_client, data: bytes, table_name: str):
     print(f'Writing to S3: \t\t S3://{os.getenv("AWS_S3_BUCKET")}/{file_name}')
 
 
-def serialize_records_as_json_bytestream(mongodb_contents):
-    return mongo_dumps(
-        mongodb_contents.find()
-    ).encode('utf-8')
+def serialize_records_as_python_dict(mongodb_contents):
+    # mongo_dumps does not respect latin1 encoding, so we will pickle as dicts instead.
+    # I turned myself into a pickle Morty! I'm Pickle Dict!
+
+    dict_store = dict()
+    for record in mongodb_contents.find():
+        dict_store[record['_id']] = record
+
+    return pickle.dumps(dict_store)
+
+
+def write_pickles_to_s3(s3_client, data: bytes, table_name: str):
+
+    file_name = f'store_pickle_dicts/{to_snake_case(table_name)}.pickle'
+
+    s3_client.put_object(
+        Bucket=os.getenv('AWS_S3_BUCKET'),
+        Key=file_name,
+        Body=data
+    )
+
+    print(f'Writing to S3: \t\t S3://{os.getenv("AWS_S3_BUCKET")}/{file_name}')
 
 
 def remove_back4app_tables(all_tables: list) -> list:
@@ -108,5 +135,6 @@ def remove_back4app_tables(all_tables: list) -> list:
 
 
 if __name__ == '__main__':
+    batch_export(PuenteTables.FORM_SPECIFICATIONS)
     # batch_export(PuenteTables.SURVEY_DATA)
-    batch_export()
+    # batch_export()
