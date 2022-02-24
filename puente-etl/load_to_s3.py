@@ -1,9 +1,7 @@
 import pickle
 import time
 
-import pandas as pd
 from bson.json_util import dumps as mongo_dumps
-from tabulate import tabulate
 
 from utils.clients import Clients
 from utils.constants import PuenteTables
@@ -90,39 +88,6 @@ def export_to_s3_as_pickle_list(s3_client, mongo_client, named_table: str):
         Bucket=Clients.S3_BUCKET_NAME,
         Key=file_name,
         Body=records
-    )
-
-    print(f'Writing to S3: \t\t S3://{Clients.S3_BUCKET_NAME}/{file_name}')
-    print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
-
-
-#
-# Pickle Pandas DataFrame
-#
-def export_to_s3_as_pickle_dataframe(s3_client, mongo_client, named_table: str):
-    """
-    Orchestrates export steps, encoding, and adds performance timer to logging
-    """
-
-    export_time = time.time()
-
-    # Serialize records as pickled Python Dictionary
-    table = mongo_client[named_table]
-    list_store: list = [
-        record
-        for record in table.find()
-    ]
-
-    df = pd.DataFrame(list_store, columns=list(list_store[0].keys()))
-    print(tabulate(df.head(), headers=df.columns))
-
-    # Write pickled Python Dictionaries to S3
-    file_name: str = f'store_pickle_dataframes/{to_snake_case(named_table)}.pickle'
-
-    s3_client.put_object(
-        Bucket=Clients.S3_BUCKET_NAME,
-        Key=file_name,
-        Body=df.to_pickle()
     )
 
     print(f'Writing to S3: \t\t S3://{Clients.S3_BUCKET_NAME}/{file_name}')

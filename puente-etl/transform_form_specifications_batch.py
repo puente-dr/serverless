@@ -1,93 +1,67 @@
-import json
-import os
 import pprint
-import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-import requests
 import pandas as pd
 from dotenv import load_dotenv; load_dotenv()
 from tabulate import tabulate
 
-from utils.helpers import shortuuid_random, to_snake_case
+from load_from_s3 import load_pickle_list_from_s3
+from utils.clients import Clients
+from utils.helpers import \
+    get_column_order_by_least_null, \
+    get_fields_from_list_of_dicts, \
+    get_unique_fields_from_list, \
+    shortuuid_random, \
+    to_snake_case
+
+pd.options.display.max_rows = 1000
+pd.options.display.max_columns = 100
+pd.options.display.max_colwidth = 100
+pd.options.display.width = 2000
 
 
-def get_custom_form_schema(custom_form_id: str):
-    """
-    Parameters
-    ----------
-    custom_form_id: string, required
-        Custom Form ID, which is represented in the FormSpecificationsV2 class as "objectId"
+def get_custom_form_schema():
 
-    Returns
-    ------
-    Pandas dataframe with Custom Form Schema
-
-    """
-
-    #
-    # Build Request URL, Headers, and Parameters
-    #
-    url = "https://parseapi.back4app.com/classes/FormSpecificationsV2"
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-Parse-Application-Id": os.getenv('PARSE_APP_ID'),
-        "X-Parse-REST-API-Key": os.getenv('PARSE_REST_API_KEY'),
-    }
-
-    params = {
-        "order": "-updatedAt",
-        "limit": 200000,
-        "where": {json.dumps({
-            "objectId": {"$in": [custom_form_id]}}
-        )}
-    }
-
-    #
-    # Make REST API Call
-    #
-    response = requests.get(
-        url,
-        params=params,
-        headers=headers
-    )
-    response.raise_for_status()
-
-    # TODO: This gets the first item in a list of dictionaries and is intended
-    #       to transform a single custom form. For bulk, we will want to refactor
-    #       this to operate on all items in a list.
-    response_json = response.json()['results'][0]
+    full_table_data: list = load_pickle_list_from_s3(Clients.S3, 'form_specifications_v2')
 
     # Denormalize Custom Form JSON
-    form_df = denormalize_custom_form(response_json)
-    questions_df = denormalize_questions(response_json)
-    answers_df = denormalize_answers(questions_df)
+    columns = get_fields_from_list_of_dicts(full_table_data)
+    # form_df = denormalize_custom_forms(full_table_data, columns)
+    questions_df = denormalize_questions(full_table_data)
+    # answers_df = denormalize_answers(full_table_data)
 
-    form_schema_df = form_df \
-        .merge(questions_df, on='custom_form_id') \
-        .drop(columns='question_options') \
-        .merge(answers_df, on='question_id')
+    # form_schema_df = form_df \
+    #     .merge(questions_df, on='custom_form_id') \
+    #     .drop(columns='question_options') \
+    #     .merge(answers_df, on='question_id')
+    #
+    # print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
-    print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
+def denormalize_custom_forms(forms_data: list, columns: list):
 
-def denormalize_custom_form(data: dict):
+    # Remove nested "fields" which are denormalized elsewhere and "location" which we do not need.
+    cols = columns.copy()
+    if 'fields' in cols and 'location' in cols:
+        cols.remove('fields')
+        cols.remove('location')
 
-    # Remove fields, which are denormalized elsewhere, and location, which we do not need
-    form_data = data.copy()
-    form_data.pop('fields')
-    form_data.pop('location')
+    # Order Row Elements by Column
+    data = []
+    for form_data in forms_data:
+        row = []
+        for col in cols:
+            row.append(form_data.get(col))
+        data.append(row)
 
-    df = pd.json_normalize(form_data) \
-        .rename(columns={'objectId': 'id'}) \
+    # Clean Column Names: Remove leading underscore and apply snake_case
+    column_names = [
+        to_snake_case(col.lstrip('_'))
+        for col in cols
+    ]
+
+    # Create DataFrame
+    df = pd.DataFrame(data, columns=column_names) \
         .add_prefix('custom_form_')
-
-    # Rename and snake_case columns
-    cols_dict = dict(zip(
-        list(df.columns),
-        to_snake_case(list(df.columns))
-    ))
-    df = df.rename(columns=cols_dict)
 
     print('Denormalized Custom Form: ')
     print(tabulate(df, headers=df.columns))
@@ -95,24 +69,29 @@ def denormalize_custom_form(data: dict):
     return df
 
 
-def denormalize_questions(data: dict):
-    fields = data.get('fields')
-    custom_form_id = data.get('objectId')
+def denormalize_questions(forms_data: list):
 
-    cols = []
-    for field in fields:
-        for fk in list(field.keys()):
-            if fk not in cols:
-                cols.append(fk)
+    # Get unique nested fields across all data set
+    fields_list = []
+    for fields_data in forms_data:
+        for cols_data in fields_data.get('fields'):
+            fields_list.extend(list(cols_data.keys()))
 
-    header = get_section_header(fields)
+    cols = get_unique_fields_from_list(fields_list)
+    if 'id' in cols:
+        cols.remove('id')
 
     rows = []
-    for item in fields:
-        row = [custom_form_id, header, shortuuid_random()]
-        for col in cols:
-            row.append(item.get(col))
-        rows.append(row)
+    for form_data in forms_data:
+        fields = form_data.get('fields')
+        custom_form_id = form_data.get('_id')
+        header = get_section_header(fields)
+
+        for item in fields:
+            row = [custom_form_id, header, shortuuid_random()]
+            for col in cols:
+                row.append(item.get(col))
+            rows.append(row)
 
     # Prepend column for IDs and section Header
     # Format column names and add columns for Question ID and Answer ID
@@ -124,8 +103,12 @@ def denormalize_questions(data: dict):
 
     df = pd.DataFrame(rows, columns=cols_formatted)
 
+    cols_ordered = get_column_order_by_least_null(df)
+
+    df = df[cols_ordered]
+
     # print('Denormalized Questions: ')
-    # print(tabulate(df, headers=cols_formatted))
+    # print(tabulate(df, headers=cols_ordered))
 
     return df
 
@@ -162,8 +145,8 @@ def denormalize_answers(questions_df):
 
     df = pd.DataFrame(rows, columns=cols_formatted)
 
-    # print('Denormalized Answers: ')
-    # print(tabulate(df, headers=cols_formatted))
+    print('Denormalized Answers: ')
+    print(tabulate(df, headers=cols_formatted))
 
     return df
 
@@ -176,4 +159,5 @@ def get_section_header(fields_dict):
 
 if __name__ == '__main__':
     # get_custom_form_schema('c570vfTSVy')
-    get_custom_form_schema('QDJ0uNloic')
+    # get_custom_form_schema('QDJ0uNloic')
+    get_custom_form_schema()

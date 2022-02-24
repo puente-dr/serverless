@@ -68,6 +68,7 @@ def get_custom_form_schema(custom_form_id: str):
         .drop(columns='question_options') \
         .merge(answers_df, on='question_id')
 
+    print()
     print(tabulate(form_schema_df, headers=form_schema_df.columns))
 
 
@@ -89,6 +90,7 @@ def denormalize_custom_form(data: dict):
     ))
     df = df.rename(columns=cols_dict)
 
+    print()
     print('Denormalized Custom Form: ')
     print(tabulate(df, headers=df.columns))
 
@@ -124,8 +126,12 @@ def denormalize_questions(data: dict):
 
     df = pd.DataFrame(rows, columns=cols_formatted)
 
-    # print('Denormalized Questions: ')
-    # print(tabulate(df, headers=cols_formatted))
+    print()
+    print('Denormalized Questions: ')
+
+    print(tabulate(df, headers=cols_formatted))
+    for i in cols_formatted:
+        print(i)
 
     return df
 
@@ -162,8 +168,9 @@ def denormalize_answers(questions_df):
 
     df = pd.DataFrame(rows, columns=cols_formatted)
 
-    # print('Denormalized Answers: ')
-    # print(tabulate(df, headers=cols_formatted))
+    print()
+    print('Denormalized Answers: ')
+    print(tabulate(df, headers=cols_formatted))
 
     return df
 
