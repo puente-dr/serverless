@@ -58,6 +58,23 @@ class ColumnOrder:
     ]
 
 
+class ColumnReplace:
+    FORM_RESULTS = {
+        'id': 'form_result_id',
+        'form_specifications_id': 'form_result_custom_form_id',
+        'fields': 'form_result_fields',
+        'p_client': 'form_result_p_client',
+        'p_parse_user': 'form_result_p_parse_user',
+        'created_at': 'form_result_created_at',
+        'updated_at': 'form_result_updated_at',
+        'description': 'form_result_question_description',
+        'organizations': 'custom_form_fields',
+        'surveying_organization': 'form_result_surveying_organization',
+        'surveying_user': 'form_result_surveying_user',
+        'title': 'custom_form_header'
+    }
+
+
 class Outputs:
     JSON = 'json'
     PICKLE_DICT = 'pickle_dict'

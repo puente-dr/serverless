@@ -5,7 +5,7 @@ from dotenv import load_dotenv; load_dotenv()
 
 from load_from_s3 import load_dataframe_from_s3, load_pickle_list_from_s3
 from utils.clients import Clients
-from utils.constants import  ColumnOrder
+from utils.constants import ColumnOrder
 from utils.helpers import \
     get_fields_from_list_of_dicts, \
     get_unique_fields_from_list, \
