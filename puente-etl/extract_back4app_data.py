@@ -2,7 +2,6 @@ from utils.clients import Clients
 from utils.constants import Outputs
 from load_to_s3 import \
     export_to_s3_as_json, \
-    export_to_s3_as_pickle_dataframe, \
     export_to_s3_as_pickle_dict, \
     export_to_s3_as_pickle_list
 
@@ -42,9 +41,6 @@ def extract_back4app_data(serialization: str, named_puente_table=None):
         
         if serialization == Outputs.JSON:
             export_to_s3_as_json(s3_client, mongo_client, table_name)
-
-        elif serialization == Outputs.PICKLE_DATAFRAME:
-            export_to_s3_as_pickle_dataframe(s3_client, mongo_client, table_name)
 
         elif serialization == Outputs.PICKLE_DICT:
             export_to_s3_as_pickle_dict(s3_client, mongo_client, table_name)

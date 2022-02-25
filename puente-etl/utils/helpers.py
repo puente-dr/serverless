@@ -42,9 +42,3 @@ def get_unique_fields_from_list(fields: list):
 def get_column_order_by_least_null(df) -> list:
     null_count = df.isnull().sum(axis=0).sort_values()
     return null_count.index.tolist()
-
-
-
-
-
-

@@ -1,3 +1,4 @@
+import io
 import pickle
 import time
 
@@ -28,6 +29,31 @@ def export_to_s3_as_json(s3_client, mongo_client, named_table: str):
         Bucket=Clients.S3_BUCKET_NAME,
         Key=file_name,
         Body=records
+    )
+
+    print(f'Writing to S3: \t\t S3://{Clients.S3_BUCKET_NAME}/{file_name}')
+    print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
+
+
+#
+# Pickle Pandas DataFrame
+#
+def export_to_s3_as_dataframe(s3_client, df, named_table: str):
+    """
+    Orchestrates export steps, encoding, and adds performance timer to logging
+    """
+    export_time = time.time()
+
+    # Write DF to S3
+    file_name: str = f'store_dataframes/{to_snake_case(named_table)}.df'
+
+    pickled_df_buffer = io.BytesIO()
+    pickle.dump(df, pickled_df_buffer)
+
+    s3_client.put_object(
+        Bucket=Clients.S3_BUCKET_NAME,
+        Key=file_name,
+        Body=pickled_df_buffer.getvalue()
     )
 
     print(f'Writing to S3: \t\t S3://{Clients.S3_BUCKET_NAME}/{file_name}')
