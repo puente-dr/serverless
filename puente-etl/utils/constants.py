@@ -8,27 +8,53 @@ class ColumnOrder:
         'custom_form_name',
         'custom_form_description',
         'custom_form_header',
-        'custom_form_updated_at',
-        'custom_form_created_at',
-        'custom_form_custom_form',
-        'custom_form_workflows',
-        'custom_form_active',
+        #
+        # Excluding these for now for readability:
+        #
+        # 'custom_form_updated_at',
+        # 'custom_form_created_at',
+        # 'custom_form_custom_form',
+        # 'custom_form_workflows',
+        # 'custom_form_active',
         'question_id',
         'question_label',
         'question_text',
         'question_field_type',
         'question_formik_key',
-        'question_value',
-        'question_active',
-        'question_number_questions_to_repeat',
-        'question_side_label',
-        'question_validation',
+        #
+        # Excluding these for now for readability:
+        #
+        # 'question_value',
+        # 'question_active',
+        # 'question_number_questions_to_repeat',
+        # 'question_side_label',
+        # 'question_validation',
         'answer_id',
         'answer_label',
         'answer_value',
         'answer_text',
         'answer_text_key',
         'answer_text_question'
+    ]
+
+    FORM_RESULTS = [
+        'form_result_id',
+        'form_result_surveying_organization',
+        'form_result_surveying_user',
+        'custom_form_id',
+        'custom_form_name',
+        'custom_form_description',
+        'form_result_response_id',
+        'question_title',
+        'question_answer',
+        'question_type',
+        #
+        # Excluding these for now for readability:
+        #
+        # 'form_result_created_at',
+        # 'form_result_updated_at',
+        # 'form_result_p_client',
+        # 'form_result_p_parse_user',
     ]
 
 

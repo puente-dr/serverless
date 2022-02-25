@@ -39,10 +39,12 @@ def get_custom_form_schema_df():
 def denormalize_custom_forms(forms_data: list):
 
     # Remove nested "fields" which are denormalized elsewhere and "location" which we do not need.
-    cols = get_fields_from_list_of_dicts(forms_data)
-    if 'fields' in cols and 'location' in cols:
-        cols.remove('fields')
-        cols.remove('location')
+    all_fields = get_fields_from_list_of_dicts(forms_data)
+    cols = [
+        c
+        for c in all_fields
+        if c not in ('fields', 'location')
+    ]
 
     # Order Row Elements by Column
     data = []
