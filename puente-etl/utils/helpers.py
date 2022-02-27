@@ -8,7 +8,7 @@ su = shortuuid.ShortUUID(alphabet=alphabet)
 
 
 def shortuuid_random():
-    return su.random(length=8)
+    return str(su.random(length=8))
 
 
 def to_snake_case(words):

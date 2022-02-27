@@ -11,11 +11,6 @@ from utils.helpers import \
     shortuuid_random, \
     to_snake_case
 
-pd.options.display.max_rows = 1000
-pd.options.display.max_columns = 100
-pd.options.display.max_colwidth = 100
-pd.options.display.width = 2000
-
 
 def get_custom_form_schema_df():
 

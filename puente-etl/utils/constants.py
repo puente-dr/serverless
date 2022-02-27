@@ -21,10 +21,10 @@ class ColumnOrder:
         'question_text',
         'question_field_type',
         'question_formik_key',
+        'question_value',
         #
         # Excluding these for now for readability:
         #
-        # 'question_value',
         # 'question_active',
         # 'question_number_questions_to_repeat',
         # 'question_side_label',
@@ -42,8 +42,6 @@ class ColumnOrder:
         'form_result_surveying_organization',
         'form_result_surveying_user',
         'custom_form_id',
-        'custom_form_name',
-        'custom_form_description',
         'form_result_response_id',
         'question_title',
         'question_answer',
@@ -51,6 +49,8 @@ class ColumnOrder:
         #
         # Excluding these for now for readability:
         #
+        # 'custom_form_name',
+        # 'custom_form_description',
         # 'form_result_created_at',
         # 'form_result_updated_at',
         # 'form_result_p_client',
