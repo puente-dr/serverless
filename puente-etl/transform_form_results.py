@@ -56,6 +56,8 @@ def get_form_results_df():
                 'form_result_surveying_organization',
                 'custom_form_id',
                 'custom_form_name',
+                'custom_form_created_at',
+                'custom_form_active',
                 'question_id',
                 'question_label',
                 'question_title',

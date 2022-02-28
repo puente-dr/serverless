@@ -12,10 +12,10 @@ class ColumnOrder:
         # Excluding these for now for readability:
         #
         # 'custom_form_updated_at',
-        # 'custom_form_created_at',
+        'custom_form_created_at',
         # 'custom_form_custom_form',
         # 'custom_form_workflows',
-        # 'custom_form_active',
+        'custom_form_active',
         'question_id',
         'question_label',
         'question_text',
@@ -88,9 +88,6 @@ class PuenteTables:
     USER = 'User'
     ALLERGIES = 'Allergies'
     ASSETS = 'Assets'
-    # B4A_CUSTOM_FIELD = 'B4aCustomField'
-    # B4A_MENU_ITEM = 'B4aMenuItem'
-    # B4A_SETTING = 'B4aSetting'
     EVALUATION_MEDICAL = 'EvaluationMedical'
     FORM_ASSET_RESULTS = 'FormAssetResults'
     FORM_RESULTS = 'FormResults'
@@ -100,5 +97,3 @@ class PuenteTables:
     HOUSEHOLD = 'Household'
     SURVEY_DATA = 'SurveyData'
     VITALS = 'Vitals'
-    OFFLINE_FORM = 'offlineForm'
-    OFFLINE_FORM_REQUEST = 'offlineFormRequest'
