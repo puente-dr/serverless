@@ -1,8 +1,6 @@
-from typing import Dict
 import requests
 import json
 from pandas import json_normalize
-import pandas as pd
 
 import sys
 import os
@@ -86,12 +84,19 @@ def restCall(specifier, survey_org, custom_form_id, url="https://parseapi.back4a
                 })
             }
         }
-        response_survey_data = requests.get(combined_url, params=params, headers=headers)
-        json_obj_survey_data = response_survey_data.json()
-        normalized_survey_data = json_normalize(json_obj_survey_data["results"])
-        normalized = normalized.rename(columns= {'objectId':specifier+'Id','client.objectId':'objectId','surveyingUser':'surveyingUserSupplementary'})
-        merged_df = pd.merge(normalized_survey_data, normalized, on="objectId")
-        return merged_df
+        response_primary = requests.get(combined_url, params=params, headers=headers)
+        json_obj_primary = response_primary.json()
+        normalized_primary = json_normalize(json_obj_primary["results"])
+        normalized = normalized.rename(columns= {
+            'objectId':'objectIdSupplementary',
+            'client.objectId':'objectId',
+            'surveyingUser':'surveyingUserSupplementary', 
+            'surveyingOrganization':'surveyingOrganizationSupplementary',
+            'createdAt':'createdAtSupplementary'
+            })
+        
+        
+        return normalized_primary, normalized
 
 
-    return normalized
+    return normalized, None
