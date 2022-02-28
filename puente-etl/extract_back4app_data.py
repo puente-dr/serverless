@@ -63,7 +63,13 @@ def remove_back4app_tables(all_tables: list) -> list:
             if t.strip('_') in ('Role', 'Session', 'User'):
                 tables_to_keep.append(t)
         else:
-            if not any(i in t for i in ['B4a', 'b4a', 'system.profile']):
+            if not any(i in t for i in [
+                'B4a',
+                'b4a',
+                'offlineForm',
+                'offlineFormRequest',
+                'system.profile'
+            ]):
                 tables_to_keep.append(t)
 
     return tables_to_keep
@@ -72,5 +78,4 @@ def remove_back4app_tables(all_tables: list) -> list:
 if __name__ == '__main__':
     # extract_back4app_data(Outputs.JSON)
     # extract_back4app_data(Outputs.PICKLE_DICT)
-    # extract_back4app_data(Outputs.PICKLE_DATAFRAME)
     extract_back4app_data(Outputs.PICKLE_LIST)
