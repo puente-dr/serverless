@@ -1,8 +1,9 @@
 import pandas as pd
 
+
 def envHealth(df):
 
-    #df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
+    # df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
 
     """
     PUT ALL CLEANING HERE
@@ -39,13 +40,19 @@ def envHealth(df):
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 
-    df["bathroomAccess_v2"]= df["bathroomAccess_v2"].str.join(" | ")
-    df["clinicAccess_v2"]= df["clinicAccess_v2"].str.join(" | ")
-    df["biggestproblemofcommunity_v2"]= df["biggestproblemofcommunity_v2"].str.join(" | ")
-    df["numberofChildrenLivinginHouseUndertheAgeof5_v2"]= df["numberofChildrenLivinginHouseUndertheAgeof5_v2"].str.join(" | ")
+    df["bathroomAccess_v2"] = df["bathroomAccess_v2"].str.join(" | ")
+    df["clinicAccess_v2"] = df["clinicAccess_v2"].str.join(" | ")
+    df["biggestproblemofcommunity_v2"] = df["biggestproblemofcommunity_v2"].str.join(
+        " | "
+    )
+    df["numberofChildrenLivinginHouseUndertheAgeof5_v2"] = df[
+        "numberofChildrenLivinginHouseUndertheAgeof5_v2"
+    ].str.join(" | ")
     df["floorMaterial"] = df["floorMaterial"].str.join(" | ")
 
-    df['surveyingOrganizationSuuplementary'] = df['surveyingOrganizationSupplementary'].str.strip()
+    df["surveyingOrganizationSuuplementary"] = df[
+        "surveyingOrganizationSupplementary"
+    ].str.strip()
 
     # water access
     water_access_replace_dict = {

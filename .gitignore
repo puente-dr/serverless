@@ -1,1 +1,6 @@
 *.packaged.yaml
+.DS_Store
+*.csv
+.env
+.idea/
+__pycache__/

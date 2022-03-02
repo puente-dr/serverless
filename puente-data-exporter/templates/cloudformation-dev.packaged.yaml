@@ -157,7 +157,7 @@ Resources:
         Fn::GetAtt:
         - LambdaIamRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 60
   LambdaIamRole:
     Type: AWS::IAM::Role
