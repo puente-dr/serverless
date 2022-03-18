@@ -53,7 +53,7 @@ class ColumnOrder:
         # 'custom_form_description',
         # 'form_result_created_at',
         # 'form_result_updated_at',
-        # 'form_result_p_client',
+         'form_result_p_client',
         # 'form_result_p_parse_user',
     ]
 

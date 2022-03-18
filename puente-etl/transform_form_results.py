@@ -11,9 +11,12 @@ from utils.helpers import \
     to_snake_case
 
 
-def get_form_results_df():
+def get_form_results_df(groupby_cols=[]):
 
     s3_client = Clients.S3
+
+    survey_data = load_pickle_list_from_s3(s3_client, "survey_data")
+    survey_df = pd.DataFrame(survey_data)
 
     custom_form_schema_df = load_dataframe_from_s3(s3_client, 'form_specifications_v2')
     custom_form_schema_df = custom_form_schema_df[ColumnOrder.FORM_SPECIFICATIONS]
@@ -44,15 +47,27 @@ def get_form_results_df():
         left_on=['custom_form_id', 'question_title', 'question_answer'],
         right_on=['custom_form_id', 'question_formik_key', 'answer_value']
     )
-    # df.to_csv('./denormalized_form_results.csv', index=False)
 
+
+
+    df[["Survey_col", "merge_id"]] = df["form_result_p_client"].str.split("$", expand=True)
+
+    print(df["form_result_p_client"])
+
+    print("survey")
+    print(survey_df.columns)
+    print("df cols")
+    print(df.columns)
+    # df.to_csv('./denormalized_form_results.csv', index=False)
+    merge_with_survey = df.merge(survey_df, left_on="merge_id", right_on="_id")
+
+    print("new merged")
+    print(merge_with_survey.head())
     #
     # Aggregate Responses per each...
     # Surveying Organization | Custom Form ID | Question ID | Answer ID
     #
-    agg_df = df \
-        .groupby(
-            [
+    base_cols = [
                 'form_result_surveying_organization',
                 'custom_form_id',
                 'custom_form_name',
@@ -63,12 +78,18 @@ def get_form_results_df():
                 'question_title',
                 'answer_id',
                 'answer_label'
-            ],
+            ]
+    agg_cols = base_cols + groupby_cols
+    agg_df = merge_with_survey \
+        .groupby(
+            agg_cols,
             as_index=False
         )['answer_value'] \
         .value_counts() \
         .rename(columns={'count': 'answer_count'})
     # agg_df.to_csv('./aggregated_results.csv', index=False)
+
+    print(agg_df.head(20))
 
     return agg_df
 
@@ -160,4 +181,4 @@ def denormalize_form_questions(forms_data: list):
 
 
 if __name__ == '__main__':
-    get_form_results_df()
+    get_form_results_df(["age", "sex"])
