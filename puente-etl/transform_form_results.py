@@ -48,21 +48,10 @@ def get_form_results_df(groupby_cols=[]):
         right_on=['custom_form_id', 'question_formik_key', 'answer_value']
     )
 
-
-
     df[["Survey_col", "merge_id"]] = df["form_result_p_client"].str.split("$", expand=True)
 
-    print(df["form_result_p_client"])
-
-    print("survey")
-    print(survey_df.columns)
-    print("df cols")
-    print(df.columns)
     # df.to_csv('./denormalized_form_results.csv', index=False)
     merge_with_survey = df.merge(survey_df, left_on="merge_id", right_on="_id")
-
-    print("new merged")
-    print(merge_with_survey.head())
     #
     # Aggregate Responses per each...
     # Surveying Organization | Custom Form ID | Question ID | Answer ID
