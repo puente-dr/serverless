@@ -1,6 +1,6 @@
 from load_to_s3 import export_to_s3_as_dataframe
 from transform_form_specifications import get_custom_form_schema_df
-from transform_form_results import get_custom_form_results_df
+from transform_form_results import get_form_results_df
 from utils.clients import Clients
 from utils.constants import PuenteTables
 
@@ -18,8 +18,8 @@ def run_transform_jobs(event, context):
     # if event.get(PuenteTables.EVALUATION_MEDICAL):
     # if event.get(PuenteTables.FORM_ASSET_RESULTS):
     if event.get(PuenteTables.FORM_RESULTS):
-        df = get_custom_form_results_df()
-        # export_to_s3_as_dataframe(s3_client, df, PuenteTables.FORM_RESULTS)
+        df = get_form_results_df()
+        export_to_s3_as_dataframe(s3_client, df, PuenteTables.FORM_RESULTS)
 
     if event.get(PuenteTables.FORM_SPECIFICATIONS):
         df = get_custom_form_schema_df()
@@ -47,8 +47,8 @@ if __name__ == '__main__':
         PuenteTables.FORM_SPECIFICATIONS: False,
         PuenteTables.HISTORY_ENVIRONMENTAL_HEALTH: False,
         PuenteTables.HISTORY_MEDICAL: False,
-        PuenteTables.OFFLINE_FORM: False,
-        PuenteTables.OFFLINE_FORM_REQUEST: False,
+        #PuenteTables.OFFLINE_FORM: False,
+        #PuenteTables.OFFLINE_FORM_REQUEST: False,
         PuenteTables.HOUSEHOLD: False,
         PuenteTables.ROLE: False,
         PuenteTables.SESSION: False,
