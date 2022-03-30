@@ -52,16 +52,21 @@ def get_form_results_df(groupby_cols=[]):
 
     # df.to_csv('./denormalized_form_results.csv', index=False)
     merge_with_survey = df.merge(survey_df, left_on="merge_id", right_on="_id")
+
     #
     # Aggregate Responses per each...
     # Surveying Organization | Custom Form ID | Question ID | Answer ID
     #
+
+    #remove inactive custom forms
+    #its recorded as a string 'false'
+    merge_with_survey = merge_with_survey[merge_with_survey["custom_form_active"]!="false"]
+
     base_cols = [
                 'form_result_surveying_organization',
                 'custom_form_id',
                 'custom_form_name',
                 'custom_form_created_at',
-                'custom_form_active',
                 'question_id',
                 'question_label',
                 'question_title',
@@ -69,6 +74,7 @@ def get_form_results_df(groupby_cols=[]):
                 'answer_label'
             ]
     agg_cols = base_cols + groupby_cols
+
     agg_df = merge_with_survey \
         .groupby(
             agg_cols,
@@ -76,9 +82,6 @@ def get_form_results_df(groupby_cols=[]):
         )['answer_value'] \
         .value_counts() \
         .rename(columns={'count': 'answer_count'})
-    # agg_df.to_csv('./aggregated_results.csv', index=False)
-
-    print(agg_df.head(20))
 
     return agg_df
 
