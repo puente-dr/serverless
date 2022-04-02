@@ -16,6 +16,7 @@ class Clients:
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
     S3_BUCKET_NAME = os.getenv('AWS_S3_BUCKET')
+    S3_OUTPUT_BUCKET = os.getenv('AWS_S3_OUTPUT_BUCKET')
 
     #
     # Initialize MongoDB Client & Connect to Database

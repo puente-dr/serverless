@@ -3,6 +3,7 @@ import pickle
 import time
 
 from bson.json_util import dumps as mongo_dumps
+from pandas import DataFrame
 
 from utils.clients import Clients
 from utils.constants import PuenteTables
@@ -119,6 +120,23 @@ def export_to_s3_as_pickle_list(s3_client, mongo_client, named_table: str):
     print(f'Writing to S3: \t\t S3://{Clients.S3_BUCKET_NAME}/{file_name}')
     print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
 
+def export_to_s3_as_csv(s3_client, df: DataFrame, named_table: str, organization: str):
+    """
+    Orchestrates export steps, encoding, and adds performance timer to logging
+    """
+    export_time = time.time()
+
+    # Write DF to S3
+    file_name: str = f'clients/{organization}/data/FormResults/denormalized/{named_table}.csv'
+
+    s3_client.put_object(
+        Bucket=Clients.S3_OUTPUT_BUCKET,
+        Key=file_name,
+        Body=df.to_csv(index=False)
+    )
+
+    print(f'Writing to S3: \t\t S3://{Clients.S3_OUTPUT_BUCKET}/{file_name}')
+    print(f'completed in \t\t {time.time() - export_time:.4f} seconds. \n')
 
 if __name__ == '__main__':
     # export_to_s3_as_json(Clients.S3, Clients.MONGO, PuenteTables.FORM_SPECIFICATIONS)

@@ -3,7 +3,7 @@ from dotenv import load_dotenv; load_dotenv()
 
 from load_from_s3 import load_dataframe_from_s3, load_pickle_list_from_s3
 from utils.clients import Clients
-from utils.constants import ColumnOrder
+from utils.constants import ColumnOrder, SurveyDataColumns
 from utils.helpers import \
     get_fields_from_list_of_dicts, \
     get_unique_fields_from_list, \
@@ -11,7 +11,7 @@ from utils.helpers import \
     to_snake_case
 
 
-def get_form_results_df(groupby_cols=[]):
+def get_form_results_df(groupby_cols=[], raw_results: bool = False):
 
     s3_client = Clients.S3
 
@@ -52,7 +52,6 @@ def get_form_results_df(groupby_cols=[]):
 
     # df.to_csv('./denormalized_form_results.csv', index=False)
     merge_with_survey = df.merge(survey_df, left_on="merge_id", right_on="_id")
-
     #
     # Aggregate Responses per each...
     # Surveying Organization | Custom Form ID | Question ID | Answer ID
@@ -73,6 +72,12 @@ def get_form_results_df(groupby_cols=[]):
                 'answer_id',
                 'answer_label'
             ]
+    
+    if raw_results:
+        all_cols = base_cols + SurveyDataColumns.columns
+        combined_df = merge_with_survey[all_cols]
+        return combined_df
+
     agg_cols = base_cols + groupby_cols
 
     agg_df = merge_with_survey \
@@ -84,7 +89,6 @@ def get_form_results_df(groupby_cols=[]):
         .rename(columns={'count': 'answer_count'})
 
     return agg_df
-
 
 def denormalize_form_results(forms_data: list):
 
