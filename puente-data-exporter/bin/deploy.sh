@@ -22,7 +22,7 @@ done
 template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
-cd ./venv/lib/python3.7/site-packages
+cd ./venv/lib/python3.9/site-packages
 zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
 cd ../../../../
 echo "APP_ID='$app_id'\n
