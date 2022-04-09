@@ -34,10 +34,10 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with: 
-        python-version: 3.7
+        python-version: 3.9
         architecture: x64
     - name: Install Python Virtual Env
-      run: pip3 install virtualenv
+      run: pip install virtualenv
     - name: Setup Virtual Env
       uses: actions/cache@v2
       id: cache-venv
@@ -48,7 +48,8 @@ jobs:
           ${{ runner.os }}-venv-
     - name: Activate venv and install dependencies
       run: python -m venv venv && source venv/bin/activate &&
-        pip3 install -r puente-data-exporter/requirements.txt
+        pip install --upgrade pip &&
+        pip install -r puente-data-exporter/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
 
     - run: sh puente-data-exporter/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} -a ${{ env.APP_ID }} -k ${{ env.REST_API_KEY }} -s ${{ env.AWS_S3_BUCKET }} -m ${{ env.AWS_ACCESS_KEY_ID }} -n ${{ env.AWS_SECRET_ACCESS_KEY }}

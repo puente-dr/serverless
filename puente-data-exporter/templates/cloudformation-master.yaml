@@ -141,7 +141,7 @@ Resources:
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
       MemorySize: 2048
       Role: !GetAtt LambdaIamRole.Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 60
     Metadata:
       cfn-lint:
