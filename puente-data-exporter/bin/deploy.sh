@@ -36,7 +36,6 @@ zip -g puente-data-exporter/lambdas/data-exporter/data-exporter.zip -r puente-da
 stack_name=puente-data-exporter$version
 aws_region=us-east-1
 
-
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
          --output-template-file ${template_file_to_deploy} \
