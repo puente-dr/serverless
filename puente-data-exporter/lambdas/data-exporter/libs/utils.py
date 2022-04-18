@@ -18,7 +18,7 @@ def write_csv_to_s3(df, key):
         aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY,
     )
-
+    print(secretz.AWS_S3_BUCKET)
     with io.StringIO() as csv_buffer:
         df.to_csv(csv_buffer, index=False)
         response = s3_client.put_object(

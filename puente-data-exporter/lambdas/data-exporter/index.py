@@ -81,8 +81,6 @@ def handler(event, context):
         specifier_data = customForms(specifier_data)
     elif specifier == "FormAssetResults":
         specifier_data = assetSupplementary(specifier_data)
-    else:
-        return err_msg("There was an error cleaning the specifier data")
 
     #
     # Joining Clean Data
@@ -91,7 +89,8 @@ def handler(event, context):
         data = pd.merge(specifier_data, primary_data, on="objectId")
         data = data.replace({pd.np.nan: ""})
     else:
-        return err_msg("There was an error cleaning the specifier data")
+        # Okay not to have a specifier - Assets and SurveyData
+        data = primary_data
 
     #
     # Write Data to S3
