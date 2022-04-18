@@ -68,6 +68,7 @@ def handler(event, context):
     else:
         return err_msg("Your specifier parameter is invalid or there was an error cleaning the primary data")
 
+
     #
     # Cleaning Specifier Data
     #
