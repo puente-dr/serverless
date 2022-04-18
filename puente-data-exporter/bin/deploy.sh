@@ -41,7 +41,7 @@ aws cloudformation package \
          --output-template-file ${template_file_to_deploy} \
          --s3-bucket "puente-data-exporter" --s3-prefix "lambdas"
 
-# aws cloudformation deploy \
-#          --template-file ${template_file_to_deploy} \
-#          --stack-name $stack_name \
-#          --region $aws_region --capabilities CAPABILITY_IAM 
+aws cloudformation deploy \
+         --template-file ${template_file_to_deploy} \
+         --stack-name $stack_name \
+         --region $aws_region --capabilities CAPABILITY_IAM 
