@@ -76,6 +76,7 @@ def get_form_results_df(groupby_cols=[], raw_results: bool = False):
     if raw_results:
         all_cols = base_cols + SurveyDataColumns.columns
         combined_df = merge_with_survey[all_cols]
+        combined_df = combined_df.apply(lambda x: (x.astype(str)).str.replace(",", " "))
         return combined_df
 
     agg_cols = base_cols + groupby_cols
