@@ -21,12 +21,6 @@ jobs = {
         PuenteTables.VITALS: False
     }
 
-common_req = {
-    "headers": {"Access-Control-Allow-Origin": "*"},
-    "isBase64Encoded": False,
-}
-
-
 def handler():
     # extract_back4app_data(Outputs.JSON)
     # extract_back4app_data(Outputs.PICKLE_DICT)
