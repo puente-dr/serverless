@@ -15,7 +15,8 @@ Resources:
       MemorySize: 2048
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.9
-      Layers: etl-layer
+      Layers:
+        - !Sub "etl-layer"
       Timeout: 60
     Metadata:
       cfn-lint:
