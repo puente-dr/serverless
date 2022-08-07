@@ -1,3 +1,4 @@
+import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 from utils.constants import Outputs, PuenteTables
 from extract_back4app_data import extract_back4app_data
 from jobs import run_transform_jobs
