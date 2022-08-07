@@ -27,6 +27,9 @@ template_file_to_deploy="puente-etl/templates/cloudformation$version.packaged.ya
 # zip -r9 ../../../../puente-etl/lambdas/etl/etl.zip .
 # cd ../../../../
 
+stack_name=puente-etl$version
+aws_region=us-east-1
+
 # REPLACES Zipping venv (Create Layer)
 pip install -r puente-etl/requirements.txt -t etl-libraries/
 zip -r layer.zip etl-libraries
@@ -38,8 +41,7 @@ aws lambda publish-layer-version \
 
 zip -g puente-etl/lambdas/etl/etl.zip -r puente-etl/lambdas/etl
 
-stack_name=puente-etl$version
-aws_region=us-east-1
+
 
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
