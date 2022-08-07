@@ -5,7 +5,7 @@ Parameters:
     Type: String
     Default: dev
 Resources:
-  LambdaFunctionDataExporter:
+  LambdaFunctionETL:
     Type: AWS::Lambda::Function
     Properties:
       Code: ../lambdas/etl/etl.zip
@@ -15,6 +15,7 @@ Resources:
       MemorySize: 2048
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.9
+      Layers: etl-layer
       Timeout: 60
     Metadata:
       cfn-lint:

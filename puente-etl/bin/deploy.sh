@@ -25,12 +25,16 @@ template_file_to_deploy="puente-etl/templates/cloudformation$version.packaged.ya
 cd ./venv/lib/python3.9/site-packages
 zip -r9 ../../../../puente-etl/lambdas/etl/etl.zip .
 cd ../../../../
-# echo "APP_ID='$app_id'\n
-# REST_API_KEY='$rest_api_key'\n
-# AWS_S3_BUCKET='$s3_bucket'\n
-# AWS_ACCESS_KEY_ID='$aws_access_key_id'\n
-# AWS_SECRET_ACCESS_KEY='$aws_secret_access_key'
-# " > puente-etl/lambdas/etl/libs/secretz.py
+
+# Layer
+pip install -r requirements.txt -t libraries/
+zip -r layer.zip libraries
+aws lambda publish-layer-version \
+        --layer-name etl-layer \
+        --zip-file fileb://layer.zip \
+        --compatible-runtimes python3.9 
+        --region $aws_region
+
 zip -g puente-etl/lambdas/etl/etl.zip -r puente-etl/lambdas/etl
 
 stack_name=puente-etl$version
