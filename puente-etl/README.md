@@ -33,8 +33,11 @@ source <Name_of_Virtual_Environment>/bin/activate
 pip install -r requirements.txt
 ```
 
-## Run
-Run python script in root directory to start
+## Run locally
+Run python script in etl directory to start
+_Make sure you have your .env is set_
 ```
-python jobs.py
+cd puente-etl/lambda/etl
+python3 extract_back4app_data.py
+python3 jobs.py
 ```
