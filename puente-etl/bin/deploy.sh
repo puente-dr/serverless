@@ -22,12 +22,13 @@ done
 template_file_to_package="puente-etl/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-etl/templates/cloudformation$version.packaged.yaml"
 
-cd ./venv/lib/python3.9/site-packages
-zip -r9 ../../../../puente-etl/lambdas/etl/etl.zip .
-cd ../../../../
+# Zipping venv
+# cd ./venv/lib/python3.9/site-packages
+# zip -r9 ../../../../puente-etl/lambdas/etl/etl.zip .
+# cd ../../../../
 
-# Layer
-pip install -r requirements.txt -t libraries/
+# REPLACES Zipping venv (Create Layer)
+pip install -r ../requirements.txt -t libraries/
 zip -r layer.zip libraries
 aws lambda publish-layer-version \
         --layer-name etl-layer \

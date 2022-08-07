@@ -4,4 +4,4 @@
 .env
 .idea/
 __pycache__/
-puente-etl/libraries/
+puente-etl/bin/libraries/
