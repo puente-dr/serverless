@@ -136,8 +136,8 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code: ../lambdas/data-exporter/data-exporter.zip
-      Description: AWS Lambda function
-      FunctionName: !Sub "lambda-function-${version}"
+      Description: Lambda Function for Data exporter
+      FunctionName: !Sub "puente-data-exporter-${version}"
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
       MemorySize: 2048
       Role: !GetAtt LambdaIamRole.Arn
