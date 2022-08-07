@@ -13,7 +13,6 @@ def run_transform_jobs(event, context):
     # Initialize AWS S3 Client
     s3_client = Clients.S3
 
-    # if event.get(PuenteTables.ALLERGIES):
     if event.get(PuenteTables.FORM_RESULTS):
         # raw_results == True does not aggregate the results, pass False to ensure aggregation
         df = get_form_results_df(raw_results=True)
@@ -28,6 +27,7 @@ def run_transform_jobs(event, context):
         export_to_s3_as_dataframe(s3_client, df, PuenteTables.FORM_SPECIFICATIONS)
 
     # TODO: PUENTE FORMS
+    # if event.get(PuenteTables.ALLERGIES):
     # if event.get(PuenteTables.FORM_ASSET_RESULTS):
 
     # if event.get(PuenteTables.ASSETS):
@@ -44,24 +44,3 @@ def run_transform_jobs(event, context):
     # if event.get(PuenteTables.ROLE):
     # if event.get(PuenteTables.SESSION):
     # if event.get(PuenteTables.USER):
-
-if __name__ == '__main__':
-    jobs = {
-        PuenteTables.ALLERGIES: False,
-        PuenteTables.ASSETS: False,
-        PuenteTables.EVALUATION_MEDICAL: False,
-        PuenteTables.FORM_ASSET_RESULTS: False,
-        PuenteTables.FORM_RESULTS: True,
-        PuenteTables.FORM_SPECIFICATIONS: False,
-        PuenteTables.HISTORY_ENVIRONMENTAL_HEALTH: False,
-        PuenteTables.HISTORY_MEDICAL: False,
-        #PuenteTables.OFFLINE_FORM: False,
-        #PuenteTables.OFFLINE_FORM_REQUEST: False,
-        PuenteTables.HOUSEHOLD: False,
-        PuenteTables.ROLE: False,
-        PuenteTables.SESSION: False,
-        PuenteTables.SURVEY_DATA: False,
-        PuenteTables.USER: False,
-        PuenteTables.VITALS: False
-    }
-    run_transform_jobs(jobs, {})

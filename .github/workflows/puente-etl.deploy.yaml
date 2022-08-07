@@ -1,0 +1,60 @@
+name: Deploy ETL Template
+
+env:
+  APPLICATION_NAME      : "puente-etl"
+  AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION            : ${{ secrets.AWS_REGION }}
+  AWS_S3_BUCKET         : ${{ secrets.AWS_S3_ETL_BUCKET }}
+  AWS_S3_OUTPUT_BUCKET  : ${{ secrets.AWS_S3_ETL_OUTPUT_BUCKET }}
+  PARSE_APP_ID          : ${{ secrets.APP_ID }}
+  PARSE_REST_API_KEY    : ${{ secrets.REST_API_KEY }}
+  PARSE_JAVASCRIPT_KEY  : ${{ secrets.PARSE_JAVASCRIPT_KEY }}
+  PARSE_SERVER_URL      : ${{ secrets.PARSE_SERVER_URL }}
+  DATABASE_URI          : ${{ secrets.PARSE_DATABASE_URI }}
+
+
+on:
+  push:
+    branches:    
+      - master
+      - dev
+jobs:
+  cloudformation-deployer:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with: 
+        python-version: 3.9
+        architecture: x64
+    - name: Install Python Virtual Env
+      run: pip install virtualenv
+    - name: Setup Virtual Env
+      uses: actions/cache@v2
+      id: cache-venv
+      with:
+        path: venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-venv-
+    - name: Activate venv and install dependencies
+      run: python -m venv venv && source venv/bin/activate &&
+        pip install --upgrade pip &&
+        pip install -r puente-etl/requirements.txt
+      if: steps.cache-venv.outputs.cache-hit != 'true'
+    - name: Run Script
+      run: sh puente-etl/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} -a ${{ env.APP_ID }} -k ${{ env.REST_API_KEY }} -s ${{ env.AWS_S3_BUCKET }} -m ${{ env.AWS_ACCESS_KEY_ID }} -n ${{ env.AWS_SECRET_ACCESS_KEY }}

@@ -73,9 +73,3 @@ def remove_back4app_tables(all_tables: list) -> list:
                 tables_to_keep.append(t)
 
     return tables_to_keep
-
-
-if __name__ == '__main__':
-    # extract_back4app_data(Outputs.JSON)
-    # extract_back4app_data(Outputs.PICKLE_DICT)
-    extract_back4app_data(Outputs.PICKLE_LIST)
