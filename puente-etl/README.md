@@ -37,7 +37,5 @@ pip install -r requirements.txt
 Run python script in etl directory to start
 _Make sure you have your .env is set_
 ```
-cd puente-etl/lambda/etl
-python3 extract_back4app_data.py
-python3 jobs.py
+python3 lambdas/etl/index.py
 ```
