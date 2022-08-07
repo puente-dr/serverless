@@ -36,7 +36,7 @@ zip -r layer.zip etl-libraries
 aws lambda publish-layer-version \
         --layer-name etl-layer \
         --zip-file fileb://layer.zip \
-        --compatible-runtimes python3.9 
+        --compatible-runtimes python3.9 \
         --region $aws_region
 
 zip -g puente-etl/lambdas/etl/etl.zip -r puente-etl/lambdas/etl
