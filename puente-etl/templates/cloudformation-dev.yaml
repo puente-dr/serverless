@@ -46,8 +46,8 @@ Resources:
                   - 'logs:CreateLogStream*'
                 Resource: '*'
       Path: '/'
-  LogGroupLambdaFunctionDataExporter:
+  LogGroupLambdaFunctionETL:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionDataExporter]]
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionETL]]
       RetentionInDays: 7 # days
