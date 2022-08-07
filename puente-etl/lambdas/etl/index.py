@@ -35,15 +35,5 @@ def handler():
 
     return
 
-
-
-# def err_msg(msg: str) -> dict:
-#     return {
-#         **common_req,
-#         "statusCode": 400,
-#         "body": json.dumps({"error": msg})
-#     }
-
-
 if __name__ == '__main__':
     handler()
