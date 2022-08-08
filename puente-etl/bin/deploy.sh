@@ -27,22 +27,17 @@ done
 template_file_to_package="puente-etl/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-etl/templates/cloudformation$version.packaged.yaml"
 
-# Zipping venv
-# cd ./venv/lib/python3.9/site-packages
-# zip -r9 ../../../../puente-etl/lambdas/etl/etl.zip .
-# cd ../../../../
-
 stack_name=puente-etl$version
 aws_region=us-east-1
 
 # REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
-pip install -r puente-etl/requirements.txt -t python/
-zip -r layer.zip python
-aws lambda publish-layer-version \
-        --layer-name etl-layer \
-        --zip-file fileb://layer.zip \
-        --compatible-runtimes python3.9 \
-        --region $aws_region
+# pip install -r puente-etl/requirements.txt -t python/
+# zip -r layer.zip python
+# aws lambda publish-layer-version \
+#         --layer-name etl-layer \
+#         --zip-file fileb://layer.zip \
+#         --compatible-runtimes python3.9 \
+#         --region $aws_region
 
 echo "PARSE_APP_ID='$PARSE_APP_ID'\n
 PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
