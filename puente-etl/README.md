@@ -1,12 +1,5 @@
 # Puente ETL
 
-
-## Project Structure
-
-- `/data-aggregation` contains logic for connection to make REST API call to 
-  [parse-server](https://docs.parseplatform.org/rest/guide/#getting-started) is being used to reduce boilerplate.
-
-
 ## Build 
 **Install virtual environment library**
 ```
@@ -39,3 +32,6 @@ _Make sure you have your .env is set_
 ```
 python3 lambdas/etl/index.py
 ```
+
+# Resource
+- [Creating a layer](https://aws.amazon.com/premiumsupport/knowledge-center/lambda-import-module-error-python/#:~:text=This%20is%20because%20Lambda%20isn,Python%20inside%20the%20%2Fpython%20folder.)
