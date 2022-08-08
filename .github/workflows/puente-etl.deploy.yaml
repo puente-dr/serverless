@@ -57,4 +57,15 @@ jobs:
         pip install -r puente-etl/requirements.txt
       if: steps.cache-venv.outputs.cache-hit != 'true'
     - name: Run Script
-      run: sh puente-etl/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} -a ${{ env.APP_ID }} -k ${{ env.REST_API_KEY }} -s ${{ env.AWS_S3_BUCKET }} -m ${{ env.AWS_ACCESS_KEY_ID }} -n ${{ env.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        sh puente-etl/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} \
+          -a ${{ env.AWS_ACCESS_KEY_ID }} \
+          -b ${{ env.AWS_SECRET_ACCESS_KEY }} \
+          -c ${{ env.AWS_REGION }} \
+          -d ${{ env.AWS_S3_BUCKET }} \
+          -e ${{ env.AWS_S3_OUTPUT_BUCKET }} \
+          -f ${{ env.PARSE_APP_ID }} \
+          -g ${{ env.PARSE_REST_API_KEY }} \
+          -h ${{ env.PARSE_JAVASCRIPT_KEY }} \
+          -i ${{ env.PARSE_SERVER_URL }} \
+          -j ${{ env.DATABASE_URI }} 

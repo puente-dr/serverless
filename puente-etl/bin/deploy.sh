@@ -11,11 +11,16 @@ while getopts e:v:a:k:s:m:n: flag
 do
     case "${flag}" in
         v) version=${OPTARG};;
-        a) app_id=${OPTARG};;
-        k) rest_api_key=${OPTARG};;
-        s) s3_bucket=${OPTARG};;
-        m) aws_access_key_id=${OPTARG};;
-        n) aws_secret_access_key=${OPTARG};;
+        a) AWS_ACCESS_KEY_ID=${OPTARG};;
+        b) AWS_SECRET_ACCESS_KEY=${OPTARG};;
+        c) AWS_REGION=${OPTARG};;
+        d) AWS_S3_BUCKET=${OPTARG};;
+        e) AWS_S3_OUTPUT_BUCKET=${OPTARG};;
+        f) PARSE_APP_ID=${OPTARG};;
+        g) PARSE_REST_API_KEY=${OPTARG};;
+        h) PARSE_JAVASCRIPT_KEY=${OPTARG};;
+        i) PARSE_SERVER_URL=${OPTARG};;
+        j) DATABASE_URI=${OPTARG};; 
     esac
 done
 
@@ -39,9 +44,18 @@ aws lambda publish-layer-version \
         --compatible-runtimes python3.9 \
         --region $aws_region
 
+echo "PARSE_APP_ID='$PARSE_APP_ID'\n
+PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
+PARSE_JAVASCRIPT_KEY='$PARSE_JAVASCRIPT_KEY'\n
+PARSE_SERVER_URL='$PARSE_SERVER_URL'\n
+DATABASE_URI='$DATABASE_URI'\n
+AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'\n
+AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'\n
+AWS_S3_BUCKET='$AWS_S3_BUCKET'\n
+AWS_S3_OUTPUT_BUCKET='$AWS_S3_OUTPUT_BUCKET'
+" > puente-etl/lambdas/etl/utils/secretz.py
+
 zip -g puente-etl/lambdas/etl/etl.zip -r puente-etl/lambdas/etl
-
-
 
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
