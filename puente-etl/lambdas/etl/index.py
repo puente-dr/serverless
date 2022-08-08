@@ -24,7 +24,7 @@ jobs = {
         PuenteTables.VITALS: False
     }
 
-def handler():
+def handler(event, context):
     # extract_back4app_data(Outputs.JSON)
     # extract_back4app_data(Outputs.PICKLE_DICT)
     extract_back4app_data(Outputs.PICKLE_LIST)
