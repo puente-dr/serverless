@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Puente ETL
+Parameters:
+  version:
+    Type: String
+    Default: dev
+Resources:
+  LambdaFunctionETL:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: ../lambdas/etl/etl.zip
+      Description: Lambda Function for ETL
+      FunctionName: !Sub "puente-etl-${version}"
+      Handler: puente-etl/lambdas/etl/index.handler
+      MemorySize: 2048
+      Role: !GetAtt LambdaIamRole.Arn
+      Runtime: python3.9
+      Layers:
+        - arn:aws:lambda:us-east-1:296719491340:layer:etl-layer:12
+      Timeout: 60
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - W3002
+  LambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub "CloudWatchLogGroupPolicy-${version}"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream*'
+                Resource: '*'
+      Path: '/'
+  LogGroupLambdaFunctionETL:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref LambdaFunctionETL]]
+      RetentionInDays: 7 # days

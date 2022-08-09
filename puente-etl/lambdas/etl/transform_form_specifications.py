@@ -1,5 +1,4 @@
 import pandas as pd
-from dotenv import load_dotenv; load_dotenv()
 
 from load_from_s3 import load_pickle_list_from_s3
 from utils.clients import Clients
