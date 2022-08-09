@@ -47,6 +47,24 @@ Resources:
                   - 'logs:CreateLogStream*'
                 Resource: '*'
       Path: '/'
+  ## Create schedule
+  CronjobsScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Scheduled Rule
+      ScheduleExpression: cron(0 6 * * ? *) #run daily at 6am UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaFunctionETL.Arn
+          Id: !Sub "puente-etl-${version}"
+  ## Grant permission to Events trigger Lambda
+  PermissionForEventsToInvokeETLFunction:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunctionETL
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LambdaFunctionETL.Arn
   LogGroupLambdaFunctionETL:
     Type: AWS::Logs::LogGroup
     Properties:
