@@ -3,7 +3,7 @@ Description: Puente ETL
 Parameters:
   version:
     Type: String
-    Default: dev
+    Default: prod
 Resources:
   LambdaFunctionETL:
     Type: AWS::Lambda::Function
