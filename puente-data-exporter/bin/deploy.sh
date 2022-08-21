@@ -22,21 +22,17 @@ done
 template_file_to_package="puente-data-exporter/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-data-exporter/templates/cloudformation$version.packaged.yaml"
 
-# cd ./venv/lib/python3.9/site-packages
-# zip -r9 ../../../../puente-data-exporter/lambdas/data-exporter/data-exporter.zip .
-# cd ../../../../
-
 stack_name=puente-data-exporter$version
 aws_region=us-east-1
 
 # REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
-pip install -r puente-data-exporter/requirements.txt -t python/
-zip -r layer.zip python
-aws lambda publish-layer-version \
-        --layer-name $stack_name-layer \
-        --zip-file fileb://layer.zip \
-        --compatible-runtimes python3.9 \
-        --region $aws_region
+# pip install -r puente-data-exporter/requirements.txt -t python/
+# zip -r layer.zip python
+# aws lambda publish-layer-version \
+#         --layer-name $stack_name-layer \
+#         --zip-file fileb://layer.zip \
+#         --compatible-runtimes python3.9 \
+#         --region $aws_region
 
 echo "APP_ID='$app_id'\n
 REST_API_KEY='$rest_api_key'\n
