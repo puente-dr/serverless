@@ -116,6 +116,5 @@ def err_msg(msg: str) -> dict:
         "body": json.dumps({"error": msg})
     }
 
-
 if __name__ == '__main__':
     handler()

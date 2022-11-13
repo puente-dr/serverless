@@ -1,5 +1,5 @@
 import pandas as pd
-from libs.utils import calculate_age
+from libs.utils import calculate_age, map_community_and_city_names
 
 
 def mainRecords(df):
@@ -68,6 +68,10 @@ def mainRecords(df):
     }
     df["educationLevel"].replace(education_replace_dict, inplace=True)
 
+    df = map_community_and_city_names(df)
+
+    # boo Brian for taking this out but the mapping is probably fine
+    
     # TODO: Do we need to keep this?
     # community, city, province using distance metric for finding typos
     # less than 3 edits
