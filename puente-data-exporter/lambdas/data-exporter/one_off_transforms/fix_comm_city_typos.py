@@ -10,6 +10,8 @@ PARSE_SERVER = "https://parseapi.back4app.com/classes"
 
 SPECIFIER = "SurveyData"
 
+COMBINED_URL = "/".join([PARSE_SERVER, SPECIFIER])
+
 def map_community_and_city_names(df):
     col_dict = {
         "communityname": "All Communities",
@@ -21,25 +23,43 @@ def map_community_and_city_names(df):
         df[col] = df[col].replace(col_map)
     return df
 
-combined_url = "/".join([PARSE_SERVER, SPECIFIER])
+def download_data():
+    headers = {
+            "Content-Type": "application/json",
+            "X-Parse-Application-Id": secretz.APPLICATION_ID,
+            "X-Parse-REST-API-Key": secretz.REST_API_KEY,
+        }
 
-headers = {
-        "Content-Type": "application/json",
-        "X-Parse-Application-Id": secretz.APPLICATION_ID,
-        "X-Parse-REST-API-Key": secretz.REST_API_KEY,
-    }
+    response = requests.get(
+            COMBINED_URL,
+            headers=headers
+        )
+    response.raise_for_status()
 
-response = requests.get(
-        combined_url,
-        headers=headers
+    json_obj = response.json()
+    normalized = pd.json_normalize(json_obj["results"])
+
+    return normalized
+
+def update_data(updated_data):
+    headers = {
+            "Content-Type": "application/json",
+            "X-Parse-Application-Id": secretz.APPLICATION_ID,
+            "X-Parse-REST-API-Key": secretz.REST_API_KEY,
+        }
+    response = requests.request(
+        "POST", COMBINED_URL, headers=headers, data=json.dumps(updated_data)
     )
-response.raise_for_status()
 
-json_obj = response.json()
-normalized = pd.json_normalize(json_obj["results"])
+    return json.loads(response.text)
 
-print(normalized["communityname"].value_counts())
+def main():
+    normalized_data = download_data()
+    updated_data = map_community_and_city_names(normalized_data)
+    response = update_data(updated_data)
+    print(response)
 
-updated_df = map_community_and_city_names(normalized)
+if __name__ == "__main__":
+    main()
 
-print(updated_df["communityname"].value_counts())
+
