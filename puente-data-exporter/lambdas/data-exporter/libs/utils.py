@@ -11,7 +11,6 @@ import numpy as np
 
 import secretz
 
-
 def write_csv_to_s3(df, key):
     s3_client = boto3.client(
         "s3",
