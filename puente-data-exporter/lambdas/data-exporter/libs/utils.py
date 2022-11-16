@@ -19,7 +19,7 @@ def map_community_and_city_names(df):
     for col, sheet_name in col_dict.items():
         clean_col_df = pd.read_excel("./data/Clean City and Community Names.xlsx", sheet_name=sheet_name)
         col_map = clean_col_df.set_index("Original")["Clean"].to_dict()
-        df[col] = df[col].map(col_map)
+        df[col] = df[col].replace(col_map)
     return df
 
 def write_csv_to_s3(df, key):
