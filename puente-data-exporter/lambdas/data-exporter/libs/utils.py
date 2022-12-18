@@ -17,7 +17,7 @@ def map_community_and_city_names(df):
         "city": "All Cities"
          }
     for col, sheet_name in col_dict.items():
-        clean_col_df = pd.read_excel("./data/Clean City and Community Names.xlsx", sheet_name=sheet_name)
+        clean_col_df = pd.read_excel("../data/Clean_City_and_Community_Names.xlsx", sheet_name=sheet_name)
         col_map = clean_col_df.set_index("Original")["Clean"].to_dict()
         df[col] = df[col].replace(col_map)
     return df
