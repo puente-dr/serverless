@@ -46,16 +46,20 @@ def update_data(updated_data):
             "X-Parse-REST-API-Key": secretz.REST_API_KEY,
         }
     response = requests.request(
-        "POST", COMBINED_URL, headers=headers, data=json.dumps(updated_data)
+        "POST", COMBINED_URL, headers=headers, data=updated_data.to_json(orient='split')
     )
 
     return json.loads(response.text)
 
 def main():
     normalized_data = download_data()
+    print(normalized_data["communityname"].unique())
     updated_data = map_community_and_city_names(normalized_data)
+    print(updated_data["communityname"].unique())
     response = update_data(updated_data)
     print(response)
+    new_data = download_data()
+    print(new_data["communityname"].unique())
 
 if __name__ == "__main__":
     main()
