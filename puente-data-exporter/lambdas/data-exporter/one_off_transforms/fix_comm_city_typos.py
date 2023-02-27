@@ -4,10 +4,12 @@ import pandas as pd
 import boto3
 import io
 import http.client
+import time
 
 import secretz
 
-PARSE_SERVER = "https://parseapi.back4app.com/classes"
+PARSE_SERVER_DOMAIN = "parseapi.back4app.com"
+PARSE_SERVER = f"https://{PARSE_SERVER_DOMAIN}/classes"
 
 SPECIFIER = "SurveyData"
 
@@ -21,11 +23,30 @@ s3_client = boto3.client(
 
 S3_BUCKET_NAME = "puente-public-assets"
 
-
+def check_changed_values(df, check_cols):
+    #print("checked cols")
+    #print(df.columns)
+    #check_cols = [col for col in df.columns if col not in ["communityname", "city", "objectId"]]
+    #print(check_cols)
+    not_equal_cols = []
+    for col in check_cols:
+        x = col+"_x"
+        y = col+"_y"
+        #print("col")
+        #print(col)
+        #print()
+        check = df[[x, y]].copy()
+        check["check"] = (check[x] == check[y])|((check[x].isna())&(check[y].isna()))
+        #print("check")
+        #print(check[~check["check"]])
+        #print(check["check"].all())
+        if not check["check"].all():
+            not_equal_cols.append(col)
+    return not_equal_cols
 
 def update_data(df):
     #print(df.columns)
-    connection = http.client.HTTPSConnection(PARSE_SERVER, 443)
+    connection = http.client.HTTPSConnection(PARSE_SERVER_DOMAIN, 443)
     connection.connect()
     # connection.request('PUT', '/parse/classes/GameScore/Ed1nuqPvcm', json.dumps({
     #     "score": 73453
@@ -34,32 +55,42 @@ def update_data(df):
     #     "X-Parse-REST-API-Key": "${REST_API_KEY}",
     #     "Content-Type": "application/json"
     # })
-    new_commcity_df = df[(df("communityname")!=df["new_communityname"])|(df["city"]!=df["new_city"])]
+    new_commcity_df = df[(df["communityname"]!=df["new_communityname"])|(df["city"]!=df["new_city"])]
+    print("new commcity")
+    print(new_commcity_df.shape)
     for i in range(10, new_commcity_df.shape[0], 10):
+        print("i ", i)
         chunk = new_commcity_df.iloc[i-10:min(i, df.shape[0])]
         requests_list = []
         for i, row in chunk.iterrows():
             object_id = row["objectId"]
             new_comm = row["new_communityname"]
             new_city = row["new_city"]
+            old_comm = row["communityname"]
+            #print(old_comm, new_comm)
             request_dict = {
             "method": "PUT",
             "path": f"/parse/classes/SurveyData/{object_id}",
             "body": {
-                "communityName": new_comm,
+                "communityname": new_comm,
                 "city": new_city
             }
             }
             requests_list.append(request_dict)
-    connection.request('POST', '/parse/batch', json.dumps({
-    "requests": requests_list
-}), {
-    "X-Parse-Application-Id": f"${secretz.APPLICATION_ID}",
-    "X-Parse-REST-API-Key": f"${secretz.REST_API_KEY}",
-    "Content-Type": "application/json"
-})
-    result = json.loads(connection.getresponse().read())
-    print(result)
+        connection.request('POST', '/parse/batch', json.dumps({
+        "requests": requests_list
+    }), {
+        "X-Parse-Application-Id": f"{secretz.APPLICATION_ID}",
+        "X-Parse-REST-API-Key": f"{secretz.REST_API_KEY}",
+        "Content-Type": "application/json"
+    })
+        result = json.loads(connection.getresponse().read())
+        if isinstance(result, dict):
+            print(result)
+            print(chunk)
+        #if i% == 0:
+        time.sleep(1)
+    #return result
 
 def load_dataframe_from_s3(s3_client, file_name: str, sheet_name):
  
@@ -97,6 +128,7 @@ def map_community_and_city_names(df, col_dict):
         stripped_col = f"stripped_{col}"
         df[stripped_col] = df[col].str.lower().str.replace(" ", "")
         df[new_col] = df[stripped_col].replace(col_map)
+    df = df[(pd.notnull(df["new_city"]))&(pd.notnull(df["new_communityname"]))]
     return df
 
 def download_data(i):
@@ -147,20 +179,32 @@ def main():
     for i in range(100):
         print(i)
         normalized_data = download_data(i)
-        print(normalized_data.shape[0])
+        #print(normalized_data.columns)
+        #print(normalized_data.shape[0])
         if normalized_data.shape[0] == 0:
             break
         
-        print(len(normalized_data["communityname"].unique()))
+        #print("pred update commnames")
+        #print(len(normalized_data["communityname"].unique()))
         updated_data = map_community_and_city_names(normalized_data, col_dict)
-        print(len(updated_data["new_communityname"].unique()))
-        response = update_data(updated_data)
+        #print("post update")
+        #print(len(updated_data["new_communityname"].unique()))
+        update_data(updated_data)
     #     print(response)
         new_data = download_data(i)
-        comm_names = list(new_data["communityname"].unique())
-        all_comm_names.append(comm_names)
-    flat_comm_names = [item for sublist in all_comm_names for item in sublist]
-    pd.DataFrame(flat_comm_names).to_csv(r"C:\Users\andyk\Downloads\comm_names.csv", index=False)
+        new_and_updated = new_data.merge(updated_data, on="objectId")
+        check_cols = [col for col in new_data.columns if col not in ["communityname", "city", "objectId"]]
+        changed_cols = check_changed_values(new_and_updated, check_cols)
+        print("neq cols")
+        print(changed_cols)
+        #comm_names = list(new_data["communityname"].unique())
+        #print("download")
+        #print(len(comm_names))
+        #all_comm_names.append(comm_names)
+    #flat_comm_names = list(set([item for sublist in all_comm_names for item in sublist]))
+    #print("flat comm names")
+    #print(flat_comm_names)
+    #pd.DataFrame(flat_comm_names).to_csv(r"C:\Users\andyk\Documents\comm_names.csv", index=False)
 
 if __name__ == "__main__":
     main()
