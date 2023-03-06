@@ -11,15 +11,41 @@ import numpy as np
 
 import secretz
 
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=secretz.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY,
+)
+
+def load_dataframe_from_s3(s3_client, file_name: str, sheet_name):
+
+    response = s3_client.get_object(
+        Bucket=secretz.AWS_S3_BUCKET, Key="data/"+file_name
+    )
+
+    body = response["Body"].read()
+
+    clean_col_df = pd.read_excel(io.BytesIO(body), sheet_name=sheet_name)
+    return clean_col_df
+
+
 def map_community_and_city_names(df):
+    comm_mapping = load_dataframe_from_s3(
+        s3_client, "clean_city_and_community_names.xlsx", "All Communities")
+    city_mapping = load_dataframe_from_s3(
+        s3_client, "clean_city_and_community_names.xlsx", "All Cities")
     col_dict = {
-        "communityname": "All Communities",
-        "city": "All Cities"
-         }
-    for col, sheet_name in col_dict.items():
-        clean_col_df = pd.read_excel("./data/Clean City and Community Names.xlsx", sheet_name=sheet_name)
+        "communityname": comm_mapping,
+        "city": city_mapping
+    }
+    for col, clean_col_df in col_dict.items():
+        clean_col_df["Original"] = clean_col_df["Original"].str.lower().str.replace(" ", "")
         col_map = clean_col_df.set_index("Original")["Clean"].to_dict()
-        df[col] = df[col].replace(col_map)
+        new_col = f"new_{col}"
+        stripped_col = f"stripped_{col}"
+        df[stripped_col] = df[col].str.lower().str.replace(" ", "")
+        df[new_col] = df[stripped_col].replace(col_map)
+    df = df[(pd.notnull(df["new_city"]))&(pd.notnull(df["new_communityname"]))]
     return df
 
 def write_csv_to_s3(df, key):
