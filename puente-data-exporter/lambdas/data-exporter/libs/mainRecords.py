@@ -68,7 +68,7 @@ def mainRecords(df):
     }
     df["educationLevel"].replace(education_replace_dict, inplace=True)
 
-    df = map_community_and_city_names(df) #2023_march_12
+    #df = map_community_and_city_names(df) #2023_march_12
 
     # boo Brian for taking this out but the mapping is probably fine
     
