@@ -3,7 +3,6 @@ import os
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import pandas as pd
-
 from libs.assets import assets
 from libs.assetSupplementary import assetSupplementary
 from libs.customForms import customForms
@@ -30,6 +29,7 @@ def handler(event, context):
     #
     # Parse request parameters
     #
+    print(event)
     params = event.get("queryStringParameters")
     if params is not None:
         survey_org = params["surveyingOrganization"]
@@ -42,6 +42,8 @@ def handler(event, context):
     # Make REST call to back4app
     #
     primary_data, specifier_data = restCall(specifier, survey_org, custom_form_id)
+    print(primary_data)
+
 
     # TODO: Repeatedly overwriting these objects in the remainder of this script is confusing
 
@@ -49,6 +51,8 @@ def handler(event, context):
     # Create S3 Bucket Key
     #
     s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}.csv"
+    print(s3_bucket_key)
+
     if specifier in ["FormResults", "FormAssetResults"]:
         s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}-{custom_form_id}.csv"
 
