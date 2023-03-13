@@ -2,9 +2,6 @@ import pandas as pd
 
 
 def envHealth(df):
-
-    # df = restCall(specifier="HistoryEnvironmentalHealth", survey_org=survey_org)
-
     """
     PUT ALL CLEANING HERE
     """

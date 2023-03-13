@@ -1,18 +1,17 @@
+from libs.vitals import vitals
+from libs.utils import write_csv_to_s3
+from libs.restCall import restCall
+from libs.mainRecords import mainRecords
+from libs.evalMedical import evalMedical
+from libs.envHealth import envHealth
+from libs.customForms import customForms
+from libs.assetSupplementary import assetSupplementary
+from libs.assets import assets
+import pandas as pd
 import json
 import os
-import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
-
-import pandas as pd
-
-from libs.assets import assets
-from libs.assetSupplementary import assetSupplementary
-from libs.customForms import customForms
-from libs.envHealth import envHealth
-from libs.evalMedical import evalMedical
-from libs.mainRecords import mainRecords
-from libs.restCall import restCall
-from libs.utils import write_csv_to_s3
-from libs.vitals import vitals
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 
 common_req = {
@@ -41,7 +40,9 @@ def handler(event, context):
     #
     # Make REST call to back4app
     #
-    primary_data, specifier_data = restCall(specifier, survey_org, custom_form_id)
+    primary_data, specifier_data = restCall(
+        specifier, survey_org, custom_form_id)
+    print(primary_data)
 
     # TODO: Repeatedly overwriting these objects in the remainder of this script is confusing
 
@@ -49,6 +50,7 @@ def handler(event, context):
     # Create S3 Bucket Key
     #
     s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}.csv"
+    print(s3_bucket_key)
     if specifier in ["FormResults", "FormAssetResults"]:
         s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}-{custom_form_id}.csv"
 
@@ -67,7 +69,6 @@ def handler(event, context):
         primary_data = assets(primary_data)
     else:
         return err_msg("Your specifier parameter is invalid or there was an error cleaning the primary data")
-
 
     #
     # Cleaning Specifier Data
@@ -115,6 +116,7 @@ def err_msg(msg: str) -> dict:
         "statusCode": 400,
         "body": json.dumps({"error": msg})
     }
+
 
 if __name__ == '__main__':
     handler()
