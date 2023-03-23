@@ -55,7 +55,7 @@ def update_data(df):
     #     "X-Parse-REST-API-Key": "${REST_API_KEY}",
     #     "Content-Type": "application/json"
     # })
-    new_commcity_df = df[(df["communityname"]!=df["new_communityname"])|(df["city"]!=df["new_city"])]
+    new_commcity_df = df[(df["communityname"]!=df["new_communityname"])|(df["city"]!=df["new_city"])|(df["surveyingOrganization"]!=df["new_surveyingOrganization"])]
     print("new commcity")
     print(new_commcity_df.shape)
     for i in range(10, new_commcity_df.shape[0], 10):
@@ -66,6 +66,7 @@ def update_data(df):
             object_id = row["objectId"]
             new_comm = row["new_communityname"]
             new_city = row["new_city"]
+            new_surveyorg = row['new_surveyingOrganization']
             old_comm = row["communityname"]
             #print(old_comm, new_comm)
             request_dict = {
@@ -73,7 +74,8 @@ def update_data(df):
             "path": f"/parse/classes/SurveyData/{object_id}",
             "body": {
                 "communityname": new_comm,
-                "city": new_city
+                "city": new_city,
+                "surveyingOrganization": new_surveyorg
             }
             }
             requests_list.append(request_dict)
@@ -131,7 +133,7 @@ def map_community_and_city_names(df, col_dict):
         stripped_col = f"stripped_{col}"
         df[stripped_col] = df[col].str.lower().str.replace(" ", "")
         df[new_col] = df[stripped_col].replace(col_map)
-    df = df[(pd.notnull(df["new_city"]))&(pd.notnull(df["new_communityname"]))]
+    df = df[(pd.notnull(df["new_city"]))&(pd.notnull(df["new_communityname"]))&(pd.notnull(df["new_surveyingOrganization"]))]
     return df
 
 
@@ -178,9 +180,12 @@ def main():
         s3_client, "clean_city_and_community_names.xlsx", "All Communities")
     city_mapping = load_dataframe_from_s3(
         s3_client, "clean_city_and_community_names.xlsx", "All Cities")
+    surveyorg_mapping = load_dataframe_from_s3(
+        s3_client, "clean_surveyorgs_v2.xlsx", "clean_surveyorgs")
     col_dict = {
         "communityname": comm_mapping,
-        "city": city_mapping
+        "city": city_mapping,
+        "surveyingOrganization": surveyorg_mapping
     }
 
     for i in range(100):
@@ -200,7 +205,7 @@ def main():
     #     print(response)
         new_data = download_data(i)
         new_and_updated = new_data.merge(updated_data, on="objectId")
-        check_cols = [col for col in new_data.columns if col not in ["communityname", "city", "objectId"]]
+        check_cols = [col for col in new_data.columns if col not in ["communityname", "city", "surveyingOrganization", "objectId"]]
         changed_cols = check_changed_values(new_and_updated, check_cols)
         print("neq cols")
         print(changed_cols)
