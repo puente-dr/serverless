@@ -205,7 +205,7 @@ def main():
     #     print(response)
         new_data = download_data(i)
         new_and_updated = new_data.merge(updated_data, on="objectId")
-        check_cols = [col for col in new_data.columns if col not in ["communityname", "city", "surveyingOrganization", "objectId"]]
+        check_cols = [col for col in new_data.columns if col not in ["objectId"]]
         changed_cols = check_changed_values(new_and_updated, check_cols)
         print("neq cols")
         print(changed_cols)
