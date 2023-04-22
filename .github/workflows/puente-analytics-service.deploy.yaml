@@ -13,8 +13,6 @@ on:
   push:
     branches:    
       - master
-      - dev
-      - PLATFORM-643
 jobs:
   cloudformation-deployer:
     runs-on: ubuntu-latest
