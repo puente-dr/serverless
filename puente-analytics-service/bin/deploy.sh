@@ -39,6 +39,7 @@ aws_region=us-east-1
 #         --compatible-runtimes python3.9 \
 #         --region $aws_region
 
+# Creates a secretz.py
 # echo "PARSE_APP_ID='$PARSE_APP_ID'\n
 # PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
 # PARSE_JAVASCRIPT_KEY='$PARSE_JAVASCRIPT_KEY'\n
