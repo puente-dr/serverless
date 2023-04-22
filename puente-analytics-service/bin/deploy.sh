@@ -22,7 +22,7 @@ done
 
 template_file_to_package="puente-analytics-service/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-analytics-service/templates/cloudformation$version.packaged.yaml"
-parameter-overrides="pAnalyticsDbName=$pAnalyticsDbName,pAnalyticsDbUser=$pAnalyticsDbUser,pAnalyticsDbPass=$pAnalyticsDbPass"
+parameter-overrides="pAnalyticsDbName=$pAnalyticsDbName pAnalyticsDbUser=$pAnalyticsDbUser pAnalyticsDbPass=$pAnalyticsDbPass"
 
 stack_name=puente-analytics-service$version
 aws_region=us-east-1
