@@ -1,4 +1,4 @@
-name: Deploy ETL Template
+name: Deploy Analytics Service Template
 
 env:
   APPLICATION_NAME      : "puente-analytics-service"
