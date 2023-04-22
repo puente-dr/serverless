@@ -10,7 +10,7 @@ Parameters:
     Type: String
   pAnalyticsDbPass:
     Type: String
-    Description: "It should be less than 8 characters"
+    Description: "It should be less than 8 char"
 Resources:
   MyDBInstance:
     Type: 'AWS::RDS::DBInstance'
