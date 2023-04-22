@@ -22,7 +22,6 @@ done
 
 template_file_to_package="puente-analytics-service/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-analytics-service/templates/cloudformation$version.packaged.yaml"
-parameter-overrides="pAnalyticsDbName=$pAnalyticsDbName pAnalyticsDbUser=$pAnalyticsDbUser pAnalyticsDbPass=$pAnalyticsDbPass"
 
 stack_name=puente-analytics-service$version
 aws_region=us-east-1
@@ -53,6 +52,7 @@ aws_region=us-east-1
 aws cloudformation package \
   --template-file ${template_file_to_package} \
   --output-template-file ${template_file_to_deploy} \
+  --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName} pAnalyticsDbUser=${pAnalyticsDbUser} pAnalyticsDbPass=${pAnalyticsDbPass}" \
   --s3-bucket 'puente-analytics-service' \
   --s3-prefix "lambdas"
 
