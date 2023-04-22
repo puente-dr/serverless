@@ -50,16 +50,14 @@ aws_region=us-east-1
 # zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
 aws cloudformation package \
-  --template-file ${template_file_to_package} \
-  --output-template-file ${template_file_to_deploy} \
-  --s3-bucket 'puente-analytics-service' \
-  --s3-prefix "lambdas" \
-  --parameter-overrides --parameter-overrides "ParameterKey=pAnalyticsDbName,ParameterValue=${pAnalyticsDbName}" "ParameterKey=pAnalyticsDbUser,ParameterValue=${pAnalyticsDbUser}" "ParameterKey=pAnalyticsDbPass,ParameterValue=${pAnalyticsDbPass}" 
-
+    --template-file ${template_file_to_package} \
+    --output-template-file ${template_file_to_deploy} \
+    --s3-bucket 'puente-analytics-service' \
+    --s3-prefix "lambdas" 
 
 
 aws cloudformation deploy \
     --template-file ${template_file_to_deploy} \
     --stack-name $stack_name \
-    --parameter-overrides ${parameter-override} \
+    --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName}" "pAnalyticsDbUser=${pAnalyticsDbUser}" "pAnalyticsDbPass=${pAnalyticsDbPass}" \
     --region $aws_region --capabilities CAPABILITY_IAM 
