@@ -51,7 +51,7 @@ aws_region=us-east-1
 # AWS_S3_OUTPUT_BUCKET='$AWS_S3_OUTPUT_BUCKET'
 # " > puente-analytics-service/lambdas/etl/utils/secretz.py
 
-zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
+# zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
