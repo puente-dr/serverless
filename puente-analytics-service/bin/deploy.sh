@@ -61,4 +61,5 @@ aws cloudformation package \
 aws cloudformation deploy \
     --template-file ${template_file_to_deploy} \
     --stack-name $stack_name \
+    --parameter-overrides ${parameter-override} \
     --region $aws_region --capabilities CAPABILITY_IAM 
