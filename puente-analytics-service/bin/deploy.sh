@@ -39,16 +39,16 @@ aws_region=us-east-1
 #         --compatible-runtimes python3.9 \
 #         --region $aws_region
 
-echo "PARSE_APP_ID='$PARSE_APP_ID'\n
-PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
-PARSE_JAVASCRIPT_KEY='$PARSE_JAVASCRIPT_KEY'\n
-PARSE_SERVER_URL='$PARSE_SERVER_URL'\n
-DATABASE_URI='$DATABASE_URI'\n
-AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'\n
-AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'\n
-AWS_S3_BUCKET='$AWS_S3_BUCKET'\n
-AWS_S3_OUTPUT_BUCKET='$AWS_S3_OUTPUT_BUCKET'
-" > puente-analytics-service/lambdas/etl/utils/secretz.py
+# echo "PARSE_APP_ID='$PARSE_APP_ID'\n
+# PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
+# PARSE_JAVASCRIPT_KEY='$PARSE_JAVASCRIPT_KEY'\n
+# PARSE_SERVER_URL='$PARSE_SERVER_URL'\n
+# DATABASE_URI='$DATABASE_URI'\n
+# AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'\n
+# AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'\n
+# AWS_S3_BUCKET='$AWS_S3_BUCKET'\n
+# AWS_S3_OUTPUT_BUCKET='$AWS_S3_OUTPUT_BUCKET'
+# " > puente-analytics-service/lambdas/etl/utils/secretz.py
 
 zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
