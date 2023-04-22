@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Puente Data Exporter - API Gateway with Lambda Integrations
+Parameters:
+  version:
+    Type: String
+    Default: prod
+  pAnalyticsDbName:
+    Type: String
+  pAnalyticsDbUser:
+    Type: String
+  pAnalyticsDbPass:
+    Type: String
+    Description: "It should be less than 8 char"
+Resources:
+  MyDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref pAnalyticsDbName
+      MasterUsername: !Ref pAnalyticsDbUser
+      MasterUserPassword: !Ref pAnalyticsDbPass
+      Engine: postgres
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
+      AllocatedStorage: '5'
+      EngineVersion: '13.3'
+      PubliclyAccessible: false
