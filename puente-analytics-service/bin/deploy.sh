@@ -53,7 +53,6 @@ aws_region=us-east-1
 aws cloudformation package \
   --template-file ${template_file_to_package} \
   --output-template-file ${template_file_to_deploy} \
-  --parameter-overrides ${parameter-override} \
   --s3-bucket 'puente-analytics-service' \
   --s3-prefix "lambdas"
 
