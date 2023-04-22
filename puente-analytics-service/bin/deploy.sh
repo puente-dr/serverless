@@ -22,6 +22,7 @@ done
 
 template_file_to_package="puente-analytics-service/templates/cloudformation$version.yaml"
 template_file_to_deploy="puente-analytics-service/templates/cloudformation$version.packaged.yaml"
+parameter-overrides="pAnalyticsDbName=$pAnalyticsDbName,pAnalyticsDbUser=$pAnalyticsDbUser,pAnalyticsDbPass=$pAnalyticsDbPass"
 
 stack_name=puente-analytics-service$version
 aws_region=us-east-1
@@ -50,14 +51,14 @@ aws_region=us-east-1
 # zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
 aws cloudformation package \
-  --template-file "${template_file_to_package}" \
-  --output-template-file "${template_file_to_deploy}" \
-  --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName},pAnalyticsDbUser=${pAnalyticsDbUser},pAnalyticsDbPass=${pAnalyticsDbPass}" \
-  --s3-bucket "puente-analytics-service" \
+  --template-file ${template_file_to_package} \
+  --output-template-file ${template_file_to_deploy} \
+  --parameter-overrides ${parameter-override} \
+  --s3-bucket 'puente-analytics-service' \
   --s3-prefix "lambdas"
 
 
 aws cloudformation deploy \
-         --template-file ${template_file_to_deploy} \
-         --stack-name $stack_name \
-         --region $aws_region --capabilities CAPABILITY_IAM 
+    --template-file ${template_file_to_deploy} \
+    --stack-name $stack_name \
+    --region $aws_region --capabilities CAPABILITY_IAM 
