@@ -54,7 +54,7 @@ aws cloudformation package \
   --output-template-file ${template_file_to_deploy} \
   --s3-bucket 'puente-analytics-service' \
   --s3-prefix "lambdas" \
-  --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName};pAnalyticsDbUser=${pAnalyticsDbUser};pAnalyticsDbPass=${pAnalyticsDbPass}" 
+  --parameter-overrides --parameter-overrides "ParameterKey=pAnalyticsDbName,ParameterValue=${pAnalyticsDbName}" "ParameterKey=pAnalyticsDbUser,ParameterValue=${pAnalyticsDbUser}" "ParameterKey=pAnalyticsDbPass,ParameterValue=${pAnalyticsDbPass}" 
 
 
 
