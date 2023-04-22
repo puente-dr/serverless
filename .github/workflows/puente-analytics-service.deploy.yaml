@@ -1,0 +1,63 @@
+name: Deploy ETL Template
+
+env:
+  APPLICATION_NAME      : "puente-analytics-service"
+  AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION            : ${{ secrets.AWS_REGION }}
+
+on:
+  push:
+    branches:    
+      - master
+      - dev
+      - PLATFORM-643
+jobs:
+  cloudformation-deployer:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with: 
+        python-version: 3.9
+        architecture: x64
+    # - name: Install Python Virtual Env
+    #   run: pip install virtualenv
+    # - name: Setup Virtual Env
+    #   uses: actions/cache@v2
+    #   id: cache-venv
+    #   with:
+    #     path: venv
+    #     key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-venv-
+    # - name: Activate venv and install dependencies
+    #   run: python -m venv venv && source venv/bin/activate &&
+    #     pip install --upgrade pip &&
+    #     pip install -r puente-analytics-service/requirements.txt
+    #   if: steps.cache-venv.outputs.cache-hit != 'true'
+    - name: Run Script
+      run: |
+        sh puente-analytics-service/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} \
+          -a ${{ env.AWS_ACCESS_KEY_ID }} \
+          -b ${{ env.AWS_SECRET_ACCESS_KEY }} \
+          -c ${{ env.AWS_REGION }} \
+          -d ${{ env.AWS_S3_BUCKET }} \
+          -e ${{ env.AWS_S3_OUTPUT_BUCKET }} \
+          -f ${{ env.PARSE_APP_ID }} \
+          -g ${{ env.PARSE_REST_API_KEY }} \
+          -h ${{ env.PARSE_JAVASCRIPT_KEY }} \
+          -i ${{ env.PARSE_SERVER_URL }} \
+          -j ${{ env.DATABASE_URI }} 
