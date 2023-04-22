@@ -5,6 +5,9 @@ env:
   AWS_ACCESS_KEY_ID     : ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY : ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION            : ${{ secrets.AWS_REGION }}
+  pAnalyticsDbName               : ${{ secrets.pAnalyticsDbName }}
+  pAnalyticsDbUser               : ${{ secrets.pAnalyticsDbUser }}
+  pAnalyticsDbPass               : ${{ secrets.AWS_REGION }}
 
 on:
   push:
@@ -54,10 +57,6 @@ jobs:
           -a ${{ env.AWS_ACCESS_KEY_ID }} \
           -b ${{ env.AWS_SECRET_ACCESS_KEY }} \
           -c ${{ env.AWS_REGION }} \
-          -d ${{ env.AWS_S3_BUCKET }} \
-          -e ${{ env.AWS_S3_OUTPUT_BUCKET }} \
-          -f ${{ env.PARSE_APP_ID }} \
-          -g ${{ env.PARSE_REST_API_KEY }} \
-          -h ${{ env.PARSE_JAVASCRIPT_KEY }} \
-          -i ${{ env.PARSE_SERVER_URL }} \
-          -j ${{ env.DATABASE_URI }} 
+          -d ${{ env.pAnalyticsDbName }} \
+          -e ${{ env.pAnalyticsDbUser }} \
+          -f ${{ env.pAnalyticsDbPass }} 

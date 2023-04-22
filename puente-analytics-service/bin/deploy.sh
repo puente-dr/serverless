@@ -14,13 +14,9 @@ do
         a) AWS_ACCESS_KEY_ID=${OPTARG};;
         b) AWS_SECRET_ACCESS_KEY=${OPTARG};;
         c) AWS_REGION=${OPTARG};;
-        d) AWS_S3_BUCKET=${OPTARG};;
-        e) AWS_S3_OUTPUT_BUCKET=${OPTARG};;
-        f) PARSE_APP_ID=${OPTARG};;
-        g) PARSE_REST_API_KEY=${OPTARG};;
-        h) PARSE_JAVASCRIPT_KEY=${OPTARG};;
-        i) PARSE_SERVER_URL=${OPTARG};;
-        j) DATABASE_URI=${OPTARG};; 
+        d) pAnalyticsDbName=${OPTARG};;
+        e) pAnalyticsDbUser=${OPTARG};;
+        f) pAnalyticsDbPass=${OPTARG};;
     esac
 done
 
@@ -56,6 +52,7 @@ aws_region=us-east-1
 aws cloudformation package \
          --template-file ${template_file_to_package}  \
          --output-template-file ${template_file_to_deploy} \
+         --parameter-overrides pAnalyticsDbName=$pAnalyticsDbName, pAnalyticsDbUser=$pAnalyticsDbUser, pAnalyticsDbPass=$pAnalyticsDbPass\
          --s3-bucket "puente-analytics-service" --s3-prefix "lambdas"
 
 aws cloudformation deploy \

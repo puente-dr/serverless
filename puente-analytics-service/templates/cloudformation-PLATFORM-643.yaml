@@ -4,20 +4,20 @@ Parameters:
   version:
     Type: String
     Default: prod
-  pDbName:
+  pAnalyticsDbName:
     Type: String
-  pDbUser:
+  pAnalyticsDbUser:
     Type: String
-  pDbPass:
+  pAnalyticsDbPass:
     Type: String
     Description: "It should be less than 8 characters"
 Resources:
   MyDBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      DBName: !Ref pDbName
-      MasterUsername: !Ref pDbUser
-      MasterUserPassword: !Ref pDbPass
+      DBName: !Ref pAnalyticsDbName
+      MasterUsername: !Ref pAnalyticsDbUser
+      MasterUserPassword: !Ref pAnalyticsDbPass
       Engine: postgresql
       DBInstanceClass: db.t2.micro
       DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
