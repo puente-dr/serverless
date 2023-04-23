@@ -12,18 +12,15 @@ Parameters:
     Type: String
     Description: "It should be less than 8 char"
 Resources:
-  AnalyticsDBVpc:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-      Tags:
-        - Key: Name
-          Value: AnalyticsDBVpc
   AnalyticsDBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow traffic to RDS database from any IP
-      VpcId: !Ref AnalyticsDBVpc
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
   AnalyticsDBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
