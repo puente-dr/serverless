@@ -12,7 +12,7 @@ Parameters:
     Type: String
     Description: "It should be less than 8 char"
 Resources:
-  MyDBInstance:
+  AnalyticsDBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBName: !Ref pAnalyticsDbName
@@ -25,19 +25,19 @@ Resources:
       EngineVersion: '13.3'
       PubliclyAccessible: true
       VPCSecurityGroups:
-        - !Ref MyDBSecurityGroup
-  MyVpc:
+        - !Ref AnalyticsDBSecurityGroup
+  AnalyticsDBVpc:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
       Tags:
         - Key: Name
-          Value: MyVpc
-  MyDBSecurityGroup:
+          Value: AnalyticsDBVpc
+  AnalyticsDBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow traffic to RDS database from any IP
-      VpcId: !Ref MyVpc
+      VpcId: !Ref AnalyticsDBVpc
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: tcp
