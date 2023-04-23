@@ -26,10 +26,18 @@ Resources:
       PubliclyAccessible: true
       VPCSecurityGroups:
         - !Ref MyDBSecurityGroup
+  MyVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: MyVpc
   MyDBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow traffic to RDS database from any IP
+      VpcId: !Ref MyVpc
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: tcp
