@@ -21,6 +21,9 @@ Resources:
           IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
+    Tags:
+      - Key: Name
+        Value: PuenteAnalyticsDBSecurityGroup
   AnalyticsDBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -34,4 +37,4 @@ Resources:
       EngineVersion: '13.3'
       PubliclyAccessible: true
       VPCSecurityGroups:
-        - !Ref AnalyticsDBSecurityGroup
+        - !Ref PuenteAnalyticsDBSecurityGroup
