@@ -24,3 +24,14 @@ Resources:
       AllocatedStorage: '5'
       EngineVersion: '13.3'
       PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref MyDBSecurityGroup
+  MyDBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow traffic to RDS database from any IP
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
