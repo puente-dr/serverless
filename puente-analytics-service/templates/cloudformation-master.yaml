@@ -12,20 +12,6 @@ Parameters:
     Type: String
     Description: "It should be less than 8 char"
 Resources:
-  AnalyticsDBInstance:
-    Type: 'AWS::RDS::DBInstance'
-    Properties:
-      DBName: !Ref pAnalyticsDbName
-      MasterUsername: !Ref pAnalyticsDbUser
-      MasterUserPassword: !Ref pAnalyticsDbPass
-      Engine: postgres
-      DBInstanceClass: db.t3.micro
-      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
-      AllocatedStorage: '5'
-      EngineVersion: '13.3'
-      PubliclyAccessible: true
-      VPCSecurityGroups:
-        - !Ref AnalyticsDBSecurityGroup
   AnalyticsDBVpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -43,3 +29,17 @@ Resources:
           IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
+  AnalyticsDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref pAnalyticsDbName
+      MasterUsername: !Ref pAnalyticsDbUser
+      MasterUserPassword: !Ref pAnalyticsDbPass
+      Engine: postgres
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
+      AllocatedStorage: '5'
+      EngineVersion: '13.3'
+      PubliclyAccessible: true
+      VPCSecurityGroups:
+        - !Ref AnalyticsDBSecurityGroup
