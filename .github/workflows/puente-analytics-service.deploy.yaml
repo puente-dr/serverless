@@ -7,7 +7,7 @@ env:
   AWS_REGION            : ${{ secrets.AWS_REGION }}
   pAnalyticsDbName      : ${{ secrets.pAnalyticsDbName }}
   pAnalyticsDbUser      : ${{ secrets.pAnalyticsDbUser }}
-  pAnalyticsDbPass      : ${{ secrets.AWS_REGION }}
+  pAnalyticsDbPass      : ${{ secrets.pAnalyticsDbPass }}
 
 on:
   push:

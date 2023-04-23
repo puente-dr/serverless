@@ -26,8 +26,6 @@ template_file_to_deploy="puente-analytics-service/templates/cloudformation$versi
 stack_name=puente-analytics-service$version
 aws_region=us-east-1
 
-echo "pAnalyticsDbPass='$pAnalyticsDbPass'"
-
 # REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
 # pip install -r puente-analytics-service/requirements.txt -t python/
 # zip -r layer.zip python
