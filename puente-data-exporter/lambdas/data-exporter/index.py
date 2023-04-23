@@ -3,6 +3,7 @@ import os
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import pandas as pd
+import numpy as np
 from libs.assets import assets
 from libs.assetSupplementary import assetSupplementary
 from libs.customForms import customForms
@@ -42,8 +43,6 @@ def handler(event, context):
     # Make REST call to back4app
     #
     primary_data, specifier_data = restCall(specifier, survey_org, custom_form_id)
-    print(primary_data)
-
 
     # TODO: Repeatedly overwriting these objects in the remainder of this script is confusing
 
@@ -92,7 +91,7 @@ def handler(event, context):
     #
     if specifier_data is not None:
         data = pd.merge(specifier_data, primary_data, on="objectId")
-        data = data.replace({pd.np.nan: ""})
+        data = data.replace({np.nan: ""})
     else:
         # Okay not to have a specifier - Assets and SurveyData
         data = primary_data
@@ -121,4 +120,11 @@ def err_msg(msg: str) -> dict:
     }
 
 if __name__ == '__main__':
-    handler()
+    event = {
+       "queryStringParameters": {
+            "surveyingOrganization": "Ryans Well",
+            "specifier": "HistoryEnvironmentalHealth"
+       } 
+    }
+    context = None
+    handler(event, context)

@@ -17,6 +17,12 @@ s3_client = boto3.client(
     aws_secret_access_key=secretz.AWS_SECRET_ACCESS_KEY,
 )
 
+def fix_missing_cols(df, duplicate_subset):
+    missing_cols = [col for col in duplicate_subset if col not in df.columns]
+    for col in missing_cols:
+        df[col] = None
+    return df
+    
 def load_dataframe_from_s3(s3_client, file_name: str, sheet_name):
 
     response = s3_client.get_object(
