@@ -71,7 +71,6 @@ def handler(event, context):
     else:
         return err_msg("Your specifier parameter is invalid or there was an error cleaning the primary data")
 
-
     #
     # Cleaning Specifier Data
     #
@@ -120,11 +119,4 @@ def err_msg(msg: str) -> dict:
     }
 
 if __name__ == '__main__':
-    event = {
-       "queryStringParameters": {
-            "surveyingOrganization": "Ryans Well",
-            "specifier": "HistoryEnvironmentalHealth"
-       } 
-    }
-    context = None
-    handler(event, context)
+    handler()
