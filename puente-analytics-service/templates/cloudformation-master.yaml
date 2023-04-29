@@ -55,6 +55,14 @@ Resources:
       Targets:
         - Id: AnalyticsLambdaFunctionETLEventsRule
           Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn
+  AnalyticsLambdaEventsRulePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Sub ${AnalyticsLambdaFunctionETL.Arn}
+      Principal: 'events.amazonaws.com'
+      SourceArn: !Sub ${AnalyticsLambdaEventsRule.Arn}
+
   LogGroupAnalyticsLambdaFunctionETL:
     Type: AWS::Logs::LogGroup
     Properties:
