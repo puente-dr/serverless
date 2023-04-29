@@ -26,28 +26,7 @@ template_file_to_deploy="puente-analytics-service/templates/cloudformation$versi
 stack_name=puente-analytics-service$version
 aws_region=us-east-1
 
-# REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
-# pip install -r puente-analytics-service/requirements.txt -t python/
-# zip -r layer.zip python
-# aws lambda publish-layer-version \
-#         --layer-name etl-layer \
-#         --zip-file fileb://layer.zip \
-#         --compatible-runtimes python3.9 \
-#         --region $aws_region
-
-# Creates a secretz.py
-# echo "PARSE_APP_ID='$PARSE_APP_ID'\n
-# PARSE_REST_API_KEY='$PARSE_REST_API_KEY'\n
-# PARSE_JAVASCRIPT_KEY='$PARSE_JAVASCRIPT_KEY'\n
-# PARSE_SERVER_URL='$PARSE_SERVER_URL'\n
-# DATABASE_URI='$DATABASE_URI'\n
-# AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID'\n
-# AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY'\n
-# AWS_S3_BUCKET='$AWS_S3_BUCKET'\n
-# AWS_S3_OUTPUT_BUCKET='$AWS_S3_OUTPUT_BUCKET'
-# " > puente-analytics-service/lambdas/etl/utils/secretz.py
-
-# zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
+zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
 aws cloudformation package \
     --template-file ${template_file_to_package} \
