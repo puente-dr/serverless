@@ -52,13 +52,8 @@ Resources:
       Description: Rule to trigger the analytics Lambda function every 1 minute
       ScheduleExpression: rate(1 minute)
       State: ENABLED
-      EventPattern: {}
-  AnalyticsEventSourceMapping:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 1
-      EventSourceArn: !GetAtt AnalyticsLambdaEventsRule.Arn
-      FunctionName: !Ref AnalyticsLambdaFunctionETL
+      Targets:
+        - Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn
   LogGroupAnalyticsLambdaFunctionETL:
     Type: AWS::Logs::LogGroup
     Properties:
