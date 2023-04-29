@@ -32,8 +32,8 @@ Resources:
     Properties:
       Code: ../lambdas/etl/etl.zip
       Description: Lambda Function for Data exporter
-      FunctionName: !Sub "puente-etl-${version}"
-      Handler: puente-etl/lambdas/etl/index.handler
+      FunctionName: !Sub "puente-analytics-service-${version}"
+      Handler: puente-analytics-service/lambdas/etl/index.handler
       MemorySize: 2048
       Role: !GetAtt CloudWatchRole.Arn
       Runtime: python3.9
