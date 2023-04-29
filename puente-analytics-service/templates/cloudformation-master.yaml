@@ -49,8 +49,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: AnalyticsLambdaEventsRule
-      Description: Rule to trigger the analytics Lambda function every 1 minute
-      ScheduleExpression: rate(1 minute)
+      Description: Rule to trigger the analytics Lambda function everyday
+      ScheduleExpression: rate(1 day)
       State: ENABLED
       Targets:
         - Id: AnalyticsLambdaFunctionETLEventsRule
