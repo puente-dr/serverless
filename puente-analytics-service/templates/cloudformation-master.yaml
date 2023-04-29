@@ -53,7 +53,7 @@ Resources:
       ScheduleExpression: rate(1 minute)
       State: ENABLED
       Targets:
-        - Id: !GetAtt AnalyticsLambdaFunctionETL.Arn
+        - Id: AnalyticsLambdaFunctionETLEventsRule
           Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn
   LogGroupAnalyticsLambdaFunctionETL:
     Type: AWS::Logs::LogGroup
