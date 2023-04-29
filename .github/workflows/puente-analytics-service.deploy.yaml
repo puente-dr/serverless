@@ -13,6 +13,7 @@ on:
   push:
     branches:    
       - master
+      - PLATFORM-646
 jobs:
   cloudformation-deployer:
     runs-on: ubuntu-latest
@@ -29,11 +30,11 @@ jobs:
         aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with: 
-        python-version: 3.9
-        architecture: x64
+    # - name: Setup Python
+    #   uses: actions/setup-python@v2
+    #   with: 
+    #     python-version: 3.9
+    #     architecture: x64
     # - name: Install Python Virtual Env
     #   run: pip install virtualenv
     # - name: Setup Virtual Env
