@@ -3,7 +3,7 @@ Description: Puente Data Exporter - API Gateway with Lambda Integrations
 Parameters:
   version:
     Type: String
-    Default: prod
+    Default: dev
   pAnalyticsDbName:
     Type: String
   pAnalyticsDbUser:
