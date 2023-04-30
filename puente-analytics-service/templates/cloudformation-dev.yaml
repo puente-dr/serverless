@@ -80,7 +80,6 @@ Resources:
               Service:
                 - 'lambda.amazonaws.com'
             Action:
-              - 'iam:*'
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
