@@ -6,3 +6,9 @@
 __pycache__/
 puente-etl/bin/libraries/
 puente-etl/lambdas/etl/utils/secretz.py
+<<<<<<< Updated upstream
+=======
+
+**/venv/
+puente-analytics-service/lambdas/etl/env.json
+>>>>>>> Stashed changes
