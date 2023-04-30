@@ -3,7 +3,7 @@ import os
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import pandas as pd
-
+import numpy as np
 from libs.assets import assets
 from libs.assetSupplementary import assetSupplementary
 from libs.customForms import customForms
@@ -30,6 +30,7 @@ def handler(event, context):
     #
     # Parse request parameters
     #
+    print(event)
     params = event.get("queryStringParameters")
     if params is not None:
         survey_org = params["surveyingOrganization"]
@@ -49,6 +50,8 @@ def handler(event, context):
     # Create S3 Bucket Key
     #
     s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}.csv"
+    print(s3_bucket_key)
+
     if specifier in ["FormResults", "FormAssetResults"]:
         s3_bucket_key = f"clients/{survey_org}/data/{specifier}/{specifier}-{custom_form_id}.csv"
 
@@ -67,7 +70,6 @@ def handler(event, context):
         primary_data = assets(primary_data)
     else:
         return err_msg("Your specifier parameter is invalid or there was an error cleaning the primary data")
-
 
     #
     # Cleaning Specifier Data
@@ -88,7 +90,7 @@ def handler(event, context):
     #
     if specifier_data is not None:
         data = pd.merge(specifier_data, primary_data, on="objectId")
-        data = data.replace({pd.np.nan: ""})
+        data = data.replace({np.nan: ""})
     else:
         # Okay not to have a specifier - Assets and SurveyData
         data = primary_data
@@ -115,7 +117,6 @@ def err_msg(msg: str) -> dict:
         "statusCode": 400,
         "body": json.dumps({"error": msg})
     }
-
 
 if __name__ == '__main__':
     handler()

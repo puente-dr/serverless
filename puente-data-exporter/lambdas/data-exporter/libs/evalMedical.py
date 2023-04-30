@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from libs.utils import fix_missing_cols
 
 
 def evalMedical(df):
@@ -8,7 +10,7 @@ def evalMedical(df):
     """ALL CLEANING HERE"""
 
     # clean none and NaN
-    df = df.replace({pd.np.nan: ""})
+    df = df.replace({np.nan: ""})
 
     # drop duplicate values
     duplicate_subset = [
@@ -30,6 +32,8 @@ def evalMedical(df):
         "immediate_follow_up",
         "planOfAction",
     ]
+
+    df = fix_missing_cols(df, duplicate_subset)
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 

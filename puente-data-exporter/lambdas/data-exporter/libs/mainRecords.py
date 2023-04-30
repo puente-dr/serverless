@@ -1,5 +1,6 @@
 import pandas as pd
-from libs.utils import calculate_age
+import numpy as np
+from libs.utils import calculate_age, fix_missing_cols
 
 
 def mainRecords(df):
@@ -31,12 +32,14 @@ def mainRecords(df):
         "age",
     ]
 
+    df = fix_missing_cols(df, duplicate_subset)
+
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 
     """ALL DATA CLEANING HERE"""
 
     # replace nan
-    df = df.replace({pd.np.nan: ""})
+    df = df.replace({np.nan: ""})
 
     # age calculation
     df["age"] = df.apply(lambda x: calculate_age(x["dob"], x["age"]), axis=1)
@@ -64,10 +67,14 @@ def mainRecords(df):
         "someCollege": "Some College",
         "college": "College",
         "someHighSchool": "Some High School",
-        "": pd.np.nan,
+        "": np.nan,
     }
     df["educationLevel"].replace(education_replace_dict, inplace=True)
 
+    #df = map_community_and_city_names(df) #2023_march_12
+
+    # boo Brian for taking this out but the mapping is probably fine
+    
     # TODO: Do we need to keep this?
     # community, city, province using distance metric for finding typos
     # less than 3 edits
@@ -82,7 +89,7 @@ def mainRecords(df):
     # renaming
     surv_org_replace_dict = {
         "": "Other/NA",
-        pd.np.nan: "Other/NA",
+        np.nan: "Other/NA",
         "puente": "Puente",
         "Rayjon": "Rayjon Share Care",
     }
@@ -91,7 +98,7 @@ def mainRecords(df):
     )
 
     # replace any induced nan
-    df = df.replace({pd.np.nan: "N/A"})
+    df = df.replace({np.nan: "N/A"})
 
     del df["searchIndex"]
 

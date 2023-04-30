@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Puente Data Exporter - API Gateway with Lambda Integrations
+Parameters:
+  version:
+    Type: String
+    Default: prod
+  pAnalyticsDbName:
+    Type: String
+  pAnalyticsDbUser:
+    Type: String
+  pAnalyticsDbPass:
+    Type: String
+    Description: "It should be less than 8 char"
+Resources:
+  AnalyticsDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: !Ref pAnalyticsDbName
+      MasterUsername: !Ref pAnalyticsDbUser
+      MasterUserPassword: !Ref pAnalyticsDbPass
+      Engine: postgres
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
+      AllocatedStorage: '5'
+      EngineVersion: '13.3'
+      PubliclyAccessible: true
+      Tags:
+        - Key: Name
+          Value: PuenteAnalyticsDBInstance
+  AnalyticsLambdaFunctionETL:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: ../lambdas/etl
+      Description: Lambda Function for Data exporter
+      FunctionName: !Sub "puente-analytics-service-${version}"
+      Handler: index.handler
+      MemorySize: 2048
+      Role: !GetAtt CloudWatchRole.Arn
+      Runtime: python3.9
+      Layers:
+        - arn:aws:lambda:us-east-1:296719491340:layer:puente-data-exporter-master-layer:1
+      Timeout: 60
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - W3002
+  AnalyticsLambdaEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: AnalyticsLambdaEventsRule
+      Description: Rule to trigger the analytics Lambda function everyday
+      ScheduleExpression: rate(1 day)
+      State: ENABLED
+      Targets:
+        - Id: AnalyticsLambdaFunctionETLEventsRule
+          Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn
+  AnalyticsLambdaEventsRulePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Sub ${AnalyticsLambdaFunctionETL.Arn}
+      Principal: 'events.amazonaws.com'
+      SourceArn: !Sub ${AnalyticsLambdaEventsRule.Arn}
+
+  LogGroupAnalyticsLambdaFunctionETL:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda',!Ref AnalyticsLambdaFunctionETL]]
+      RetentionInDays: 7 # days
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub "CloudWatchLogGroupPolicy-${version}"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream*'
+                Resource: '*'
+        - PolicyName: !Sub "CloudWatchEventsPolicy-${version}"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'events:PutTargets'
+                  - 'events:PutRule'
+                Resource: '*'
+

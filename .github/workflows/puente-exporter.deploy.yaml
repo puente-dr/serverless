@@ -1,4 +1,4 @@
-name: Deploy CloudFormation Template
+name: Deploy Exporter API Template
 
 env:
   APPLICATION_NAME      : "puente-data-exporter"
