@@ -10,7 +10,7 @@ install:
 # Run the application locally
 .PHONY: build
 build:
-	DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam build -u --template ../../templates/cloudformation-master.yaml
+	DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam build -u --template ../../templates/cloudformation-dev.yaml
 
 # Run the application locally
 .PHONY: invoke
@@ -20,4 +20,4 @@ invoke:
 # Run the application locally
 .PHONY: run
 run:
-	sudo DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam local start-lambda --template ../../templates/cloudformation-master.yaml --debug
+	sudo DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam local start-lambda --template ../../templates/cloudformation-dev.yaml --debug
