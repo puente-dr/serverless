@@ -35,7 +35,7 @@ Resources:
       FunctionName: !Sub "puente-analytics-service-${version}"
       Handler: index.handler
       MemorySize: 2048
-      Role: arn:aws:iam::296719491340:role/puente-analytics-service-master-CloudWatchRole-1J766GHDHE0OD
+      Role: !GetAtt CloudWatchRole.Arn
       Runtime: python3.9
       Layers:
         - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:2
@@ -79,6 +79,7 @@ Resources:
               Service:
                 - 'lambda.amazonaws.com'
             Action:
+              - 'iam:*'
               - 'sts:AssumeRole'
       Path: '/'
       Policies:
