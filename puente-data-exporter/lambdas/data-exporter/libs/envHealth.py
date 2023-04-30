@@ -1,5 +1,6 @@
 import pandas as pd
-
+import numpy as np
+from libs.utils import fix_missing_cols
 
 def envHealth(df):
 
@@ -9,7 +10,7 @@ def envHealth(df):
     PUT ALL CLEANING HERE
     """
     # replace nan
-    df.replace({pd.np.nan: ""}, inplace=True)
+    df.replace({np.nan: ""}, inplace=True)
 
     # drop duplicates
     # TO CHANGE: right now im manually specifying these columns but idk where they came from
@@ -37,6 +38,8 @@ def envHealth(df):
         "electricityAccess",
         "houseMaterial",
     ]
+
+    df = fix_missing_cols(df, duplicate_subset)
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 

@@ -1,9 +1,11 @@
 import pandas as pd
+import numpy as np
+from libs.utils import fix_missing_cols
 
 
 def vitals(df):
     """ALL CLEANING HERE"""
-    df.replace({",": pd.np.nan}, inplace=True)
+    df.replace({",": np.nan}, inplace=True)
 
     # drop duplicates from columns
     duplicate_subset = [
@@ -19,6 +21,8 @@ def vitals(df):
         "hemoglobinLevels",
         "painLevels",
     ]
+
+    df = fix_missing_cols(df, duplicate_subset)
 
     df.drop_duplicates(subset=duplicate_subset, inplace=True)
 
