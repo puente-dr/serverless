@@ -1,6 +1,6 @@
 # Define a default target
 .PHONY: default
-default: install
+default: run
 
 # Install dependencies
 .PHONY: install
@@ -21,4 +21,3 @@ invoke:
 .PHONY: run
 run:
 	sudo DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam local start-lambda --template ../../templates/cloudformation-master.yaml --debug
-
