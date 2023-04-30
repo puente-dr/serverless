@@ -35,8 +35,7 @@ aws lambda publish-layer-version \
         --layer-name $stack_name-layer \
         --zip-file fileb://layer.zip \
         --compatible-runtimes python3.9 \
-        --region $aws_region \
-        --layer-version 1
+        --region $aws_region 
 
         
 aws cloudformation package \
