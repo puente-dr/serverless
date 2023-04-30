@@ -17,6 +17,4 @@ def handler(event, context):
     }
 
 if __name__ == '__main__':
-    # handler()
-    import sys
-    handler(sys.argv[1], sys.argv[2])
+    handler()
