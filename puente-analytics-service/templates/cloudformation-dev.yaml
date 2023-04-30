@@ -20,7 +20,7 @@ Resources:
       MasterUserPassword: !Ref pAnalyticsDbPass
       Engine: postgres
       DBInstanceClass: db.t3.micro
-      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" ]]
+      DBInstanceIdentifier: !Join ["-", [ "PuenteAnalyticsDBInstance", !Ref "AWS::Region" , !Sub "${version}"]]
       AllocatedStorage: '5'
       EngineVersion: '13.3'
       PubliclyAccessible: true
