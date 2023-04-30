@@ -35,7 +35,7 @@ Resources:
       FunctionName: !Sub "puente-analytics-service-${version}"
       Handler: index.handler
       MemorySize: 2048
-      # Role: !GetAtt CloudWatchRole.Arn
+      Role: !GetAtt CloudWatchRole.Arn
       Runtime: python3.9
       Layers:
         - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:2
@@ -68,37 +68,37 @@ Resources:
     Properties:
       LogGroupName: !Join ['/', ['/aws/lambda',!Ref AnalyticsLambdaFunctionETL]]
       RetentionInDays: 7 # days
-  # CloudWatchRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Effect: 'Allow'
-  #           Principal:
-  #             Service:
-  #               - 'lambda.amazonaws.com'
-  #           Action:
-  #             - 'sts:AssumeRole'
-  #     Path: '/'
-  #     Policies:
-  #       - PolicyName: !Sub "CloudWatchLogGroupPolicy-${version}"
-  #         PolicyDocument: 
-  #           Version: '2012-10-17'
-  #           Statement:
-  #             - Effect: 'Allow'
-  #               Action:
-  #                 - 'logs:PutLogEvents'
-  #                 - 'logs:CreateLogGroup'
-  #                 - 'logs:CreateLogStream*'
-  #               Resource: '*'
-  #       - PolicyName: !Sub "CloudWatchEventsPolicy-${version}"
-  #         PolicyDocument: 
-  #           Version: '2012-10-17'
-  #           Statement:
-  #             - Effect: 'Allow'
-  #               Action:
-  #                 - 'events:PutTargets'
-  #                 - 'events:PutRule'
-  #               Resource: '*'
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub "CloudWatchLogGroupPolicy-${version}"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:PutLogEvents'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream*'
+                Resource: '*'
+        - PolicyName: !Sub "CloudWatchEventsPolicy-${version}"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'events:PutTargets'
+                  - 'events:PutRule'
+                Resource: '*'
 
