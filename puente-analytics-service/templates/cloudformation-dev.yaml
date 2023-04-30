@@ -48,7 +48,7 @@ Resources:
   AnalyticsLambdaEventsRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: AnalyticsLambdaEventsRule
+      Name: !Sub "AnalyticsLambdaEventsRule-${version}"
       Description: Rule to trigger the analytics Lambda function everyday
       ScheduleExpression: rate(1 day)
       State: ENABLED
