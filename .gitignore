@@ -8,3 +8,4 @@ puente-etl/bin/libraries/
 puente-etl/lambdas/etl/utils/secretz.py
 
 **/venv/
+puente-analytics-service/scripts/secretz.py
