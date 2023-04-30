@@ -35,6 +35,6 @@ def handler(event, context):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"s3_url": "Hello Hope"}),
+        "body": json.dumps({"s3_url": testPuenteDataKey}),
         "isBase64Encoded": False,
     }

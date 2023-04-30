@@ -9,4 +9,5 @@ puente-etl/lambdas/etl/utils/secretz.py
 
 
 **/venv/
+**/prod-venv/
 puente-analytics-service/lambdas/etl/env.json
