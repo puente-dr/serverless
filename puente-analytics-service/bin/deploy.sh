@@ -37,13 +37,11 @@ aws lambda publish-layer-version \
         --compatible-runtimes python3.9 \
         --region $aws_region 
 
-        
 aws cloudformation package \
     --template-file ${template_file_to_package} \
     --output-template-file ${template_file_to_deploy} \
     --s3-bucket 'puente-analytics-service' \
     --s3-prefix "lambdas" 
-
 
 aws cloudformation deploy \
     --template-file ${template_file_to_deploy} \
