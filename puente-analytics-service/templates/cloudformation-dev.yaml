@@ -42,7 +42,7 @@ Resources:
             S3_BUCKET_NAME: 'hellohellohello'
             S3_OBJECT_KEY: 'keykeykey'
       Layers:
-        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:4
+        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:5
         - arn:aws:lambda:us-east-1:898466741470:layer:psycopg2-py38:2
       Timeout: 60
     Metadata:
