@@ -31,23 +31,23 @@ zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/
 # REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
 # pip install -r puente-analytics-service/lambdas/etl/requirements.txt -t python/
 # zip -r layer.zip python
-# aws lambda publish-layer-version \
-#         --layer-name $stack_name-layer \
-#         --zip-file fileb://layer.zip \
-#         --compatible-runtimes python3.9 \
-#         --region $aws_region 
+aws lambda publish-layer-version \
+        --layer-name $stack_name-layer \
+        --zip-file fileb://layer.zip \
+        --compatible-runtimes python3.9 \
+        --region $aws_region 
 
         
-aws cloudformation package \
-    --template-file ${template_file_to_package} \
-    --output-template-file ${template_file_to_deploy} \
-    --s3-bucket 'puente-analytics-service' \
-    --s3-prefix "lambdas" 
+# aws cloudformation package \
+#     --template-file ${template_file_to_package} \
+#     --output-template-file ${template_file_to_deploy} \
+#     --s3-bucket 'puente-analytics-service' \
+#     --s3-prefix "lambdas" 
 
 
-aws cloudformation deploy \
-    --template-file ${template_file_to_deploy} \
-    --stack-name $stack_name \
-    --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName}" "pAnalyticsDbUser=${pAnalyticsDbUser}" "pAnalyticsDbPass=${pAnalyticsDbPass}" \
-    --region $aws_region \
-    --capabilities CAPABILITY_NAMED_IAM 
+# aws cloudformation deploy \
+#     --template-file ${template_file_to_deploy} \
+#     --stack-name $stack_name \
+#     --parameter-overrides "pAnalyticsDbName=${pAnalyticsDbName}" "pAnalyticsDbUser=${pAnalyticsDbUser}" "pAnalyticsDbPass=${pAnalyticsDbPass}" \
+#     --region $aws_region \
+#     --capabilities CAPABILITY_NAMED_IAM 

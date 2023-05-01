@@ -5,15 +5,15 @@ from modules.s3Client import returnS3Client
 from modules.csv import csvHandler
 from modules.postgres import postgresConn
 
-S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME')
-S3_OBJECT_KEY = os.environ.get('S3_OBJECT_KEY')
+S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
+S3_OBJECT_KEY = os.environ['S3_OBJECT_KEY']
 
 def handler(event, context):
-    s3client = returnS3Client()
+    # s3client = returnS3Client()
     testPuenteDataKey = S3_OBJECT_KEY + 'Puente/data/SurveyData/SurveyData.csv'
-    print(testPuenteDataKey)
-    response = s3client.get_object(Bucket=S3_BUCKET_NAME, Key=testPuenteDataKey)
-    print(response)
+    # print(testPuenteDataKey)
+    # response = s3client.get_object(Bucket=S3_BUCKET_NAME, Key=testPuenteDataKey)
+    # print(response)
 
     # data = csvHandler(response)
 

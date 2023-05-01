@@ -20,4 +20,4 @@ invoke:
 # Run the application locally
 .PHONY: run
 run:
-	sudo DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam local start-lambda --template ../../templates/cloudformation-dev.yaml --debug
+	sudo DOCKER_HOST=unix:///Users/hopetambala/.docker/run/docker.sock sam local start-lambda --template ../../templates/cloudformation-dev.yaml --debug --env-vars env.json 
