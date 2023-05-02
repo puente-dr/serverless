@@ -37,6 +37,14 @@ aws lambda publish-layer-version \
         --compatible-runtimes python3.9 \
         --region $aws_region 
 
+pip install sqlalchemy -t sqlalchemy/
+zip -r sqlalchemy.zip sqlalchemy
+aws lambda publish-layer-version \
+        --layer-name $stack_name-sqlalchemy-layer \
+        --zip-file fileb://sqlalchemy.zip \
+        --compatible-runtimes python3.9 \
+        --region $aws_region 
+
 aws cloudformation package \
     --template-file ${template_file_to_package} \
     --output-template-file ${template_file_to_deploy} \
