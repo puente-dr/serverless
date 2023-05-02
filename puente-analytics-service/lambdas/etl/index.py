@@ -1,9 +1,10 @@
 import os
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 import json
-from modules.s3Client import returnS3Client
-from modules.csv import csvHandler
-from modules.postgres import postgresConn
+from modules.s3Client import s3Client
+from modules.postgres import engine
+from modules.models import CommunityDimension
+
 
 S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 S3_OBJECT_KEY = os.environ['S3_OBJECT_KEY']
@@ -11,9 +12,10 @@ S3_OBJECT_KEY = os.environ['S3_OBJECT_KEY']
 def handler(event, context):
     # s3client = returnS3Client()
     testPuenteDataKey = S3_OBJECT_KEY + 'Puente/data/SurveyData/SurveyData.csv'
-    # print(testPuenteDataKey)
-    # response = s3client.get_object(Bucket=S3_BUCKET_NAME, Key=testPuenteDataKey)
-    # print(response)
+    Engine , Session = engine()
+    response = s3Client.get_object(
+        Bucket=S3_BUCKET_NAME, Key=testPuenteDataKey)
+    print(response)
 
     # data = csvHandler(response)
 
