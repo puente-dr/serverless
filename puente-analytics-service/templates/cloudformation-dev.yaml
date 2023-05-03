@@ -50,7 +50,7 @@ Resources:
             PG_USERNAME: 'PG_USERNAME'
             PG_PASSWORD: 'PG_PASSWORD'
       Layers:
-        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:8
+        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:9
       Timeout: 60
     Metadata:
       cfn-lint:
