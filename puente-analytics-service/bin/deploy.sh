@@ -29,13 +29,13 @@ aws_region=us-east-1
 zip -g puente-analytics-service/lambdas/etl/etl.zip -r puente-analytics-service/lambdas/etl
 
 # REPLACES Zipping venv (Create Layer) Only uncomment when creating a new layer
-pip3.9 install -r puente-analytics-service/lambdas/etl/requirements.txt -t python/
-zip -r9 layer.zip python
-aws lambda publish-layer-version \
-        --layer-name $stack_name-layer \
-        --zip-file fileb://layer.zip \
-        --compatible-runtimes python3.9 \
-        --region $aws_region 
+# pip3.9 install -r puente-analytics-service/lambdas/etl/requirements.txt -t python/
+# zip -r9 layer.zip python
+# aws lambda publish-layer-version \
+#         --layer-name $stack_name-layer \
+#         --zip-file fileb://layer.zip \
+#         --compatible-runtimes python3.9 \
+#         --region $aws_region 
 
 # pip install sqlalchemy -t sqlalchemy/
 # zip -r sqlalchemy.zip sqlalchemy
