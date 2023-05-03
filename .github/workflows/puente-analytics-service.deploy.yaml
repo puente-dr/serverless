@@ -28,20 +28,20 @@ jobs:
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       id: extract_branch
     - name: Set environment variables
-        run: |
-          if [[ $GITHUB_REF == refs/heads/master ]]; then
-            echo "Setting environment variables for master branch"
-            export pAnalyticsDbName=pAnalyticsDbName
-            export pAnalyticsDbUser=pAnalyticsDbUser
-            export pAnalyticsDbPass=pAnalyticsDbPass
-            export pAnalyticsDbHost=pAnalyticsDbHost
-            export pAnalyticsDbPort=pAnalyticsDbPort
-          elif [[ $GITHUB_REF == refs/heads/dev ]]; then
-            echo "Setting environment variables for dev branch"
-            export pAnalyticsDbHost=pAnalyticsDbHostDev
-          else
-            echo "Branch not recognized, using default environment variables"
-          fi
+      run: |
+        if [[ $GITHUB_REF == refs/heads/master ]]; then
+          echo "Setting environment variables for master branch"
+          export pAnalyticsDbName=pAnalyticsDbName
+          export pAnalyticsDbUser=pAnalyticsDbUser
+          export pAnalyticsDbPass=pAnalyticsDbPass
+          export pAnalyticsDbHost=pAnalyticsDbHost
+          export pAnalyticsDbPort=pAnalyticsDbPort
+        elif [[ $GITHUB_REF == refs/heads/dev ]]; then
+          echo "Setting environment variables for dev branch"
+          export pAnalyticsDbHost=pAnalyticsDbHostDev
+        else
+          echo "Branch not recognized, using default environment variables"
+        fi
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
