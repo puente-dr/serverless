@@ -8,6 +8,8 @@ env:
   pAnalyticsDbName      : ${{ secrets.pAnalyticsDbName }}
   pAnalyticsDbUser      : ${{ secrets.pAnalyticsDbUser }}
   pAnalyticsDbPass      : ${{ secrets.pAnalyticsDbPass }}
+  pAnalyticsDbHost      : ${{ secrets.pAnalyticsDbHost }}
+  pAnalyticsDbPort      : ${{ secrets.pAnalyticsDbPort }}
 
 on:
   push:
@@ -30,26 +32,6 @@ jobs:
         aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with: 
-        python-version: 3.9
-        architecture: x64
-    # - name: Install Python Virtual Env
-    #   run: pip install virtualenv
-    # - name: Setup Virtual Env
-    #   uses: actions/cache@v2
-    #   id: cache-venv
-    #   with:
-    #     path: venv
-    #     key: ${{ runner.os }}-venv-${{ hashFiles('**/requirements*.txt') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-venv-
-    # - name: Activate venv and install dependencies
-    #   run: python -m venv venv && source venv/bin/activate &&
-    #     pip install --upgrade pip &&
-    #     pip install -r puente-analytics-service/requirements.txt
-    #   if: steps.cache-venv.outputs.cache-hit != 'true'
     - name: Run Script
       run: |
         sh puente-analytics-service/bin/deploy.sh -v -${{ steps.extract_branch.outputs.branch }} \
@@ -58,4 +40,6 @@ jobs:
           -c ${{ env.AWS_REGION }} \
           -d ${{ env.pAnalyticsDbName }} \
           -e ${{ env.pAnalyticsDbUser }} \
-          -f ${{ env.pAnalyticsDbPass }} 
+          -f ${{ env.pAnalyticsDbPass }} \
+          -f ${{ env.pAnalyticsDbHost }} \
+          -f ${{ env.pAnalyticsDbPort }} 

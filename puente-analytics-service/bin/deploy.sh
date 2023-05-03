@@ -17,6 +17,8 @@ do
         d) pAnalyticsDbName=${OPTARG};;
         e) pAnalyticsDbUser=${OPTARG};;
         f) pAnalyticsDbPass=${OPTARG};;
+        g) pAnalyticsDbHost=${OPTARG};;
+        h) pAnalyticsDbPort=${OPTARG};;
     esac
 done
 

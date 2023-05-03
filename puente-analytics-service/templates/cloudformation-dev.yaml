@@ -8,9 +8,12 @@ Parameters:
     Type: String
   pAnalyticsDbUser:
     Type: String
+  pAnalyticsDbHost:
+    Type: String
   pAnalyticsDbPass:
     Type: String
-    Description: "It should be less than 8 char"
+  pAnalyticsDbPort:
+    Type: String
 Resources:
   AnalyticsDBInstance:
     Type: 'AWS::RDS::DBInstance'
@@ -39,18 +42,16 @@ Resources:
       Runtime: python3.9
       Environment: 
         Variables:
-            S3_BUCKET_NAME: 'hellohellohello'
-            S3_OBJECT_KEY: 'keykeykey'
-            # AWS_ACCESS_KEY_ID: 'AWS_ACCESS_KEY_ID'
-            # AWS_SECRET_ACCESS_KEY: 'AWS_SECRET_ACCESS_KEY'
-            # AWS_REGION: 'AWS_REGION'
-            PG_HOST: 'PG_HOST'
-            PG_PORT: 'PG_PORT'
-            PG_DATABASE: 'PG_DATABASE'
-            PG_USERNAME: 'PG_USERNAME'
-            PG_PASSWORD: 'PG_PASSWORD'
+            S3_BUCKET_NAME: 'puente-data-exporter'
+            S3_OBJECT_KEY: 'clients/'
+            PG_HOST: !Sub "${pAnalyticsDbHost}"
+            PG_PORT: !Sub "${pAnalyticsDbPort}"
+            PG_DATABASE: !Sub "${pAnalyticsDbName}"
+            PG_USERNAME: !Sub "${pAnalyticsDbUser}"
+            PG_PASSWORD: !Sub "${pAnalyticsDbPass}"
       Layers:
-        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:9
+        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-layer:8
+        - arn:aws:lambda:us-east-1:296719491340:layer:puente-analytics-service-dev-psycog-layer:1
       Timeout: 60
     Metadata:
       cfn-lint:
