@@ -219,13 +219,13 @@ def get_surveying_organization_dim(df):
 def get_users_dim(df):
     con = connection()
     cur = con.cursor()
-    users = df[['surveyingUser', 'first_name', 'last_name', 'phone_number', 'email', 'surveyingOrganization']].unique()
+    users = df[['surveyingUser', 'fname', 'lname', 'phone_number', 'email', 'surveyingOrganization']].unique()
     now = datetime.datetime.utcnow()
     for user_row in users:
         user = user_row['surveyingUser']
         survey_org = user_row['SurveyingOrganization']
-        first_name = user_row['first_name']
-        last_name = user_row['last_name']
+        first_name = user_row['fname']
+        last_name = user_row['lname']
         phone_number = user_row['phone_number']
         email = user_row['email']
         uuid = md5_encode(user)
@@ -251,12 +251,84 @@ def get_users_dim(df):
         "isBase64Encoded": False,
     }
 
+def get_household_dim(df):
+    con = connection()
+    cur = con.cursor()
+    households = df[['householdId', 'latitude', 'longtitude', 'communityname']].unique()
+    now = datetime.datetime.utcnow()
+    for household_row in households:
+        household_id = household_row['householdId']
+        community_name = household_row['communityname']
+        lat = household_row['latitude']
+        lon = household_row['longitude']
+        uuid = md5_encode(household_id)
+        community = md5_encode(community_name)
+        cur.execute(
+                f"""
+                INSERT INTO household_dim (uuid, latitude, longtidue, created_at, updated_at, community_id)
+                VALUES ({uuid}, {lat}, {lon}, {now}, {now}, {community})
+                """
+            )
+        
+    # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"households": households}),
+        "isBase64Encoded": False,
+    }
+
+def get_patient_dim(df):
+    #What is the unique identifier for a patient? String name seems like a bad idea
+    con = connection()
+    cur = con.cursor()
+    patients = df[['surveyingUser', 'fname', 'lname', 'nickname' 'phone_number', 'email', 'householdId']].unique()
+    now = datetime.datetime.utcnow()
+    for patient_row in patients:
+        household_id = patient_row['householdId']
+        first_name = patient_row['fname']
+        last_name = patient_row['lname']
+        nick_name = patient_row['nickname']
+        phone_number = patient_row['phone_number']
+        email = patient_row['email']
+        uuid = md5_encode(first_name + last_name) 
+        household_uuid = md5_encode(household_id)
+        cur.execute(
+                f"""
+                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, created_at, updated_at, phone_number, email, household_id)
+                VALUES ({uuid}, {first_name}, {last_name}, {nick_name}, {now}, {now}, {phone_number}, {email}, {household_uuid})
+                """
+            )
+        
+    # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"patients": patients}),
+        "isBase64Encoded": False,
+    }
+
+
 def fill_tables():
     #df = restCall() #get this data from existing database
     get_community_dim(df)
     get_surveying_organization_dim(df)
     get_form_dim(df)
     get_users_dim(df)
+    get_household_dim(df)
+    get_patient_dim(df)
 
 
 def create_tables():
