@@ -13,7 +13,6 @@ on:
   push:
     branches:    
       - master
-      - dev
 jobs:
   cloudformation-deployer:
     runs-on: ubuntu-latest
