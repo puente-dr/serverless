@@ -288,16 +288,17 @@ def get_patient_dim(df):
     #What is the unique identifier for a patient? String name seems like a bad idea
     con = connection()
     cur = con.cursor()
-    patients = df[['surveyingUser', 'fname', 'lname', 'nickname' 'phone_number', 'email', 'householdId']].unique()
+    patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'nickname' 'phone_number', 'email', 'householdId']].unique()
     now = datetime.datetime.utcnow()
-    for patient_row in patients:
+    for patient_row in patients:\
+        patient_id = patient_row['objectId']
         household_id = patient_row['householdId']
         first_name = patient_row['fname']
         last_name = patient_row['lname']
         nick_name = patient_row['nickname']
         phone_number = patient_row['phone_number']
         email = patient_row['email']
-        uuid = md5_encode(first_name + last_name) 
+        uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         cur.execute(
                 f"""
@@ -319,6 +320,7 @@ def get_patient_dim(df):
         "body": json.dumps({"patients": patients}),
         "isBase64Encoded": False,
     }
+
 
 
 def fill_tables():
