@@ -114,10 +114,6 @@ def initialize_tables():
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         form_id UUID NOT NULL REFERENCES form_dim (uuid),
-        latitude NUMERIC(9,6) NOT NULL,
-        longtitude NUMERIC(9,6) NOT NULL,
-        city VARCHAR(255) NOT NULL,
-        region VARCHAR(255) NOT NULL,
         patient_id UUID NOT NULL REFERENCES patient_dim (uuid),
         household_id UUID NOT NULL REFERENCES household_dim (uuid)
     );
@@ -292,7 +288,6 @@ def get_household_dim(df):
     }
 
 def get_patient_dim(df):
-    #What is the unique identifier for a patient? String name seems like a bad idea
     con = connection()
     cur = con.cursor()
     patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'sex', 'nickname' 'phone_number', 'email', 'householdId']].unique()
@@ -329,6 +324,11 @@ def get_patient_dim(df):
         "isBase64Encoded": False,
     }
 
+def get_question_dim(df):
+    pass
+
+def get_survey_fact(df):
+    pass
 
 
 def fill_tables():
@@ -339,6 +339,8 @@ def fill_tables():
     get_users_dim(df)
     get_household_dim(df)
     get_patient_dim(df)
+    get_question_dim(df)
+    get_survey_fact(df)
 
 
 def create_tables():
