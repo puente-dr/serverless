@@ -51,6 +51,8 @@ def initialize_tables():
     CREATE TABLE community_dim (
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(255) NOT NULL,
+        city VARCHAR(255),
+        region VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
@@ -136,14 +138,18 @@ def initialize_tables():
 def get_community_dim(df):
     con = connection()
     cur = con.cursor()
-    communities = df['communityname'].unique()
+    communities = df[['communityname', 'city', 'region']].unique()
     now = datetime.datetime.utcnow()
-    for community in communities:
+    for community_row in communities:
+        community = community_row['communityname']
+        city = community_row['city']
+        region = community_row['region']
         uuid = md5_encode(community)
+
         cur.execute(
                 f"""
-                INSERT INTO community_dim (uuid, name, created_at, updated_at)
-                VALUES ({uuid}, {community}, {now}, {now})
+                INSERT INTO community_dim (uuid, name, city, region, created_at, updated_at)
+                VALUES ({uuid}, {community}, {city}, {region}, {now}, {now})
                 """
             )
         
