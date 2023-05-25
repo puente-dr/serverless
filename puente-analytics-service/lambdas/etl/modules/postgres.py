@@ -73,6 +73,7 @@ def initialize_tables():
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
         nick_name VARCHAR(255), 
+        sex VARCHAR(255),
         phone_number VARCHAR(255),
         email VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -288,7 +289,7 @@ def get_patient_dim(df):
     #What is the unique identifier for a patient? String name seems like a bad idea
     con = connection()
     cur = con.cursor()
-    patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'nickname' 'phone_number', 'email', 'householdId']].unique()
+    patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'sex', 'nickname' 'phone_number', 'email', 'householdId']].unique()
     now = datetime.datetime.utcnow()
     for patient_row in patients:\
         patient_id = patient_row['objectId']
@@ -296,14 +297,15 @@ def get_patient_dim(df):
         first_name = patient_row['fname']
         last_name = patient_row['lname']
         nick_name = patient_row['nickname']
+        sex = patient_row['sex']
         phone_number = patient_row['phone_number']
         email = patient_row['email']
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         cur.execute(
                 f"""
-                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, created_at, updated_at, phone_number, email, household_id)
-                VALUES ({uuid}, {first_name}, {last_name}, {nick_name}, {now}, {now}, {phone_number}, {email}, {household_uuid})
+                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, sex, created_at, updated_at, phone_number, email, household_id)
+                VALUES ({uuid}, {first_name}, {last_name}, {nick_name}, {sex}, {now}, {now}, {phone_number}, {email}, {household_uuid})
                 """
             )
         
