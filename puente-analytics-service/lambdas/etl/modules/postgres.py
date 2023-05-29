@@ -88,6 +88,7 @@ def initialize_tables():
     CREATE TABLE form_dim (
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(255) NOT NULL,
+        description VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
@@ -166,14 +167,19 @@ def get_community_dim(df):
 def get_form_dim(df):
     con = connection()
     cur = con.cursor()
-    forms = df['form'].unique()
+    forms = df[['objectId', 'name', 'description', 'createdAt', 'updatedAt']].unique()
     now = datetime.datetime.utcnow()
-    for form in forms:
+    for form_row in forms:
+        form = form_row['objectId']
+        name = form_row['name']
+        description = form_row['description']
+        created_at = form_row['createdAt']
+        updated_at = form_row['updatedAt']
         uuid = md5_encode(form)
         cur.execute(
                 f"""
-                INSERT INTO form_dim (uuid, name, created_at, updated_at)
-                VALUES ({uuid}, {form}, {now}, {now})
+                INSERT INTO form_dim (uuid, name, description, created_at, updated_at)
+                VALUES ({uuid}, {name}, {description}, {created_at}, {updated_at})
                 """
             )
         
