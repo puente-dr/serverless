@@ -89,6 +89,7 @@ def initialize_tables():
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(255) NOT NULL,
         description VARCHAR(255),
+        is_custom_form BOOLEAN NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
@@ -98,6 +99,8 @@ def initialize_tables():
     CREATE TABLE question_dim (
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         question VARCHAR(255) NOT NULL,
+        field_type VARACHAR(255) NOT NULL,
+        options TEXT[],
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         form_id UUID NOT NULL REFERENCES form_dim (uuid)
@@ -129,8 +132,6 @@ def initialize_tables():
     # Close the database connection and cursor
     cur.close()
     conn.close()
-
-#query("SELECT * FROM information_schema.tables")
 
 def get_community_dim(df):
     con = connection()
@@ -167,19 +168,20 @@ def get_community_dim(df):
 def get_form_dim(df):
     con = connection()
     cur = con.cursor()
-    forms = df[['objectId', 'name', 'description', 'createdAt', 'updatedAt']].unique()
+    forms = df[['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt']].unique()
     now = datetime.datetime.utcnow()
     for form_row in forms:
         form = form_row['objectId']
         name = form_row['name']
         description = form_row['description']
+        is_custom_form = form_row['customForm']
         created_at = form_row['createdAt']
         updated_at = form_row['updatedAt']
         uuid = md5_encode(form)
         cur.execute(
                 f"""
-                INSERT INTO form_dim (uuid, name, description, created_at, updated_at)
-                VALUES ({uuid}, {name}, {description}, {created_at}, {updated_at})
+                INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
+                VALUES ({uuid}, {name}, {description}, {is_custom_form}, {created_at}, {updated_at})
                 """
             )
         
@@ -331,8 +333,31 @@ def get_patient_dim(df):
     }
 
 def get_question_dim(df):
-    pass
+    con = connection()
+    cur = con.cursor()
+    forms = df[['objectId', 'fields', 'createdAt', 'updatedAt']].unique()
+    for form_row in forms:
+        form = form_row['objectId']
+        form_created_at = form_row['createdAt']
+        form_updated_at = form_row['updatedAt']
+        form_id = md5_encode(form)
 
+        question_list = form_row['fields']
+        for question in question_list:
+            uuid = question['id']
+            field_type = question['fieldType']
+            question = question['label']
+            #note sure the best way to handle this
+            if field_type in ['select', 'selectMulti']:
+                options = question['options']
+            else:
+                options = None
+            cur.execute(
+                f"""
+                INSERT INTO question_dim (uuid, question, field_type, options, created_at, updated_at, form_id)
+                VALUES ({uuid}, {question}, {field_type}, {options}, {form_created_at}, {form_updated_at}, {form_id})
+                """
+            )
 def get_survey_fact(df):
     pass
 
