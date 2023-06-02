@@ -13,6 +13,11 @@ PG_DATABASE = os.environ.get('PG_DATABASE')
 PG_USERNAME = os.environ.get('PG_USERNAME')
 PG_PASSWORD = os.environ.get('PG_PASSWORD')
 
+NOSQL_TABLES = {
+    'HistoryEnvironmentalHealth': 'Marketplace form for questions related to patients environment',
+    'EvaluationMedical': 'Marketplace form for questions related to patients current medical health'
+}
+
 def connection():
     conn = psycopg2.connect(
         host=PG_HOST,
@@ -100,6 +105,7 @@ def initialize_tables():
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         question VARCHAR(255) NOT NULL,
         field_type VARACHAR(255) NOT NULL,
+        formik_key VARCHAR(255),
         options TEXT[],
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -166,6 +172,7 @@ def get_community_dim(df):
     }
 
 def get_form_dim(df):
+    #this comes from formspecificationsv2
     con = connection()
     cur = con.cursor()
     forms = df[['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt']].unique()
@@ -276,7 +283,7 @@ def get_household_dim(df):
         community = md5_encode(community_name)
         cur.execute(
                 f"""
-                INSERT INTO household_dim (uuid, latitude, longtidue, created_at, updated_at, community_id)
+                INSERT INTO household_dim (uuid, latitude, longitude, created_at, updated_at, community_id)
                 VALUES ({uuid}, {lat}, {lon}, {now}, {now}, {community})
                 """
             )
@@ -296,6 +303,7 @@ def get_household_dim(df):
     }
 
 def get_patient_dim(df):
+    #this data comes from surveyfact
     con = connection()
     cur = con.cursor()
     patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'sex', 'nickname' 'phone_number', 'email', 'householdId']].unique()
@@ -333,6 +341,7 @@ def get_patient_dim(df):
     }
 
 def get_question_dim(df):
+    #this comes from formspecificationsv2
     con = connection()
     cur = con.cursor()
     forms = df[['objectId', 'fields', 'createdAt', 'updatedAt']].unique()
@@ -346,6 +355,7 @@ def get_question_dim(df):
         for question in question_list:
             uuid = question['id']
             field_type = question['fieldType']
+            formik_key = question[ "formikKey"]
             question = question['label']
             #note sure the best way to handle this
             if field_type in ['select', 'selectMulti']:
@@ -354,16 +364,105 @@ def get_question_dim(df):
                 options = None
             cur.execute(
                 f"""
-                INSERT INTO question_dim (uuid, question, field_type, options, created_at, updated_at, form_id)
-                VALUES ({uuid}, {question}, {field_type}, {options}, {form_created_at}, {form_updated_at}, {form_id})
+                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                VALUES ({uuid}, {question}, {field_type}, {formik_key}, {options}, {form_created_at}, {form_updated_at}, {form_id})
                 """
             )
-def get_survey_fact(df):
+
+            # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"questions": question_list}),
+        "isBase64Encoded": False,
+    }
+
+def add_nosql_to_forms(name, description, now):
+    
+    uuid = md5_encode(name)
+
+    con = connection()
+    cur = con.cursor()
+    cur.execute(
+                f"""
+                INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
+                VALUES ({uuid}, {name}, {description}, {False}, {now}, {now})
+                """
+            )
+        
+    # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+def ingest_nosql_table_questions(nosql_table, table_name):
+    
+    con = connection()
+    cur = con.cursor()
+
+    now = datetime.datetime.now()
+
+    form_id = md5_encode(table_name)
+
+    id_cols = [
+        'objectId',
+        'ACL',
+        'client',
+        'createdAt',
+        'updatedAt',
+        'parseParentClassObjectIdOffline',
+        'phoneOS',
+        'surveyingUser',
+        'appVersion',
+        'surveyingOrganization',
+        'parseUser'
+    ]
+
+    nosql_table_questions = [col for col in nosql_table.columns if col not in id_cols]
+    for question_name in nosql_table_questions:
+        uuid = md5_encode(question_name)
+        cur.execute(
+                f"""
+                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                VALUES ({uuid}, {question_name}, {field_type}, {formik_key}, {options}, {now}, {now}, {form_id})
+                """
+            )
+
+            # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"questions": nosql_table_questions}),
+        "isBase64Encoded": False,
+    }
+    
+def get_survey_fact(env_df):
+    env_df_questions = env_df.melt(id_vars=id_cols, var_name='question', value_name='answer')
+
+    env_df['community_id'] = env_df['communityname'].apply(md5_encode)
+    env_df['patient_id'] = env_df['client'].apply(md5_encode)
+    env_df['household_id'] = env_df['householdId'].apply(md5_encode)
+    env_df['surveyorg_id'] = env_df['surveyingOrganization'].apply(md5_encode)
+    env_df['user_id'] = env_df['surveryingUser'].apply(md5_encode)
     pass
 
 
 def fill_tables():
-    #df = restCall() #get this data from existing database
+    #survey_df = restCall() #get this data from existing database
     get_community_dim(df)
     get_surveying_organization_dim(df)
     get_form_dim(df)
@@ -371,6 +470,11 @@ def fill_tables():
     get_household_dim(df)
     get_patient_dim(df)
     get_question_dim(df)
+
+    for table_name, table_desc in NOSQL_TABLES.items():
+        #rest call here to get appropriate table
+        add_nosql_to_forms(table_name, table_desc)
+        ingest_nosql_table_questions(nosql_df)
     get_survey_fact(df)
 
 
