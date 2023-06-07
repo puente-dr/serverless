@@ -3,9 +3,44 @@ import psycopg2
 import datetime
 import json
 
+#with open("survey_data_config.json", 'r') as j:
+#     contents = json.loads(j.read())
+#     print(contents)
+#print(os.getcwd())
+#survey_config = json.loads("./survey_data_config.json")
+#env_config = json.loads('env_data_config.json')
+
 import hashlib
+
+#survey_config
+
+def to_camel_case(text):
+    s = text.replace("-", " ").replace("_", " ")
+    s = s.split()
+    if len(text) == 0:
+        return text
+    return s[0] + ''.join(i.capitalize() for i in s[1:])
+
 def md5_encode(s):
     return hashlib.md5(s.encode('utf-8')).hexdigest()
+
+def parse_json_config(json_path):
+    with open(json_path, 'r') as j:
+        questions = json.loads(j.read())
+        question_values_list = []
+        for question in questions:
+            formikkey = question['formikKey']
+            uuid = md5_encode(formikkey)
+            field_type = question['fieldType']
+            if 'options' in question.keys():
+                options = [option['value'] for option in question['options']]
+            else:
+                options = None
+
+            question_values = (uuid, formikkey, formikkey, field_type, options)
+            question_values_list.append(question_values)
+
+    return question_values_list
 
 PG_HOST = os.environ.get('PG_HOST')
 PG_PORT = os.environ.get('PG_PORT')
@@ -15,7 +50,14 @@ PG_PASSWORD = os.environ.get('PG_PASSWORD')
 
 NOSQL_TABLES = {
     'HistoryEnvironmentalHealth': 'Marketplace form for questions related to patients environment',
-    'EvaluationMedical': 'Marketplace form for questions related to patients current medical health'
+    'EvaluationMedical': 'Marketplace form for questions related to patients current medical health',
+    'Vitals': "Marketplace form for questions related to patients' vitals"
+}
+
+CONFIGS = {
+    "HistoryEnvironmentalHealth": "env_health_config.json",
+    "EvaluationMedical": "eval_medical_config.json",
+    "Vitals": "vitals_config.json"
 }
 
 def connection():
@@ -308,7 +350,7 @@ def get_patient_dim(df):
     cur = con.cursor()
     patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'sex', 'nickname' 'phone_number', 'email', 'householdId']].unique()
     now = datetime.datetime.utcnow()
-    for patient_row in patients:\
+    for patient_row in patients:
         patient_id = patient_row['objectId']
         household_id = patient_row['householdId']
         first_name = patient_row['fname']
@@ -403,6 +445,29 @@ def add_nosql_to_forms(name, description, now):
     cur.close()
     con.close()
 
+def ingest_nosql_configs(configs):
+    con = connection()
+    cur = con.cursor()
+    for table_name, config_path in configs.items():
+        form_id = md5_encode(table_name)
+        to_insert = parse_json_config(config_path)
+        now = datetime.datetime.now()
+        for question in to_insert:
+            uuid, question, field_type, formik_key, options = question
+            cur.execute(
+                f"""
+                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                VALUES ({uuid}, {question}, {field_type}, {formik_key}, {options}, {now}, {now}, {form_id})
+                """
+            )
+
+    # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
 def ingest_nosql_table_questions(nosql_table, table_name):
     
     con = connection()
@@ -429,6 +494,7 @@ def ingest_nosql_table_questions(nosql_table, table_name):
     nosql_table_questions = [col for col in nosql_table.columns if col not in id_cols]
     for question_name in nosql_table_questions:
         uuid = md5_encode(question_name)
+        formik_key = to_camel_case(question_name)
         cur.execute(
                 f"""
                 INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
