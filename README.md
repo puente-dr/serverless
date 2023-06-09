@@ -1,8 +1,8 @@
-# Puente's Lambdas
+# Puente's Cloud Infrastructure
 
 <!-- <img align="right" width="300" src="https://s3-us-west-2.amazonaws.com/assets.site.serverless.com/email/sls-getting-started.gif" /> -->
 
-A collection of ready-to-deploy lambda services.
+A collection of AWS orchestration
 
 ## Table of Contents
 <details>
@@ -19,7 +19,7 @@ A collection of ready-to-deploy lambda services.
 
 <!-- If you are new to serverless, we recommend getting started with by creating an HTTP API Endpoint in [NodeJS](https://github.com/serverless/examples/tree/master/aws-node-simple-http-endpoint), [Python](https://github.com/serverless/examples/tree/master/aws-python-simple-http-endpoint), [Java](https://github.com/serverless/examples/tree/master/aws-java-simple-http-endpoint), or [Golang](https://github.com/serverless/examples/tree/master/aws-golang-simple-http-endpoint). -->
 
-## Lambdas
+## Infra
 
 Each lambda contains a `README.md` with an explanation about the service and it's use cases.
 
