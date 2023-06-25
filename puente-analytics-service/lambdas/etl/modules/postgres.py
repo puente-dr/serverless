@@ -14,6 +14,106 @@ import hashlib
 
 #survey_config
 
+import json
+import os
+import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+import requests
+from pandas import json_normalize
+
+
+def restCall(
+    specifier, custom_form_id, url="https://parseapi.back4app.com/classes/"
+):
+    """
+    Parameters
+    ----------
+    specifier: string, required
+        Parse model to query
+
+    custom_form_id: string, not required
+        Custom form object id
+
+    url: string, required
+        Parse endpoint
+    Returns
+    ------
+    Pandas dataframe with query results
+
+    """
+
+    #
+    # Build Request URL, Headers, and Parameters
+    #
+    combined_url = url + specifier
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-Parse-Application-Id": APP_ID,
+        "X-Parse-REST-API-Key": REST_API_KEY,
+    }
+
+    common_params = {
+        "order": "-updatedAt",
+        "limit": 200000,
+    }
+
+    params = dict()
+
+    if specifier != "FormResults" and specifier != "FormAssetResults":
+        params = {
+            **common_params,
+        }
+    else:
+        # custom forms need to ensure that the correct custom form results are returned
+        params = {
+            **common_params,
+            "where": {json.dumps({
+                "formSpecificationsId": {"$in": [custom_form_id]}}
+            )}
+        }
+
+    #
+    # MAKE REST API CALL
+    #
+    response = requests.get(
+        combined_url,
+        params=params,
+        headers=headers
+    )
+    response.raise_for_status()
+
+    json_obj = response.json()
+    print('json_obj')
+    print(json_obj)
+    # normalize (ie flatten) data, turns it into a pandas df
+    normalized = json_normalize(json_obj["results"])
+
+    # # join non surveyData forms to surveyData
+    # if specifier != "SurveyData" and specifier != "Assets":
+    #     combined_url = (
+    #         url + "SurveyData" if specifier != "FormAssetResults" else url + "Assets"
+    #     )
+    #     params = {
+    #         **common_params,
+    #     }
+    #     response_primary = requests.get(combined_url, params=params, headers=headers)
+    #     json_obj_primary = response_primary.json()
+    #     normalized_primary = json_normalize(json_obj_primary["results"])
+    #     normalized = normalized.rename(
+    #         columns={
+    #             "objectId": "objectIdSupplementary",
+    #             "client.objectId": "objectId",
+    #             "surveyingUser": "surveyingUserSupplementary",
+    #             "surveyingOrganization": "surveyingOrganizationSupplementary",
+    #             "createdAt": "createdAtSupplementary",
+    #         }
+    #     )
+
+    #     return normalized_primary, normalized
+
+    return normalized
+
 def to_camel_case(text):
     s = text.replace("-", " ").replace("_", " ")
     s = s.split()
@@ -42,11 +142,22 @@ def parse_json_config(json_path):
 
     return question_values_list
 
-PG_HOST = os.environ.get('PG_HOST')
-PG_PORT = os.environ.get('PG_PORT')
-PG_DATABASE = os.environ.get('PG_DATABASE')
-PG_USERNAME = os.environ.get('PG_USERNAME')
-PG_PASSWORD = os.environ.get('PG_PASSWORD')
+# PG_HOST = os.environ.get('PG_HOST')
+# PG_PORT = os.environ.get('PG_PORT')
+# PG_DATABASE = os.environ.get('PG_DATABASE')
+# PG_USERNAME = os.environ.get('PG_USERNAME')
+# PG_PASSWORD = os.environ.get('PG_PASSWORD')
+
+with open("../env.json") as file:
+    env = json.load(file)["AnalyticsLambdaFunctionETL"]
+
+PG_HOST = env.get('PG_HOST')
+PG_PORT = env.get('PG_PORT')
+PG_DATABASE = env.get('PG_DATABASE')
+PG_USERNAME = env.get('PG_USERNAME')
+PG_PASSWORD = env.get('PG_PASSWORD')
+APP_ID = env.get('APP_ID')
+REST_API_KEY = env.get('REST_API_KEY')
 
 NOSQL_TABLES = {
     'HistoryEnvironmentalHealth': 'Marketplace form for questions related to patients environment',
@@ -60,6 +171,13 @@ CONFIGS = {
     "Vitals": "vitals_config.json"
 }
 
+def unique_combos(df, col_list):
+    df[col_list] = df[col_list].apply(lambda x: x.str.strip())
+    return df.groupby(col_list).size().reset_index()[col_list]
+
+def coalesce_pkey(val_df, pkey):
+    return val_df.groupby(pkey).max().reset_index()
+
 def connection():
     conn = psycopg2.connect(
         host=PG_HOST,
@@ -69,25 +187,46 @@ def connection():
     )
     return conn
 
+
+def drop_tables():
+    #be very sure about running this lol
+    conn = connection()
+    cur = conn.cursor()
+    tables = ['surveying_organization_dim', 'users_dim', 'community_dim', 'household_dim', 'patient_dim', "question_dim", 'form_dim', 'survey_fact']
+    for table in tables:
+       cur.execute(f"DROP TABLE {table} CASCADE")
+       conn.commit()
+
+    cur.close()
+    conn.close()
+
+#drop_tables()
+
+# cur.execute("select * from information_schema.tables where table_schema = 'public'")
+# mobile_records = cur.fetchall()
+# print(mobile_records)
+
 def initialize_tables():
     conn = connection()
     cur = conn.cursor()
     users_q = f"""
     CREATE TABLE IF NOT EXISTS users_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
+        user_name VARCHAR(255) NOT NULL,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         email VARCHAR(255),
         phone_number VARCHAR(255),
+        role VARCHAR(255),
         suveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid)
     );
     """
 
     surveying_org_q = f"""
     CREATE TABLE surveying_organization_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -96,7 +235,7 @@ def initialize_tables():
 
     community_q = f"""
     CREATE TABLE community_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         city VARCHAR(255),
         region VARCHAR(255),
@@ -107,7 +246,7 @@ def initialize_tables():
 
     household_q = f"""
     CREATE TABLE household_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         latitude NUMERIC(9,6) NOT NULL,
         longtitude NUMERIC(9,6) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -118,10 +257,10 @@ def initialize_tables():
 
     patient_q = f"""
     CREATE TABLE patient_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
-        nick_name VARCHAR(255), 
+        nick_name VARCHAR(255),
         sex VARCHAR(255),
         phone_number VARCHAR(255),
         email VARCHAR(255),
@@ -133,7 +272,7 @@ def initialize_tables():
 
     form_q = f"""
     CREATE TABLE form_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description VARCHAR(255),
         is_custom_form BOOLEAN NOT NULL,
@@ -144,9 +283,9 @@ def initialize_tables():
 
     question_q = f"""
     CREATE TABLE question_dim (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         question VARCHAR(255) NOT NULL,
-        field_type VARACHAR(255) NOT NULL,
+        field_type VARCHAR(255) NOT NULL,
         formik_key VARCHAR(255),
         options TEXT[],
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -157,7 +296,7 @@ def initialize_tables():
 
     survey_fact_q = f"""
     CREATE TABLE survey_fact (
-        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        uuid UUID PRIMARY KEY,
         surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid),
         surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
         community_id UUID NOT NULL REFERENCES community_dim (uuid),
@@ -172,7 +311,10 @@ def initialize_tables():
     """
 
     create_qs = [surveying_org_q, users_q, community_q, household_q, patient_q, form_q, question_q, survey_fact_q]
-    for q in create_qs:
+    q_names = ['survey_org', 'users', 'comm', 'house', 'patient', 'form', 'question', 'survey_fact']
+    for q, name in zip(create_qs, q_names):
+        print('query:')
+        print(name)
         cur.execute(q)
         # Commit the changes to the database
         conn.commit()
@@ -184,21 +326,30 @@ def initialize_tables():
 def get_community_dim(df):
     con = connection()
     cur = con.cursor()
-    communities = df[['communityname', 'city', 'region']].unique()
+    communities = unique_combos(df, ['communityname', 'city', 'region'])
+    communities = coalesce_pkey(communities, 'communityname')
     now = datetime.datetime.utcnow()
-    for community_row in communities:
-        community = community_row['communityname']
-        city = community_row['city']
-        region = community_row['region']
+    for i, community_row in communities.iterrows():
+        print('community')
+        print(community_row)
+        community = community_row.get('communityname')
+        city = community_row.get('city')
+        region = community_row.get('region')
+    
+        if (community is None)|(community in ["", " "]):
+            print('continuing')
+            continue
+
         uuid = md5_encode(community)
 
         cur.execute(
                 f"""
                 INSERT INTO community_dim (uuid, name, city, region, created_at, updated_at)
-                VALUES ({uuid}, {community}, {city}, {region}, {now}, {now})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, community, city, region, now, now)
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -209,7 +360,7 @@ def get_community_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"communities": communities}),
+        "body": json.dumps({"communities": communities.to_json()}),
         "isBase64Encoded": False,
     }
 
@@ -217,23 +368,28 @@ def get_form_dim(df):
     #this comes from formspecificationsv2
     con = connection()
     cur = con.cursor()
-    forms = df[['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt']].unique()
+    forms = unique_combos(df, ['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt'])
+    forms = coalesce_pkey(forms, 'objectId')
+    #forms = df[['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt']].unique()
     now = datetime.datetime.utcnow()
-    for form_row in forms:
-        form = form_row['objectId']
-        name = form_row['name']
-        description = form_row['description']
-        is_custom_form = form_row['customForm']
-        created_at = form_row['createdAt']
-        updated_at = form_row['updatedAt']
+    for i, form_row in forms.iterrows():
+        form = form_row.get('objectId')
+        name = form_row.get('name')
+        description = form_row.get('description')
+        is_custom_form = form_row.get('customForm')
+        created_at = form_row.get('createdAt')
+        updated_at = form_row.get('updatedAt')
+        if (form is None)|(form in ['', " "]):
+            continue
         uuid = md5_encode(form)
         cur.execute(
                 f"""
                 INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
-                VALUES ({uuid}, {name}, {description}, {is_custom_form}, {created_at}, {updated_at})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, name, description, is_custom_form, created_at, updated_at)
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -244,7 +400,7 @@ def get_form_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"forms": forms}),
+        "body": json.dumps({"forms": forms.to_json()}),
         "isBase64Encoded": False,
     }
 
@@ -254,14 +410,19 @@ def get_surveying_organization_dim(df):
     survey_orgs = df['surveyingOrganization'].unique()
     now = datetime.datetime.utcnow()
     for survey_org in survey_orgs:
+        if (survey_org is None)|(survey_org in ['', ' ']):
+            continue
+        print('survey org')
+        print(survey_org)
         uuid = md5_encode(survey_org)
         cur.execute(
                 f"""
                 INSERT INTO surveying_organization_dim (uuid, name, created_at, updated_at)
-                VALUES ({uuid}, {survey_org}, {now}, {now})
-                """
+                VALUES (%s, %s, %s, %s)
+                """,
+                (uuid, survey_org, now, now)
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -272,31 +433,39 @@ def get_surveying_organization_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"surveying_organizations": survey_orgs}),
+        "body": json.dumps({"surveying_organizations": survey_orgs.tolist()}),
         "isBase64Encoded": False,
     }
 
 def get_users_dim(df):
     con = connection()
     cur = con.cursor()
-    users = df[['surveyingUser', 'fname', 'lname', 'phone_number', 'email', 'surveyingOrganization']].unique()
-    now = datetime.datetime.utcnow()
-    for user_row in users:
-        user = user_row['surveyingUser']
-        survey_org = user_row['SurveyingOrganization']
-        first_name = user_row['fname']
-        last_name = user_row['lname']
-        phone_number = user_row['phone_number']
-        email = user_row['email']
+    users = unique_combos(df, ['objectId', 'username', 'firstname', 'lastname', 'phonenumber', 'email', 'role' 'createdAt', 'updatedAt', 'organization'])
+    users = coalesce_pkey(users, 'objectId')
+    #users = df[['surveyingUser', 'fname', 'lname', 'phone_number', 'email', 'surveyingOrganization']].unique()
+    for i, user_row in users.iterrows():
+        user = user_row.get('objectId')
+        survey_org = user_row.get('organization')
+        user_name = user_row.get('user_name')
+        first_name = user_row.get('firstname')
+        last_name = user_row.get('lastname')
+        phone_number = user_row.get('phonenumber')
+        email = user_row.get('email')
+        role = user_row.get('role')
+        created_at = user_row.get('createdAt')
+        updated_at = user_row.get('updatedAt')
+        if (user is None)|(survey_org is None)|(user in ['', ' '])|(survey_org in ['', ' ']):
+            continue
         uuid = md5_encode(user)
         survey_org = md5_encode(survey_org)
         cur.execute(
                 f"""
-                INSERT INTO users_dim (uuid, first_name, last_name, created_at, updated_at, phone_number, email, surveying_organization_id)
-                VALUES ({uuid}, {first_name}, {last_name}, {now}, {now}, {phone_number}, {email}, {survey_org})
-                """
+                INSERT INTO users_dim (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, email, role, surveying_organization_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, email, role, survey_org)
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -307,7 +476,7 @@ def get_users_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"users": users}),
+        "body": json.dumps({"users": users.to_json()}),
         "isBase64Encoded": False,
     }
 
@@ -329,7 +498,7 @@ def get_household_dim(df):
                 VALUES ({uuid}, {lat}, {lon}, {now}, {now}, {community})
                 """
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -367,7 +536,7 @@ def get_patient_dim(df):
                 VALUES ({uuid}, {first_name}, {last_name}, {nick_name}, {sex}, {now}, {now}, {phone_number}, {email}, {household_uuid})
                 """
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -426,7 +595,7 @@ def get_question_dim(df):
     }
 
 def add_nosql_to_forms(name, description, now):
-    
+
     uuid = md5_encode(name)
 
     con = connection()
@@ -437,7 +606,7 @@ def add_nosql_to_forms(name, description, now):
                 VALUES ({uuid}, {name}, {description}, {False}, {now}, {now})
                 """
             )
-        
+
     # Commit the changes to the database
     con.commit()
 
@@ -469,7 +638,7 @@ def ingest_nosql_configs(configs):
     con.close()
 
 def ingest_nosql_table_questions(nosql_table, table_name):
-    
+
     con = connection()
     cur = con.cursor()
 
@@ -515,7 +684,7 @@ def ingest_nosql_table_questions(nosql_table, table_name):
         "body": json.dumps({"questions": nosql_table_questions}),
         "isBase64Encoded": False,
     }
-    
+
 def get_survey_fact(env_df):
     env_df_questions = env_df.melt(id_vars=id_cols, var_name='question', value_name='answer')
 
@@ -528,22 +697,31 @@ def get_survey_fact(env_df):
 
 
 def fill_tables():
-    #survey_df = restCall() #get this data from existing database
-    get_community_dim(df)
-    get_surveying_organization_dim(df)
-    get_form_dim(df)
-    get_users_dim(df)
-    get_household_dim(df)
-    get_patient_dim(df)
-    get_question_dim(df)
+    survey_df = restCall('SurveyData', None) #get this data from existing database
+    print('survey df')
+    print(survey_df)
+    get_community_dim(survey_df)
+    get_surveying_organization_dim(survey_df)
+    #get_form_dim(survey_df)
+    users_df = restCall('User', None)
+    print('users df')
+    print(users_df)
+    get_users_dim(users_df)
+    get_household_dim(survey_df)
+    get_patient_dim(survey_df)
+    get_question_dim(survey_df)
 
-    for table_name, table_desc in NOSQL_TABLES.items():
-        #rest call here to get appropriate table
-        add_nosql_to_forms(table_name, table_desc)
-        ingest_nosql_table_questions(nosql_df)
-    get_survey_fact(df)
+    # for table_name, table_desc in NOSQL_TABLES.items():
+    #     #rest call here to get appropriate table
+    #     add_nosql_to_forms(table_name, table_desc)
+    #     ingest_nosql_table_questions(nosql_df)
+    # get_survey_fact(df)
 
 
 def create_tables():
     initialize_tables()
     fill_tables()
+
+drop_tables()
+initialize_tables()
+fill_tables()
