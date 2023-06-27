@@ -84,8 +84,8 @@ def restCall(
     response.raise_for_status()
 
     json_obj = response.json()
-    print('json_obj')
-    print(json_obj)
+    #print('json_obj')
+    #print(json_obj)
     # normalize (ie flatten) data, turns it into a pandas df
     normalized = json_normalize(json_obj["results"])
 
@@ -172,7 +172,9 @@ CONFIGS = {
 }
 
 def unique_combos(df, col_list):
-    df[col_list] = df[col_list].apply(lambda x: x.str.strip())
+    string_dtypes = df.convert_dtypes().select_dtypes("string")
+    strings_in_col_list = [col for col in col_list if col in string_dtypes]
+    df[strings_in_col_list] = df[strings_in_col_list].apply(lambda x: x.str.strip())
     return df.groupby(col_list).size().reset_index()[col_list]
 
 def coalesce_pkey(val_df, pkey):
@@ -248,7 +250,7 @@ def initialize_tables():
     CREATE TABLE household_dim (
         uuid UUID PRIMARY KEY,
         latitude NUMERIC(9,6) NOT NULL,
-        longtitude NUMERIC(9,6) NOT NULL,
+        longitude NUMERIC(9,6) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         community_id UUID NOT NULL REFERENCES community_dim (uuid)
@@ -262,8 +264,8 @@ def initialize_tables():
         last_name VARCHAR(255) NOT NULL,
         nick_name VARCHAR(255),
         sex VARCHAR(255),
+        age INT, 
         phone_number VARCHAR(255),
-        email VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         household_id UUID NOT NULL REFERENCES household_dim (uuid)
@@ -483,20 +485,26 @@ def get_users_dim(df):
 def get_household_dim(df):
     con = connection()
     cur = con.cursor()
-    households = df[['householdId', 'latitude', 'longtitude', 'communityname']].unique()
+    households = unique_combos(df, ['householdId', 'latitude', 'longitude', 'communityname'])
+    households = coalesce_pkey(households, 'householdId')
+    #households = df[['householdId', 'latitude', 'longtitude', 'communityname']].unique()
     now = datetime.datetime.utcnow()
-    for household_row in households:
-        household_id = household_row['householdId']
-        community_name = household_row['communityname']
-        lat = household_row['latitude']
-        lon = household_row['longitude']
+    for i, household_row in households.iterrows():
+        household_id = household_row.get('householdId')
+        community_name = household_row.get('communityname')
+        lat = household_row.get('latitude')
+        lon = household_row.get('longitude')
+        if (household_id is None)|(community_name is None)|(household_id in ['', ' '])|(community_name in ['', ' ']):
+            continue
         uuid = md5_encode(household_id)
         community = md5_encode(community_name)
+        print(uuid, lat, lon, now, community, community_name)
         cur.execute(
                 f"""
                 INSERT INTO household_dim (uuid, latitude, longitude, created_at, updated_at, community_id)
-                VALUES ({uuid}, {lat}, {lon}, {now}, {now}, {community})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, lat, lon, now, now, community)
             )
 
     # Commit the changes to the database
@@ -509,7 +517,7 @@ def get_household_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"households": households}),
+        "body": json.dumps({"households": households.to_json()}),
         "isBase64Encoded": False,
     }
 
@@ -517,24 +525,29 @@ def get_patient_dim(df):
     #this data comes from surveyfact
     con = connection()
     cur = con.cursor()
-    patients = df[['objectId', 'surveyingUser', 'fname', 'lname', 'sex', 'nickname' 'phone_number', 'email', 'householdId']].unique()
+    patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
+    patients = coalesce_pkey(patients, 'objectId')
+    #patients = df[].unique()
     now = datetime.datetime.utcnow()
-    for patient_row in patients:
-        patient_id = patient_row['objectId']
-        household_id = patient_row['householdId']
-        first_name = patient_row['fname']
-        last_name = patient_row['lname']
-        nick_name = patient_row['nickname']
-        sex = patient_row['sex']
-        phone_number = patient_row['phone_number']
-        email = patient_row['email']
+    for i, patient_row in patients.iterrows():
+        patient_id = patient_row.get('objectId')
+        household_id = patient_row.get('householdId')
+        first_name = patient_row.get('fname')
+        last_name = patient_row.get('lname')
+        nick_name = patient_row.get('nickname')
+        sex = patient_row.get('sex')
+        age = patient_row.get('age')
+        phone_number = patient_row.get('telephoneNumber')
+        if (patient_id is None)|(household_id is None)|(patient_id in ['', ' '])|(household_id in ['', ' ']):
+            continue
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         cur.execute(
                 f"""
-                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, sex, created_at, updated_at, phone_number, email, household_id)
-                VALUES ({uuid}, {first_name}, {last_name}, {nick_name}, {sex}, {now}, {now}, {phone_number}, {email}, {household_uuid})
-                """
+                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, sex, age, created_at, updated_at, phone_number, household_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, first_name, last_name, nick_name, sex, age, now, now, phone_number, household_uuid)
             )
 
     # Commit the changes to the database
@@ -547,7 +560,7 @@ def get_patient_dim(df):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"patients": patients}),
+        "body": json.dumps({"patients": patients.to_json()}),
         "isBase64Encoded": False,
     }
 
@@ -698,15 +711,15 @@ def get_survey_fact(env_df):
 
 def fill_tables():
     survey_df = restCall('SurveyData', None) #get this data from existing database
-    print('survey df')
-    print(survey_df)
+    #print('survey df')
+    #print(survey_df)
     get_community_dim(survey_df)
     get_surveying_organization_dim(survey_df)
     #get_form_dim(survey_df)
-    users_df = restCall('User', None)
-    print('users df')
-    print(users_df)
-    get_users_dim(users_df)
+    #users_df = restCall('User', None)
+    #print('users df')
+    #print(users_df)
+    #get_users_dim(users_df)
     get_household_dim(survey_df)
     get_patient_dim(survey_df)
     get_question_dim(survey_df)
