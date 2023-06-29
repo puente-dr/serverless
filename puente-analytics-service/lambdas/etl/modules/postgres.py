@@ -45,6 +45,17 @@ def restCall(
     #
     # Build Request URL, Headers, and Parameters
     #
+
+    common_params = {
+        "order": "-updatedAt",
+        "limit": 200000,
+    }
+    if specifier == 'User':
+        split_url = url.split("/")
+        url = "/".join(split_url[:len(split_url)-2]) + "/"
+        print('user url')
+        print(url)
+        common_params = {}
     combined_url = url + specifier
 
     headers = {
@@ -53,10 +64,7 @@ def restCall(
         "X-Parse-REST-API-Key": REST_API_KEY,
     }
 
-    common_params = {
-        "order": "-updatedAt",
-        "limit": 200000,
-    }
+    
 
     params = dict()
 
@@ -222,7 +230,7 @@ def initialize_tables():
         email VARCHAR(255),
         phone_number VARCHAR(255),
         role VARCHAR(255),
-        suveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid)
+        surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid)
     );
     """
 
@@ -716,10 +724,10 @@ def fill_tables():
     get_community_dim(survey_df)
     get_surveying_organization_dim(survey_df)
     #get_form_dim(survey_df)
-    #users_df = restCall('User', None)
-    #print('users df')
-    #print(users_df)
-    #get_users_dim(users_df)
+    users_df = restCall('User', None)
+    print('users df')
+    print(users_df)
+    get_users_dim(users_df)
     get_household_dim(survey_df)
     get_patient_dim(survey_df)
     get_question_dim(survey_df)
