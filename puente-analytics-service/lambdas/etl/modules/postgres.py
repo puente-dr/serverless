@@ -2,6 +2,7 @@ import os
 import psycopg2
 import datetime
 import json
+import numpy as np
 
 #with open("survey_data_config.json", 'r') as j:
 #     contents = json.loads(j.read())
@@ -23,7 +24,7 @@ from pandas import json_normalize
 
 
 def restCall(
-    specifier, custom_form_id, url="https://parseapi.back4app.com/classes/"
+    specifier, custom_form_id, url="https://parseapi.back4app.com/classes/" #url="https://puente.back4app.io/classes/" #
 ):
     """
     Parameters
@@ -48,19 +49,19 @@ def restCall(
 
     common_params = {
         "order": "-updatedAt",
-        "limit": 200000,
+        "limit": 500000,
     }
-    if specifier == 'User':
+    if specifier == 'users':
         split_url = url.split("/")
         url = "/".join(split_url[:len(split_url)-2]) + "/"
         print('user url')
         print(url)
-        common_params = {}
     combined_url = url + specifier
 
     headers = {
         "Content-Type": "application/json",
         "X-Parse-Application-Id": APP_ID,
+        "X-Parse-Master-Key": MASTER_KEY,
         "X-Parse-REST-API-Key": REST_API_KEY,
     }
 
@@ -96,6 +97,11 @@ def restCall(
     #print(json_obj)
     # normalize (ie flatten) data, turns it into a pandas df
     normalized = json_normalize(json_obj["results"])
+
+    #string_cols = normalized.select_dtypes(include=[object]).columns
+    #normalized[string_cols] = normalized[string_cols].apply(lambda x: x.str.strip())
+
+    #normalized.to_csv(os.getcwd()+'/test.csv')
 
     # # join non surveyData forms to surveyData
     # if specifier != "SurveyData" and specifier != "Assets":
@@ -166,6 +172,7 @@ PG_USERNAME = env.get('PG_USERNAME')
 PG_PASSWORD = env.get('PG_PASSWORD')
 APP_ID = env.get('APP_ID')
 REST_API_KEY = env.get('REST_API_KEY')
+MASTER_KEY = env.get('MASTER_KEY')
 
 NOSQL_TABLES = {
     'HistoryEnvironmentalHealth': 'Marketplace form for questions related to patients environment',
@@ -180,13 +187,14 @@ CONFIGS = {
 }
 
 def unique_combos(df, col_list):
-    string_dtypes = df.convert_dtypes().select_dtypes("string")
+    string_dtypes = df.select_dtypes(include=[object]).columns.tolist()
     strings_in_col_list = [col for col in col_list if col in string_dtypes]
     df[strings_in_col_list] = df[strings_in_col_list].apply(lambda x: x.str.strip())
-    return df.groupby(col_list).size().reset_index()[col_list]
+    unique_combos = df.groupby(col_list, dropna=False).size().reset_index()[col_list]
+    return unique_combos
 
 def coalesce_pkey(val_df, pkey):
-    return val_df.groupby(pkey).max().reset_index()
+    return val_df.groupby(pkey).first().reset_index()
 
 def connection():
     conn = psycopg2.connect(
@@ -227,7 +235,6 @@ def initialize_tables():
         last_name VARCHAR(255) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        email VARCHAR(255),
         phone_number VARCHAR(255),
         role VARCHAR(255),
         surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid)
@@ -284,7 +291,7 @@ def initialize_tables():
     CREATE TABLE form_dim (
         uuid UUID PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        description VARCHAR(255),
+        description VARCHAR(10000),
         is_custom_form BOOLEAN NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -380,7 +387,6 @@ def get_form_dim(df):
     cur = con.cursor()
     forms = unique_combos(df, ['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt'])
     forms = coalesce_pkey(forms, 'objectId')
-    #forms = df[['objectId', 'name', 'description', 'customForm', 'createdAt', 'updatedAt']].unique()
     now = datetime.datetime.utcnow()
     for i, form_row in forms.iterrows():
         form = form_row.get('objectId')
@@ -392,6 +398,10 @@ def get_form_dim(df):
         if (form is None)|(form in ['', " "]):
             continue
         uuid = md5_encode(form)
+        print(uuid)
+        print(name)
+        print(description)
+        print(is_custom_form)
         cur.execute(
                 f"""
                 INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
@@ -450,9 +460,8 @@ def get_surveying_organization_dim(df):
 def get_users_dim(df):
     con = connection()
     cur = con.cursor()
-    users = unique_combos(df, ['objectId', 'username', 'firstname', 'lastname', 'phonenumber', 'email', 'role' 'createdAt', 'updatedAt', 'organization'])
+    users = unique_combos(df, ['objectId', 'username', 'firstname', 'lastname', 'phonenumber', 'role', 'createdAt', 'updatedAt', 'organization'])
     users = coalesce_pkey(users, 'objectId')
-    #users = df[['surveyingUser', 'fname', 'lname', 'phone_number', 'email', 'surveyingOrganization']].unique()
     for i, user_row in users.iterrows():
         user = user_row.get('objectId')
         survey_org = user_row.get('organization')
@@ -460,20 +469,23 @@ def get_users_dim(df):
         first_name = user_row.get('firstname')
         last_name = user_row.get('lastname')
         phone_number = user_row.get('phonenumber')
-        email = user_row.get('email')
         role = user_row.get('role')
         created_at = user_row.get('createdAt')
         updated_at = user_row.get('updatedAt')
-        if (user is None)|(survey_org is None)|(user in ['', ' '])|(survey_org in ['', ' ']):
+        if (user is None)|(survey_org is None)|(user in ['', ' '])|(survey_org in ['', ' '])|(user_name is None):
             continue
+        print('users')
+        print(user)
+        print(user_name)
+        print(first_name, last_name)
         uuid = md5_encode(user)
         survey_org = md5_encode(survey_org)
         cur.execute(
                 f"""
-                INSERT INTO users_dim (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, email, role, surveying_organization_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO users_dim (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, role, surveying_organization_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, email, role, survey_org)
+                (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, role, survey_org)
             )
 
     # Commit the changes to the database
@@ -535,6 +547,9 @@ def get_patient_dim(df):
     cur = con.cursor()
     patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
     patients = coalesce_pkey(patients, 'objectId')
+    print('patients dtypes')
+    print(patients.dtypes)
+    df['age'] = df['age'].replace({'nan': None, '': None, ' ': None, np.nan: None})
     #patients = df[].unique()
     now = datetime.datetime.utcnow()
     for i, patient_row in patients.iterrows():
@@ -548,6 +563,7 @@ def get_patient_dim(df):
         phone_number = patient_row.get('telephoneNumber')
         if (patient_id is None)|(household_id is None)|(patient_id in ['', ' '])|(household_id in ['', ' ']):
             continue
+        print(patient_id, household_id, first_name, last_name, age, phone_number)
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         cur.execute(
@@ -576,29 +592,34 @@ def get_question_dim(df):
     #this comes from formspecificationsv2
     con = connection()
     cur = con.cursor()
-    forms = df[['objectId', 'fields', 'createdAt', 'updatedAt']].unique()
-    for form_row in forms:
-        form = form_row['objectId']
-        form_created_at = form_row['createdAt']
-        form_updated_at = form_row['updatedAt']
+    patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
+    patients = coalesce_pkey(patients, 'objectId')
+    forms = unique_combos(df, ['objectId', 'fields', 'createdAt', 'updatedAt'])
+    for i, form_row in forms.iterrows():
+        form = form_row.get('objectId')
+        form_created_at = form_row.get('createdAt')
+        form_updated_at = form_row.get('updatedAt')
+        if (form is None)|(form in ['', ' ']):
+            continue
         form_id = md5_encode(form)
 
-        question_list = form_row['fields']
+        question_list = form_row.get('fields')
         for question in question_list:
-            uuid = question['id']
-            field_type = question['fieldType']
-            formik_key = question[ "formikKey"]
-            question = question['label']
+            uuid = question.get('id')
+            field_type = question.get('fieldType')
+            formik_key = question.get("formikKey")
+            question = question.get('label')
             #note sure the best way to handle this
             if field_type in ['select', 'selectMulti']:
-                options = question['options']
+                options = question.get('options')
             else:
                 options = None
             cur.execute(
                 f"""
                 INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
-                VALUES ({uuid}, {question}, {field_type}, {formik_key}, {options}, {form_created_at}, {form_updated_at}, {form_id})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, 
+                (uuid, question, field_type, formik_key, options, form_created_at, form_updated_at, form_id)
             )
 
             # Commit the changes to the database
@@ -723,14 +744,19 @@ def fill_tables():
     #print(survey_df)
     get_community_dim(survey_df)
     get_surveying_organization_dim(survey_df)
-    #get_form_dim(survey_df)
-    users_df = restCall('User', None)
+    form_specs = restCall('FormSpecificationsV2', None)
+    print('form specss')
+    print(form_specs)
+    get_form_dim(form_specs)
+    users_df = restCall('users', None)
+    #users_df.to_csv('users_test.csv')
     print('users df')
     print(users_df)
+    print(users_df.columns)
     get_users_dim(users_df)
     get_household_dim(survey_df)
     get_patient_dim(survey_df)
-    get_question_dim(survey_df)
+    get_question_dim(form_specs)
 
     # for table_name, table_desc in NOSQL_TABLES.items():
     #     #rest call here to get appropriate table
