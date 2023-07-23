@@ -3,6 +3,9 @@ import psycopg2
 import datetime
 import json
 import numpy as np
+import pandas as pd
+
+from psycopg2.errors import ForeignKeyViolation
 
 #with open("survey_data_config.json", 'r') as j:
 #     contents = json.loads(j.read())
@@ -144,14 +147,15 @@ def parse_json_config(json_path):
         question_values_list = []
         for question in questions:
             formikkey = question['formikKey']
+            label = question['label']
             uuid = md5_encode(formikkey)
             field_type = question['fieldType']
             if 'options' in question.keys():
-                options = [option['value'] for option in question['options']]
+                options = [option.get('value') for option in question['options']]
             else:
                 options = None
 
-            question_values = (uuid, formikkey, formikkey, field_type, options)
+            question_values = (uuid, label, formikkey, field_type, options)
             question_values_list.append(question_values)
 
     return question_values_list
@@ -200,6 +204,7 @@ def connection():
     conn = psycopg2.connect(
         host=PG_HOST,
         database=PG_DATABASE,
+        port=PG_PORT,
         user=PG_USERNAME,
         password=PG_PASSWORD
     )
@@ -353,8 +358,9 @@ def get_community_dim(df):
         city = community_row.get('city')
         region = community_row.get('region')
     
-        if (community is None)|(community in ["", " "]):
+        if (community in [np.nan, None, "", " "])|(isinstance(community, float)):
             print('continuing')
+            #log the communities that have problems here
             continue
 
         uuid = md5_encode(community)
@@ -395,7 +401,8 @@ def get_form_dim(df):
         is_custom_form = form_row.get('customForm')
         created_at = form_row.get('createdAt')
         updated_at = form_row.get('updatedAt')
-        if (form is None)|(form in ['', " "]):
+        if form in [np.nan, None, '', " "]:
+            #log the bad forms here
             continue
         uuid = md5_encode(form)
         print(uuid)
@@ -430,7 +437,8 @@ def get_surveying_organization_dim(df):
     survey_orgs = df['surveyingOrganization'].unique()
     now = datetime.datetime.utcnow()
     for survey_org in survey_orgs:
-        if (survey_org is None)|(survey_org in ['', ' ']):
+        if survey_org in [np.nan, None, '', ' ']:
+            #log bad survey orgs here
             continue
         print('survey org')
         print(survey_org)
@@ -514,8 +522,9 @@ def get_household_dim(df):
         community_name = household_row.get('communityname')
         lat = household_row.get('latitude')
         lon = household_row.get('longitude')
-        if (household_id is None)|(community_name is None)|(household_id in ['', ' '])|(community_name in ['', ' ']):
+        if (household_id in ['', ' ', None, np.nan])|(community_name in ['', ' ', None, np.nan]):
             continue
+
         uuid = md5_encode(household_id)
         community = md5_encode(community_name)
         print(uuid, lat, lon, now, community, community_name)
@@ -545,11 +554,12 @@ def get_patient_dim(df):
     #this data comes from surveyfact
     con = connection()
     cur = con.cursor()
+    df['age'] = df['age'].replace({'nan': None, '': None, ' ': None, np.nan: None})
     patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
     patients = coalesce_pkey(patients, 'objectId')
     print('patients dtypes')
     print(patients.dtypes)
-    df['age'] = df['age'].replace({'nan': None, '': None, ' ': None, np.nan: None})
+    
     #patients = df[].unique()
     now = datetime.datetime.utcnow()
     for i, patient_row in patients.iterrows():
@@ -560,19 +570,28 @@ def get_patient_dim(df):
         nick_name = patient_row.get('nickname')
         sex = patient_row.get('sex')
         age = patient_row.get('age')
+        if age in ['11 meses']:
+            age = '0'
         phone_number = patient_row.get('telephoneNumber')
-        if (patient_id is None)|(household_id is None)|(patient_id in ['', ' '])|(household_id in ['', ' ']):
+        if (patient_id in ['', ' ', None, np.nan])|(household_id in ['', ' ', None, np.nan]):
             continue
         print(patient_id, household_id, first_name, last_name, age, phone_number)
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
-        cur.execute(
-                f"""
-                INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, sex, age, created_at, updated_at, phone_number, household_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (uuid, first_name, last_name, nick_name, sex, age, now, now, phone_number, household_uuid)
-            )
+        try:
+            cur.execute(
+                    f"""
+                    INSERT INTO patient_dim (uuid, first_name, last_name, nick_name, sex, age, created_at, updated_at, phone_number, household_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (uuid, first_name, last_name, nick_name, sex, age, now, now, phone_number, household_uuid)
+                )
+        except ForeignKeyViolation:
+            print('foreign key violation')
+            print(patient_id, household_id, household_uuid)
+            cur.execute("ROLLBACK")
+            continue
+            
 
     # Commit the changes to the database
     con.commit()
@@ -592,9 +611,12 @@ def get_question_dim(df):
     #this comes from formspecificationsv2
     con = connection()
     cur = con.cursor()
-    patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
-    patients = coalesce_pkey(patients, 'objectId')
-    forms = unique_combos(df, ['objectId', 'fields', 'createdAt', 'updatedAt'])
+
+    #grouping by fields returns nan for some reason??
+    unique_forms = unique_combos(df, ['objectId', 'createdAt', 'updatedAt'])
+    unique_forms = coalesce_pkey(unique_forms, 'objectId')
+    forms = unique_forms.merge(df[['objectId', 'fields', 'createdAt', 'updatedAt']], on=['objectId', 'createdAt', 'updatedAt'])
+    inserted_uuids = []
     for i, form_row in forms.iterrows():
         form = form_row.get('objectId')
         form_created_at = form_row.get('createdAt')
@@ -603,26 +625,44 @@ def get_question_dim(df):
             continue
         form_id = md5_encode(form)
 
+        print('form row')
+        print(form_row.index)
+        print(form_row)
+
         question_list = form_row.get('fields')
+        print('question list')
+        print(question_list)
+        if isinstance(question_list, float):
+            print('float questions list')
+            print(question_list)
+            continue
         for question in question_list:
             uuid = question.get('id')
             field_type = question.get('fieldType')
             formik_key = question.get("formikKey")
-            question = question.get('label')
+            question_label = question.get('label')
+            if (uuid in ['', ' ', None, np.nan])|(question_label in ['', ' ', None, np.nan]):
+                continue
             #note sure the best way to handle this
             if field_type in ['select', 'selectMulti']:
                 options = question.get('options')
+                options_list = [option['label'] for option in options]
             else:
-                options = None
-            cur.execute(
-                f"""
-                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """, 
-                (uuid, question, field_type, formik_key, options, form_created_at, form_updated_at, form_id)
-            )
+                options_list = None
 
-            # Commit the changes to the database
+            if uuid in inserted_uuids:
+                continue
+            else:
+                cur.execute(
+                    f"""
+                    INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, 
+                    (uuid, question_label, field_type, formik_key, options_list, form_created_at, form_updated_at, form_id)
+                )
+                inserted_uuids.append(uuid)
+
+    # Commit the changes to the database
     con.commit()
 
     # Close the database connection and cursor
@@ -645,8 +685,9 @@ def add_nosql_to_forms(name, description, now):
     cur.execute(
                 f"""
                 INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
-                VALUES ({uuid}, {name}, {description}, {False}, {now}, {now})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, name, description, False, now, now)
             )
 
     # Commit the changes to the database
@@ -679,7 +720,9 @@ def ingest_nosql_configs(configs):
     cur.close()
     con.close()
 
-def ingest_nosql_table_questions(nosql_table, table_name):
+def ingest_nosql_table_questions(table_name):
+
+    config = parse_json_config(CONFIGS[table_name])
 
     con = connection()
     cur = con.cursor()
@@ -688,29 +731,31 @@ def ingest_nosql_table_questions(nosql_table, table_name):
 
     form_id = md5_encode(table_name)
 
-    id_cols = [
-        'objectId',
-        'ACL',
-        'client',
-        'createdAt',
-        'updatedAt',
-        'parseParentClassObjectIdOffline',
-        'phoneOS',
-        'surveyingUser',
-        'appVersion',
-        'surveyingOrganization',
-        'parseUser'
-    ]
+    # id_cols = [
+    #     'objectId',
+    #     'ACL',
+    #     'client',
+    #     'createdAt',
+    #     'updatedAt',
+    #     'parseParentClassObjectIdOffline',
+    #     'phoneOS',
+    #     'surveyingUser',
+    #     'appVersion',
+    #     'surveyingOrganization',
+    #     'parseUser'
+    # ]
 
-    nosql_table_questions = [col for col in nosql_table.columns if col not in id_cols]
-    for question_name in nosql_table_questions:
-        uuid = md5_encode(question_name)
-        formik_key = to_camel_case(question_name)
+    # nosql_table_questions = [col for col in nosql_table.columns if col not in id_cols]
+    for question_tuple in config:
+        uuid, label, formik_key, field_type, options = question_tuple#
+        uuid = md5_encode(formik_key)
+        #formik_key = to_camel_case(question_name)
         cur.execute(
                 f"""
                 INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
-                VALUES ({uuid}, {question_name}, {field_type}, {formik_key}, {options}, {now}, {now}, {form_id})
-                """
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (uuid, label, field_type, formik_key, options, now, now, form_id)
             )
 
             # Commit the changes to the database
@@ -723,7 +768,7 @@ def ingest_nosql_table_questions(nosql_table, table_name):
     return {
         "statusCode": 200,
         "headers": {"Access-Control-Allow-Origin": "*"},
-        "body": json.dumps({"questions": nosql_table_questions}),
+        "body": json.dumps({"questions": config}),
         "isBase64Encoded": False,
     }
 
@@ -747,6 +792,13 @@ def fill_tables():
     form_specs = restCall('FormSpecificationsV2', None)
     print('form specss')
     print(form_specs)
+    print(form_specs.dtypes)
+    forms = unique_combos(form_specs, ['objectId', 'createdAt', 'updatedAt'])
+    print('unique combos')
+    print(forms)
+    forms = coalesce_pkey(forms, 'objectId')
+    print('coalesce')
+    print(forms)
     get_form_dim(form_specs)
     users_df = restCall('users', None)
     #users_df.to_csv('users_test.csv')
@@ -758,10 +810,19 @@ def fill_tables():
     get_patient_dim(survey_df)
     get_question_dim(form_specs)
 
-    # for table_name, table_desc in NOSQL_TABLES.items():
-    #     #rest call here to get appropriate table
-    #     add_nosql_to_forms(table_name, table_desc)
-    #     ingest_nosql_table_questions(nosql_df)
+    for table_name, table_desc in NOSQL_TABLES.items():
+        now = datetime.datetime.now()
+        print('table name, desc')
+        print(table_name, table_desc)
+        #rest call here to get appropriate table
+        #nosql_df = restCall(table_name, None)
+        #print('nosql df')
+        #print(nosql_df)
+        #config = parse_json_config(CONFIGS[table_name])
+        #print('config')
+        #print(config)
+        add_nosql_to_forms(table_name, table_desc, now)
+        ingest_nosql_table_questions(table_name)
     # get_survey_fact(df)
 
 
