@@ -4,6 +4,7 @@ import datetime
 import json
 import numpy as np
 import pandas as pd
+import uuid
 
 from psycopg2.errors import ForeignKeyViolation
 
@@ -25,6 +26,10 @@ import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 import requests
 from pandas import json_normalize
 
+def add_surveyuser_column(df):
+    df['default_value'] = df['firstname'] + df['lastname']
+    df['survey_user'] = df[['default_value', 'username', 'firstname', 'lastname']].bfill(axis=1).iloc[:, 0]
+    return df
 
 def restCall(
     specifier, custom_form_id, url="https://parseapi.back4app.com/classes/" #url="https://puente.back4app.io/classes/" #
@@ -160,12 +165,6 @@ def parse_json_config(json_path):
 
     return question_values_list
 
-# PG_HOST = os.environ.get('PG_HOST')
-# PG_PORT = os.environ.get('PG_PORT')
-# PG_DATABASE = os.environ.get('PG_DATABASE')
-# PG_USERNAME = os.environ.get('PG_USERNAME')
-# PG_PASSWORD = os.environ.get('PG_PASSWORD')
-
 with open("../env.json") as file:
     env = json.load(file)["AnalyticsLambdaFunctionETL"]
 
@@ -235,6 +234,7 @@ def initialize_tables():
     users_q = f"""
     CREATE TABLE IF NOT EXISTS users_dim (
         uuid UUID PRIMARY KEY,
+        survey_user VARCHAR(255) NOT NULL,
         user_name VARCHAR(255) NOT NULL,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
@@ -316,11 +316,12 @@ def initialize_tables():
     );
     """
 
+    #surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
     survey_fact_q = f"""
     CREATE TABLE survey_fact (
         uuid UUID PRIMARY KEY,
         surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid),
-        surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
+        surveying_user_id VARCHAR(1000),
         community_id UUID NOT NULL REFERENCES community_dim (uuid),
         question_id UUID NOT NULL REFERENCES question_dim (uuid),
         question_answer VARCHAR(255) NOT NULL,
@@ -470,8 +471,9 @@ def get_users_dim(df):
     cur = con.cursor()
     users = unique_combos(df, ['objectId', 'username', 'firstname', 'lastname', 'phonenumber', 'role', 'createdAt', 'updatedAt', 'organization'])
     users = coalesce_pkey(users, 'objectId')
+    users = add_surveyuser_column(users)
     for i, user_row in users.iterrows():
-        user = user_row.get('objectId')
+        survey_user = user_row.get('survey_user')
         survey_org = user_row.get('organization')
         user_name = user_row.get('user_name')
         first_name = user_row.get('firstname')
@@ -480,20 +482,21 @@ def get_users_dim(df):
         role = user_row.get('role')
         created_at = user_row.get('createdAt')
         updated_at = user_row.get('updatedAt')
-        if (user is None)|(survey_org is None)|(user in ['', ' '])|(survey_org in ['', ' '])|(user_name is None):
+        if (survey_user is None)|(survey_org is None)|(survey_user in ['', ' '])|(survey_org in ['', ' '])|(user_name is None):
             continue
         print('users')
-        print(user)
+        print(survey_user)
         print(user_name)
         print(first_name, last_name)
-        uuid = md5_encode(user)
+        full_name = first_name + ' ' + last_name
+        uuid = md5_encode(survey_user)
         survey_org = md5_encode(survey_org)
         cur.execute(
                 f"""
-                INSERT INTO users_dim (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, role, surveying_organization_id)
+                INSERT INTO users_dim (uuid, survey_user, user_name, first_name, last_name, created_at, updated_at, phone_number, role, surveying_organization_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (uuid, user_name, first_name, last_name, created_at, updated_at, phone_number, role, survey_org)
+                (uuid, survey_user, user_name, first_name, last_name, created_at, updated_at, phone_number, role, survey_org)
             )
 
     # Commit the changes to the database
@@ -575,7 +578,8 @@ def get_patient_dim(df):
         phone_number = patient_row.get('telephoneNumber')
         if (patient_id in ['', ' ', None, np.nan])|(household_id in ['', ' ', None, np.nan]):
             continue
-        print(patient_id, household_id, first_name, last_name, age, phone_number)
+        if patient_id == '4ABNhV9swN':
+            print(patient_id, patient_id, household_id, first_name, last_name, age, phone_number)
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         try:
@@ -772,33 +776,128 @@ def ingest_nosql_table_questions(table_name):
         "isBase64Encoded": False,
     }
 
-def get_survey_fact(env_df):
-    env_df_questions = env_df.melt(id_vars=id_cols, var_name='question', value_name='answer')
+def add_nosql_to_fact(table_name, survey_df):
+    con = connection()
+    cur = con.cursor()
+    rename_dict = {
+                "objectId": "objectIdSupplementary",
+                "client.objectId": "objectId",
+                "surveyingUser": "surveyingUserSupplementary",
+                "surveyingOrganization": "surveyingOrganizationSupplementary",
+                "createdAt": "createdAtSupplementary",
+                "updatedAt": "updatedAtSuplementary",
+                'yearsLivedinthecommunity': 'yearsLivedinthecommunitySupplementary',
+                'yearsLivedinThisHouse': 'yearsLivedinThisHouseSupplementary',
+                'waterAccess': 'waterAccessSupplementary',
+                'numberofIndividualsLivingintheHouse': 'numberofIndividualsLivingintheHouseSupplementary'
+            }
+    nosql_df = restCall(table_name, None).rename(rename_dict, axis=1)
+    print('nosql')
+    print(nosql_df.columns)
+    print(nosql_df)
+    id_cols = ['objectId', 'surveyingOrganization', 'surveyingUser', 'communityname', 'householdId', 'createdAt', 'updatedAt']
+    merged = survey_df.merge(nosql_df, on='objectId')
+    # both_df_cols = ['surveyingOrganization', 'surveyingUser', 'createdAt', 'updatedAt']
+    # for col in both_df_cols:
+    #     merged[col] = merged[col].combine_first(merged[f'{col}_y'])
+    #     merged.drop([f'{col}_x', f'{col}_y'], inplace=True, axis=1)
+    print('merged')
+    print(merged.columns)
+    print(merged)
+    
+    config = parse_json_config(CONFIGS[table_name])
+    print('config')
+    print(config)
+    questions = []
+    for question_tuple in config:
+        print(question_tuple)
+        _, _, formik_key, _, _ = question_tuple
+        questions.append(formik_key)
 
-    env_df['community_id'] = env_df['communityname'].apply(md5_encode)
-    env_df['patient_id'] = env_df['client'].apply(md5_encode)
-    env_df['household_id'] = env_df['householdId'].apply(md5_encode)
-    env_df['surveyorg_id'] = env_df['surveyingOrganization'].apply(md5_encode)
-    env_df['user_id'] = env_df['surveryingUser'].apply(md5_encode)
-    pass
+    print('questions')
+    print(questions)
+    print(merged.columns)
+    questions = [question for question in questions if question in list(merged.columns)]
+    comb_df = merged[id_cols+questions].melt(id_vars=id_cols, var_name='question', value_name='answer')
+    print('comb df')
+    print(comb_df)
 
 
+    ignore_questions = ['searchIndex'] + [col for col in questions if 'location' in col]
+
+    for i, row in comb_df.iterrows():
+        # for question_tuple in config:
+        #     _, _, formik_key, _, _ = question_tuple
+        created_at = row['createdAt']
+        updated_at = row['updatedAt']
+        question_name = row['question']
+        if question_name in ignore_questions:
+            continue
+        question_answer = row['answer']
+        object_id = row['objectId']
+        survey_org = row['surveyingOrganization']
+        user = row['surveyingUser']
+        community_name = row['communityname']
+        nosql_household_id = row['householdId']
+        #theres probably an elegant way to do this but whatever im tired
+        #for id in [object_id, survey_org, user, community_name]
+        if (object_id in ['', ' ',None, np.nan])|(survey_org in ['', ' ',None, np.nan])|(user in ['', ' ',None, np.nan])|(community_name in ['', ' ',None, np.nan])|(nosql_household_id in ['', ' ',None, np.nan])|(question_name in ['', ' ',None, np.nan]):
+            continue
+        patient_id = md5_encode(object_id)
+        surveying_organization_id = md5_encode(survey_org)
+        user_id = md5_encode(user)
+        community_id = md5_encode(community_name)
+        household_id = md5_encode(nosql_household_id)
+        question_id = md5_encode(question_name)
+        form_id = md5_encode(table_name)
+
+        #composite_key = surveying_organization_id + user_id + community_id + question_id + form_id + patient_id + household_id
+        #uuid = md5_encode(composite_key)
+        id = str(uuid.uuid4())
+        user_id = None
+        
+        print('survey fact insert')
+        print(survey_org, user, community_name, nosql_household_id, question_name, object_id)
+        print(id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        try:
+            cur.execute(
+            f"""
+            INSERT INTO survey_fact (uuid, surveying_organization_id, surveying_user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        )
+        except ForeignKeyViolation:
+            print('foreign key violation')
+            print(uuid, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+            cur.execute("ROLLBACK")
+            continue
+
+            # Commit the changes to the database
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"questions": comb_df.to_json()}),
+        "isBase64Encoded": False,
+    }
+
+            
 def fill_tables():
     survey_df = restCall('SurveyData', None) #get this data from existing database
-    #print('survey df')
-    #print(survey_df)
+    print('survey df')
+    print(survey_df[survey_df['objectId']=='4ABNhV9swN'])
     get_community_dim(survey_df)
     get_surveying_organization_dim(survey_df)
     form_specs = restCall('FormSpecificationsV2', None)
     print('form specss')
     print(form_specs)
     print(form_specs.dtypes)
-    forms = unique_combos(form_specs, ['objectId', 'createdAt', 'updatedAt'])
-    print('unique combos')
-    print(forms)
-    forms = coalesce_pkey(forms, 'objectId')
-    print('coalesce')
-    print(forms)
     get_form_dim(form_specs)
     users_df = restCall('users', None)
     #users_df.to_csv('users_test.csv')
@@ -823,7 +922,10 @@ def fill_tables():
         #print(config)
         add_nosql_to_forms(table_name, table_desc, now)
         ingest_nosql_table_questions(table_name)
-    # get_survey_fact(df)
+
+        add_nosql_to_fact(table_name, survey_df)
+
+        #get_survey_fact(nosql_df, survey_df)
 
 
 def create_tables():
