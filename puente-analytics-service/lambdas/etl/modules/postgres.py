@@ -317,6 +317,7 @@ def initialize_tables():
     """
 
     #surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
+    #surveying_user_id VARCHAR(1000),
     survey_fact_q = f"""
     CREATE TABLE survey_fact (
         uuid UUID PRIMARY KEY,
@@ -562,6 +563,8 @@ def get_patient_dim(df):
     patients = coalesce_pkey(patients, 'objectId')
     print('patients dtypes')
     print(patients.dtypes)
+
+    missing_rows = []
     
     #patients = df[].unique()
     now = datetime.datetime.utcnow()
@@ -592,9 +595,14 @@ def get_patient_dim(df):
                 )
         except ForeignKeyViolation:
             print('foreign key violation')
+            missing_rows.append((patient_id, household_id, household_uuid))
             print(patient_id, household_id, household_uuid)
             cur.execute("ROLLBACK")
             continue
+
+    missing_rows_df = pd.DataFrame.from_records(missing_rows)
+    missing_rows_df.columns = ['patient_id', 'household_id', 'household_uuid']
+    missing_rows_df.to_csv('./patient_dim.csv', index=False)
             
 
     # Commit the changes to the database
@@ -825,6 +833,8 @@ def add_nosql_to_fact(table_name, survey_df):
 
     ignore_questions = ['searchIndex'] + [col for col in questions if 'location' in col]
 
+    missing_rows = []
+
     for i, row in comb_df.iterrows():
         # for question_tuple in config:
         #     _, _, formik_key, _, _ = question_tuple
@@ -869,6 +879,7 @@ def add_nosql_to_fact(table_name, survey_df):
         )
         except ForeignKeyViolation:
             print('foreign key violation')
+            missing_rows.append((uuid, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id))
             print(uuid, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
             cur.execute("ROLLBACK")
             continue
@@ -879,6 +890,22 @@ def add_nosql_to_fact(table_name, survey_df):
     # Close the database connection and cursor
     cur.close()
     con.close()
+
+    missing_rows_df = pd.DataFrame.from_records(missing_rows)
+    missing_rows_df.columns = [
+        'uuid',
+        'surveying_organization_id',
+        'user_id',
+        'community_id',
+        'question_id',
+        'question_answer',
+        'created_at',
+        'updated_at',
+        'patient_id',
+        'household_id',
+        'form_id'
+        ]
+    missing_rows_df.to_csv('./add_nosql_to_fact.csv', index=False)
 
     return {
         "statusCode": 200,
