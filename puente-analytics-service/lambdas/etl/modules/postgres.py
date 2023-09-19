@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import uuid
 
-from psycopg2.errors import ForeignKeyViolation
+from psycopg2.errors import ForeignKeyViolation, NotNullViolation
 
 #with open("survey_data_config.json", 'r') as j:
 #     contents = json.loads(j.read())
@@ -62,8 +62,8 @@ def restCall(
     if specifier == 'users':
         split_url = url.split("/")
         url = "/".join(split_url[:len(split_url)-2]) + "/"
-        print('user url')
-        print(url)
+        #print('user url')
+        #print(url)
     combined_url = url + specifier
 
     headers = {
@@ -322,7 +322,7 @@ def initialize_tables():
     CREATE TABLE survey_fact (
         uuid UUID PRIMARY KEY,
         surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid),
-        surveying_user_id VARCHAR(1000),
+        surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
         community_id UUID NOT NULL REFERENCES community_dim (uuid),
         question_id UUID NOT NULL REFERENCES question_dim (uuid),
         question_answer VARCHAR(255) NOT NULL,
@@ -337,8 +337,8 @@ def initialize_tables():
     create_qs = [surveying_org_q, users_q, community_q, household_q, patient_q, form_q, question_q, survey_fact_q]
     q_names = ['survey_org', 'users', 'comm', 'house', 'patient', 'form', 'question', 'survey_fact']
     for q, name in zip(create_qs, q_names):
-        print('query:')
-        print(name)
+        #print('query:')
+        #print(name)
         cur.execute(q)
         # Commit the changes to the database
         conn.commit()
@@ -347,6 +347,13 @@ def initialize_tables():
     cur.close()
     conn.close()
 
+
+'''
+The following is a huge series of creating all the dimension/fact tables
+Kinda repetitive, I'm sure there's a way to better generalize but this works
+And keeps it clear what is happening in all the tables
+'''
+
 def get_community_dim(df):
     con = connection()
     cur = con.cursor()
@@ -354,14 +361,14 @@ def get_community_dim(df):
     communities = coalesce_pkey(communities, 'communityname')
     now = datetime.datetime.utcnow()
     for i, community_row in communities.iterrows():
-        print('community')
-        print(community_row)
+        #'community')
+        #print(community_row)
         community = community_row.get('communityname')
         city = community_row.get('city')
         region = community_row.get('region')
     
         if (community in [np.nan, None, "", " "])|(isinstance(community, float)):
-            print('continuing')
+           # print('continuing')
             #log the communities that have problems here
             continue
 
@@ -407,10 +414,10 @@ def get_form_dim(df):
             #log the bad forms here
             continue
         uuid = md5_encode(form)
-        print(uuid)
-        print(name)
-        print(description)
-        print(is_custom_form)
+        #print(uuid)
+        #print(name)
+        #print(description)
+        #print(is_custom_form)
         cur.execute(
                 f"""
                 INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
@@ -442,8 +449,8 @@ def get_surveying_organization_dim(df):
         if survey_org in [np.nan, None, '', ' ']:
             #log bad survey orgs here
             continue
-        print('survey org')
-        print(survey_org)
+        #print('survey org')
+        #print(survey_org)
         uuid = md5_encode(survey_org)
         cur.execute(
                 f"""
@@ -485,10 +492,10 @@ def get_users_dim(df):
         updated_at = user_row.get('updatedAt')
         if (survey_user is None)|(survey_org is None)|(survey_user in ['', ' '])|(survey_org in ['', ' '])|(user_name is None):
             continue
-        print('users')
-        print(survey_user)
-        print(user_name)
-        print(first_name, last_name)
+        #print('users')
+        #print(survey_user)
+        #print(user_name)
+        #print(first_name, last_name)
         full_name = first_name + ' ' + last_name
         uuid = md5_encode(survey_user)
         survey_org = md5_encode(survey_org)
@@ -531,7 +538,7 @@ def get_household_dim(df):
 
         uuid = md5_encode(household_id)
         community = md5_encode(community_name)
-        print(uuid, lat, lon, now, community, community_name)
+        #print(uuid, lat, lon, now, community, community_name)
         cur.execute(
                 f"""
                 INSERT INTO household_dim (uuid, latitude, longitude, created_at, updated_at, community_id)
@@ -561,8 +568,8 @@ def get_patient_dim(df):
     df['age'] = df['age'].replace({'nan': None, '': None, ' ': None, np.nan: None})
     patients = unique_combos(df, ['objectId', 'fname', 'lname', 'sex', 'age', 'nickname', 'telephoneNumber', 'householdId'])
     patients = coalesce_pkey(patients, 'objectId')
-    print('patients dtypes')
-    print(patients.dtypes)
+    #print('patients dtypes')
+    #print(patients.dtypes)
 
     missing_rows = []
     
@@ -581,8 +588,8 @@ def get_patient_dim(df):
         phone_number = patient_row.get('telephoneNumber')
         if (patient_id in ['', ' ', None, np.nan])|(household_id in ['', ' ', None, np.nan]):
             continue
-        if patient_id == '4ABNhV9swN':
-            print(patient_id, patient_id, household_id, first_name, last_name, age, phone_number)
+        #if patient_id == '4ABNhV9swN':
+            #print(patient_id, patient_id, household_id, first_name, last_name, age, phone_number)
         uuid = md5_encode(patient_id)
         household_uuid = md5_encode(household_id)
         try:
@@ -637,16 +644,16 @@ def get_question_dim(df):
             continue
         form_id = md5_encode(form)
 
-        print('form row')
-        print(form_row.index)
-        print(form_row)
+        #print('form row')
+        #print(form_row.index)
+        #print(form_row)
 
         question_list = form_row.get('fields')
-        print('question list')
-        print(question_list)
+        #print('question list')
+        #print(question_list)
         if isinstance(question_list, float):
-            print('float questions list')
-            print(question_list)
+         #   print('float questions list')
+         #   print(question_list)
             continue
         for question in question_list:
             uuid = question.get('id')
@@ -799,41 +806,46 @@ def add_nosql_to_fact(table_name, survey_df):
                 'waterAccess': 'waterAccessSupplementary',
                 'numberofIndividualsLivingintheHouse': 'numberofIndividualsLivingintheHouseSupplementary'
             }
+    import time
+    for i in range(1,11):
+        print(i)
+        time.sleep(5)
     nosql_df = restCall(table_name, None).rename(rename_dict, axis=1)
-    print('nosql')
-    print(nosql_df.columns)
-    print(nosql_df)
+    #print('nosql')
+    #print(nosql_df.columns)
+    #print(nosql_df)
     id_cols = ['objectId', 'surveyingOrganization', 'surveyingUser', 'communityname', 'householdId', 'createdAt', 'updatedAt']
     merged = survey_df.merge(nosql_df, on='objectId')
     # both_df_cols = ['surveyingOrganization', 'surveyingUser', 'createdAt', 'updatedAt']
     # for col in both_df_cols:
     #     merged[col] = merged[col].combine_first(merged[f'{col}_y'])
     #     merged.drop([f'{col}_x', f'{col}_y'], inplace=True, axis=1)
-    print('merged')
-    print(merged.columns)
-    print(merged)
+    #print('merged')
+    #print(merged.columns)
+    #print(merged)
     
     config = parse_json_config(CONFIGS[table_name])
-    print('config')
-    print(config)
+    #print('config')
+    #print(config)
     questions = []
     for question_tuple in config:
-        print(question_tuple)
+    #    print(question_tuple)
         _, _, formik_key, _, _ = question_tuple
         questions.append(formik_key)
 
-    print('questions')
-    print(questions)
-    print(merged.columns)
+#    print('questions')
+#    print(questions)
+#    print(merged.columns)
     questions = [question for question in questions if question in list(merged.columns)]
     comb_df = merged[id_cols+questions].melt(id_vars=id_cols, var_name='question', value_name='answer')
-    print('comb df')
-    print(comb_df)
+ #   print('comb df')
+ #   print(comb_df)
 
 
     ignore_questions = ['searchIndex'] + [col for col in questions if 'location' in col]
 
-    missing_rows = []
+    fk_missing_rows = []
+    notnull_missing_rows = []
 
     for i, row in comb_df.iterrows():
         # for question_tuple in config:
@@ -855,7 +867,7 @@ def add_nosql_to_fact(table_name, survey_df):
             continue
         patient_id = md5_encode(object_id)
         surveying_organization_id = md5_encode(survey_org)
-        user_id = md5_encode(user)
+        user_id = str(md5_encode(user))
         community_id = md5_encode(community_name)
         household_id = md5_encode(nosql_household_id)
         question_id = md5_encode(question_name)
@@ -864,11 +876,13 @@ def add_nosql_to_fact(table_name, survey_df):
         #composite_key = surveying_organization_id + user_id + community_id + question_id + form_id + patient_id + household_id
         #uuid = md5_encode(composite_key)
         id = str(uuid.uuid4())
-        user_id = None
+        #user_id = 
         
-        print('survey fact insert')
-        print(survey_org, user, community_name, nosql_household_id, question_name, object_id)
-        print(id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        #print('survey fact insert')
+        #print(survey_org, user, community_name, nosql_household_id, question_name, object_id)
+        insert_tuple = (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        #for thing in [id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id]:
+        #    print(type(thing))
         try:
             cur.execute(
             f"""
@@ -877,13 +891,26 @@ def add_nosql_to_fact(table_name, survey_df):
             """,
             (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
         )
+        
         except ForeignKeyViolation:
             print('foreign key violation')
-            missing_rows.append((uuid, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id))
-            print(uuid, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+            fk_missing_rows.append(insert_tuple)
+            print(insert_tuple)
             cur.execute("ROLLBACK")
             continue
 
+        except NotNullViolation:
+            print('not null violation')
+            notnull_missing_rows.append(insert_tuple)
+            print(insert_tuple)
+            cur.execute("ROLLBACK")
+            continue
+
+        #except ProgrammingError:
+        #    print('programming error')
+        #    notnull_missing_rows.append(insert_tuple)
+        #    print(insert_tuple)
+        #    cur.execute("ROLLBACK")
             # Commit the changes to the database
     con.commit()
 
@@ -891,8 +918,7 @@ def add_nosql_to_fact(table_name, survey_df):
     cur.close()
     con.close()
 
-    missing_rows_df = pd.DataFrame.from_records(missing_rows)
-    missing_rows_df.columns = [
+    cols = [
         'uuid',
         'surveying_organization_id',
         'user_id',
@@ -905,7 +931,20 @@ def add_nosql_to_fact(table_name, survey_df):
         'household_id',
         'form_id'
         ]
-    missing_rows_df.to_csv('./add_nosql_to_fact.csv', index=False)
+
+    notnull_missing_rows_df = pd.DataFrame.from_records(notnull_missing_rows, columns=cols)
+    fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
+
+    print('nn')
+    print(notnull_missing_rows_df)
+    print('fk')
+    print(fk_missing_rows)
+    
+    #notnull_missing_rows_df.columns = cols
+    #fk_missing_rows_df.columns = cols
+    
+    notnull_missing_rows_df.to_csv('./add_nosql_to_fact_notnull.csv', index=False)
+    fk_missing_rows_df.to_csv('./add_nosql_to_fact_fk.csv', index=False)
 
     return {
         "statusCode": 200,
@@ -917,20 +956,20 @@ def add_nosql_to_fact(table_name, survey_df):
             
 def fill_tables():
     survey_df = restCall('SurveyData', None) #get this data from existing database
-    print('survey df')
-    print(survey_df[survey_df['objectId']=='4ABNhV9swN'])
+   #print('survey df')
+   # print(survey_df[survey_df['objectId']=='4ABNhV9swN'])
     get_community_dim(survey_df)
     get_surveying_organization_dim(survey_df)
     form_specs = restCall('FormSpecificationsV2', None)
-    print('form specss')
-    print(form_specs)
-    print(form_specs.dtypes)
+    #print('form specss')
+    #print(form_specs)
+    #print(form_specs.dtypes)
     get_form_dim(form_specs)
     users_df = restCall('users', None)
     #users_df.to_csv('users_test.csv')
-    print('users df')
-    print(users_df)
-    print(users_df.columns)
+    #print('users df')
+    #print(users_df)
+    #print(users_df.columns)
     get_users_dim(users_df)
     get_household_dim(survey_df)
     get_patient_dim(survey_df)
@@ -938,8 +977,8 @@ def fill_tables():
 
     for table_name, table_desc in NOSQL_TABLES.items():
         now = datetime.datetime.now()
-        print('table name, desc')
-        print(table_name, table_desc)
+        #print('table name, desc')
+        #print(table_name, table_desc)
         #rest call here to get appropriate table
         #nosql_df = restCall(table_name, None)
         #print('nosql df')
