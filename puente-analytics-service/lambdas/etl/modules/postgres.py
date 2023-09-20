@@ -77,18 +77,18 @@ def restCall(
 
     params = dict()
 
-    if specifier != "FormResults" and specifier != "FormAssetResults":
-        params = {
-            **common_params,
-        }
-    else:
-        # custom forms need to ensure that the correct custom form results are returned
-        params = {
-            **common_params,
-            "where": {json.dumps({
-                "formSpecificationsId": {"$in": [custom_form_id]}}
-            )}
-        }
+    #if specifier != "FormResults" and specifier != "FormAssetResults":
+    params = {
+        **common_params,
+    }
+    # else:
+    #     # custom forms need to ensure that the correct custom form results are returned
+    #     params = {
+    #         **common_params,
+    #         "where": {json.dumps({
+    #             "formSpecificationsId": {"$in": [custom_form_id]}}
+    #         )}
+    #     }
 
     #
     # MAKE REST API CALL
@@ -325,7 +325,7 @@ def initialize_tables():
         surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
         community_id UUID NOT NULL REFERENCES community_dim (uuid),
         question_id UUID NOT NULL REFERENCES question_dim (uuid),
-        question_answer VARCHAR(255) NOT NULL,
+        question_answer VARCHAR(10000) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         form_id UUID NOT NULL REFERENCES form_dim (uuid),
@@ -695,6 +695,134 @@ def get_question_dim(df):
         "isBase64Encoded": False,
     }
 
+def get_custom_forms(df):
+    con = connection()
+    cur = con.cursor()
+
+    fk_missing_rows = []
+    missing_qa_rows = []
+    exploded_df = df.explode('fields')
+    def get_subquestions(d):
+        ans = d.get('answer')
+        if isinstance(ans, dict):
+            return [{'title': title, 'answer': answer} for title, answer in ans.items()]
+        else:
+            return [d]
+        
+
+    exploded_df['fields'] = exploded_df['fields'].apply(lambda x: get_subquestions(x))
+    exploded_df = exploded_df.explode('fields')
+
+    exploded_df['title'] = exploded_df['fields'].apply(lambda x: x.get('title'))
+    exploded_df['question_answer'] = exploded_df['fields'].apply(lambda x: x.get('answer'))
+
+    print(exploded_df.loc[exploded_df['question_answer'].isnull(), ['fields', 'title', 'question_answer']])
+
+    for i, row in exploded_df.iterrows():
+        object_id = row.get('objectId')
+        user = row.get('surveyingUser')
+        survey_org = row.get('surveyingOrganization')
+        form = row.get('formSpecificationsId')
+        created_at = row.get('createdAt')
+        updated_at = row.get('updatedAt')
+        household = row.get('household')
+        community_name = row.get('communityname')
+        #questions = row.get('fields')
+        title = row.get('title')
+        question_answer = row.get('question_answer')
+
+        if len(str(question_answer)) > 250:
+            print(question_answer)
+
+        #print(object_id, survey_org, user, community_name)
+
+        if (object_id in ['', ' ',None, np.nan])|(survey_org in ['', ' ',None, np.nan])|(user in ['', ' ',None, np.nan])|(community_name in ['', ' ',None, np.nan]):
+            continue
+
+        if household in [np.nan, None]:
+            household = ' '
+
+       #print('got past nulls')
+        
+        patient_id = md5_encode(object_id)
+        user_id = md5_encode(user)
+        surveying_organization_id = md5_encode(survey_org)
+        form_id = md5_encode(form)
+        household_id = md5_encode(household)
+        community_id = md5_encode(community_name)
+
+        #for title, question_answer in questions.items():
+            
+            #if isinstance(question, dict):
+            #    for title, question in 
+            #title = question['title']
+        question_id = md5_encode(title)
+        #question_answer = question['answer']
+
+        id = str(uuid.uuid4())
+
+        insert_tuple = (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        for x in insert_tuple:
+            if isinstance(x, dict):
+                print('something was a dict')
+                print(insert_tuple)
+                print('the final insert tuple')
+                return insert_tuple
+        try:
+            cur.execute(
+            f"""
+            INSERT INTO survey_fact (uuid, surveying_organization_id, surveying_user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
+        )
+        
+        except ForeignKeyViolation:
+            #print('foreign key violation')
+            fk_missing_rows.append(insert_tuple)
+            #print(insert_tuple)
+            cur.execute("ROLLBACK")
+            continue
+
+        except NotNullViolation:
+            missing_qa_rows.append(insert_tuple)
+            cur.execute("ROLLBACK")
+            continue
+
+    con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+    cols = [
+        'uuid',
+        'surveying_organization_id',
+        'user_id',
+        'community_id',
+        'question_id',
+        'question_answer',
+        'created_at',
+        'updated_at',
+        'patient_id',
+        'household_id',
+        'form_id'
+        ]
+
+    fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns = cols)
+    fk_missing_rows_df.to_csv('custom_fk.csv')
+    missing_qa_rows_df = pd.DataFrame.from_records(missing_qa_rows, columns = cols)
+    missing_qa_rows_df.to_csv('custom_nullqa.csv')
+
+    return {
+        "statusCode": 200,
+        "headers": {"Access-Control-Allow-Origin": "*"},
+        "body": json.dumps({"questions": exploded_df.to_json()}),
+        "isBase64Encoded": False,
+    }
+
+
+
 def add_nosql_to_forms(name, description, now):
 
     uuid = md5_encode(name)
@@ -935,10 +1063,10 @@ def add_nosql_to_fact(table_name, survey_df):
     notnull_missing_rows_df = pd.DataFrame.from_records(notnull_missing_rows, columns=cols)
     fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
 
-    print('nn')
-    print(notnull_missing_rows_df)
-    print('fk')
-    print(fk_missing_rows)
+    #print('nn')
+    #print(notnull_missing_rows_df)
+    #print('fk')
+    #print(fk_missing_rows)
     
     #notnull_missing_rows_df.columns = cols
     #fk_missing_rows_df.columns = cols
@@ -975,23 +1103,32 @@ def fill_tables():
     get_patient_dim(survey_df)
     get_question_dim(form_specs)
 
-    for table_name, table_desc in NOSQL_TABLES.items():
-        now = datetime.datetime.now()
-        #print('table name, desc')
-        #print(table_name, table_desc)
-        #rest call here to get appropriate table
-        #nosql_df = restCall(table_name, None)
-        #print('nosql df')
-        #print(nosql_df)
-        #config = parse_json_config(CONFIGS[table_name])
-        #print('config')
-        #print(config)
-        add_nosql_to_forms(table_name, table_desc, now)
-        ingest_nosql_table_questions(table_name)
+    # for table_name, table_desc in NOSQL_TABLES.items():
+    #     now = datetime.datetime.now()
+    #     #print('table name, desc')
+    #     #print(table_name, table_desc)
+    #     #rest call here to get appropriate table
+    #     #nosql_df = restCall(table_name, None)
+    #     #print('nosql df')
+    #     #print(nosql_df)
+    #     #config = parse_json_config(CONFIGS[table_name])
+    #     #print('config')
+    #     #print(config)
+    #     add_nosql_to_forms(table_name, table_desc, now)
+    #     ingest_nosql_table_questions(table_name)
 
-        add_nosql_to_fact(table_name, survey_df)
+    #     add_nosql_to_fact(table_name, survey_df)
 
         #get_survey_fact(nosql_df, survey_df)
+
+    form_results = restCall('FormResults', None)
+    print(form_results.columns)
+    print(form_results['fields'].values[0])
+    print(form_results[[col for col in form_results.columns if 'client' in col]].head())
+    form_results = form_results.merge(survey_df[['objectId', 'communityname', 'householdId']].rename({'householdId': 'household', 'objectId': 'client.objectId'}, axis=1), on='client.objectId')
+    print(form_results.columns)
+    print(form_results[form_results['surveyingUser'].isnull()])
+    get_custom_forms(form_results)
 
 
 def create_tables():
