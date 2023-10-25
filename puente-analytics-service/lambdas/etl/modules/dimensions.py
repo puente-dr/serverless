@@ -142,8 +142,8 @@ def get_users_dim(df):
     users = add_surveyuser_column(users)
     grouped = users.groupby('survey_user').nunique().reset_index()
     dups = grouped.loc[grouped['objectId']>1]
-    dups.to_csv('all_duplicates.csv', index=False)
-    #users[users['survey_user']=='ElbaMartinez'].to_csv('duplicate_person.csv', index=False)
+    if dups.shape[0] > 0:
+        dups.to_csv('all_duplicates.csv', index=False)
     missing_names = []
     missing_surveyorgs = []
     for i, user_row in users.iterrows():
@@ -165,6 +165,14 @@ def get_users_dim(df):
         #print(user_name)
         #print(first_name, last_name)
         #full_name = first_name + ' ' + last_name
+
+        check_list = []
+        for field in [survey_org, first_name, last_name]:
+            if isinstance(field, str):
+                check = 'test' in field.lower()
+                check_list.append(check)
+        if any(check_list):
+            continue
        
         uuid = md5_encode(survey_user)
         if survey_org is None:
@@ -213,10 +221,12 @@ def get_users_dim(df):
         'survey_org_id'
     ]
     missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
-    missing_names_df.to_csv('missing_surveyorgs_usersdim.csv', index=False)
+    if missing_names_df.shape[0] > 0:
+        missing_names_df.to_csv('missing_surveyorgs_usersdim.csv', index=False)
 
     missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
-    missing_surveyorgs_df.to_csv('missing_surveyorgs_usersdim.csv', index=False)
+    if missing_surveyorgs_df.shape[0] > 0:
+        missing_surveyorgs_df.to_csv('missing_surveyorgs_usersdim.csv', index=False)
 
     return {
         "statusCode": 200,
@@ -241,6 +251,14 @@ def get_household_dim(df):
         lon = household_row.get('longitude')
         #if (household_id in ['', ' ', None, np.nan])|(community_name in ['', ' ', None, np.nan]):
         #    continue
+        check_list = []
+        for field in [community_name, household_id]:
+            if isinstance(field, str):
+                check = 'test' in field.lower()
+                check_list.append(check)
+        if any(check_list):
+            continue
+
         if community_name is None:
             missing_comms.append((household_id, community_name, lat, lon))
             continue
@@ -272,9 +290,11 @@ def get_household_dim(df):
         'lon'
     ]
     missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
-    missing_comms_df.to_csv('missing_comms_householddim.csv', index=False)
+    if missing_comms_df.shape[0] > 0:
+        missing_comms_df.to_csv('missing_comms_householddim.csv', index=False)
     missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    missing_hhid_df.to_csv('missing_hhid_householddim.csv', index=False)
+    if missing_hhid_df.shape[0] > 0:
+        missing_hhid_df.to_csv('missing_hhid_householddim.csv', index=False)
 
     return {
         "statusCode": 200,
@@ -312,6 +332,14 @@ def get_patient_dim(df):
         #    continue
         #if patient_id == '4ABNhV9swN':
             #print(patient_id, patient_id, household_id, first_name, last_name, age, phone_number)
+        check_list = []
+        for field in [household_id]:
+            if isinstance(field, str):
+                check = 'test' in field.lower()
+                check_list.append(check)
+        if any(check_list):
+            continue
+
         if household_id is None:
             missing_hhid.append((uuid, first_name, last_name, nick_name, sex, age, phone_number, household_id, household_uuid))
             continue
@@ -345,11 +373,13 @@ def get_patient_dim(df):
     ]
 
     missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    missing_hhid_df.to_csv('missing_hhid_patient.csv', index=False)
+    if missing_hhid_df.shape[0] > 0:
+        missing_hhid_df.to_csv('missing_hhid_patient.csv', index=False)
 
     missing_rows_df = pd.DataFrame.from_records(missing_rows)
     missing_rows_df.columns = ['patient_id', 'household_id', 'household_uuid']
-    missing_rows_df.to_csv('./patient_dim.csv', index=False)
+    if missing_rows_df.shape[0] > 0:
+        missing_rows_df.to_csv('./patient_dim.csv', index=False)
             
 
     # Commit the changes to the database
@@ -411,6 +441,17 @@ def get_question_dim(df):
             else:
                 options_list = None
 
+            check_list = []
+            for field in [id, question_label, ]:
+                if isinstance(field, str):
+                    check = 'test' in field.lower()
+                    check_list.append(check)
+            if any(check_list):
+                continue
+
+            if question_label == 'geolocation':
+                continue
+
             if id is None:
                 missing_ids.append((id, field_type, formik_key, question_label, options_list, form, form_id))
                 continue
@@ -448,9 +489,11 @@ def get_question_dim(df):
         'form_id'
     ]
     missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
-    missing_ids_df.to_csv('missing_ids_question.csv', index=False)
+    if missing_ids_df.shape[0] > 0:
+        missing_ids_df.to_csv('missing_ids_question.csv', index=False)
     missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
-    missing_labels_df.to_csv('missing_labels_question.csv', index=False)
+    if missing_labels_df.shape[0] > 0:
+        missing_labels_df.to_csv('missing_labels_question.csv', index=False)
 
     return {
         "statusCode": 200,

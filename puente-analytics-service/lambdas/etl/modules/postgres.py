@@ -1,20 +1,11 @@
 import os
-import psycopg2
 import datetime
-import json
-import numpy as np
-import pandas as pd
-import uuid
-import time
 
-from psycopg2.errors import ForeignKeyViolation, NotNullViolation
-
-import json
 import os
 import sys; sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 from create_drop import drop_tables, initialize_tables
-from env_utils import NOSQL_TABLES, CONFIGS
+from env_utils import NOSQL_TABLES
 from utils import restCall
 
 from dimensions import (

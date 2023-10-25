@@ -1,10 +1,11 @@
 import pandas as pd
+import numpy as np
 import json
 import uuid
 from psycopg2.errors import ForeignKeyViolation
 import time
 
-from utils import get_subquestions, connection, md5_encode, restCall, parse_json_config
+from utils import get_subquestions, connection, md5_encode, restCall, parse_json_config, check_valid_field
 from env_utils import CONFIGS
 
 def get_custom_forms(df):
@@ -43,6 +44,9 @@ def get_custom_forms(df):
         title = row.get('title')
         question_answer = row.get('question_answer')
 
+        if title == 'appVersion':
+            continue
+
         #if len(str(question_answer)) > 250:
         #    print(question_answer)
 
@@ -57,6 +61,14 @@ def get_custom_forms(df):
        #print('got past nulls')
         row_insert = (object_id, user, survey_org, form, household, community_name, title, question_answer)
         #print(row_insert)
+        check_list = []
+        for field in [household, community_name, question_answer, user]:
+            if isinstance(field, str):
+                check = 'test' in field.lower()
+                check_list.append(check)
+        if any(check_list):
+            continue
+                    
         if household in [None, np.nan]:
             missing_dict['hhids'].append(row_insert)
             continue
@@ -140,7 +152,8 @@ def get_custom_forms(df):
 
     for table, missing in missing_dict.items():
         missing_df = pd.DataFrame.from_records(missing, columns = cols)
-        missing_df.to_csv(f'customforms_missing_{table}.csv', index=False)
+        if missing_df.shape[0] > 0:
+            missing_df.to_csv(f'customforms_missing_{table}.csv', index=False)
 
     cols = [
         'uuid',
@@ -159,9 +172,11 @@ def get_custom_forms(df):
         ]
 
     fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns = cols)
-    fk_missing_rows_df.to_csv('custom_fk.csv', index=False)
+    if fk_missing_rows_df.shape[0] > 0:
+        fk_missing_rows_df.to_csv('custom_fk.csv', index=False)
     missing_qa_rows_df = pd.DataFrame.from_records(missing_qa_rows, columns = cols)
-    missing_qa_rows_df.to_csv('custom_nullqa.csv', index=False)
+    if missing_qa_rows_df.shape[0] > 0:
+        missing_qa_rows_df.to_csv('custom_nullqa.csv', index=False)
 
     return {
         "statusCode": 200,
@@ -187,8 +202,10 @@ def add_nosql_to_fact(table_name, survey_df):
             }
     
     for i in range(1,11):
-        #print(i)
-        time.sleep(5)
+        print(i)
+        time.sleep(15)
+
+    print(table_name)
     nosql_df = restCall(table_name, None).rename(rename_dict, axis=1)
     #print('nosql')
     #print(nosql_df.columns)
@@ -254,6 +271,14 @@ def add_nosql_to_fact(table_name, survey_df):
         #for id in [object_id, survey_org, user, community_name]
         # if (object_id in ['', ' ',None, np.nan])|(survey_org in ['', ' ',None, np.nan])|(user in ['', ' ',None, np.nan])|(community_name in ['', ' ',None, np.nan])|(nosql_household_id in ['', ' ',None, np.nan])|(question_name in ['', ' ',None, np.nan]):
         #     continue
+        check_list = []
+        for field in [nosql_household_id, user, community_name]:
+            if isinstance(field, str):
+                check = 'test' in field.lower()
+                check_list.append(check)
+        if any(check_list):
+            continue
+
         row_insert = (object_id, survey_org, user, community_name, nosql_household_id, question_name, question_answer, table_name)
         if nosql_household_id in [None, np.nan]:
             missing_dict['hhids'].append(row_insert)
@@ -358,20 +383,13 @@ def add_nosql_to_fact(table_name, survey_df):
 
     for table, missing in missing_dict.items():
         missing_df = pd.DataFrame.from_records(missing, columns = cols)
-        missing_df.to_csv(f'add_nosql_to_fact_{table_name}_missing_{table}.csv', index=False)
-
-
-    # missing_hhids_df = pd.DataFrame.from_records(missing_hhids, columns = cols)
-    # missing_hhids_df.to_csv('add_nosql_to_fact_missing_hhids', index=False)
-
-    # missing_users_df = pd.DataFrame.from_records(missing_users, columns = cols)
-    # missing_users_df.to_csv('add_nosql_to_fact_missing_users', index=False)
-
-    # missing_comms_df = pd.DataFrame.from_records(missing_comms, columns = cols)
-    # missing_comms_df.to_csv('add_nosql_to_fact_missing_comms', index=False)
+        if missing_df.shape[0] > 0:
+            missing_df.to_csv(f'add_nosql_to_fact_{table_name}_missing_{table}.csv', index=False)
     
-    notnull_missing_rows_df.to_csv(f'./add_nosql_to_fact_notnull_{table_name}.csv', index=False)
-    fk_missing_rows_df.to_csv(f'./add_nosql_to_fact_fk_{table_name}.csv', index=False)
+    if notnull_missing_rows_df.shape[0] > 0:
+        notnull_missing_rows_df.to_csv(f'./add_nosql_to_fact_notnull_{table_name}.csv', index=False)
+    if fk_missing_rows_df.shape[0] > 0:
+        fk_missing_rows_df.to_csv(f'./add_nosql_to_fact_fk_{table_name}.csv', index=False)
 
     return {
         "statusCode": 200,

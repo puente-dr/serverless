@@ -3,8 +3,16 @@ import requests
 from pandas import json_normalize
 import json
 import psycopg2
+import numpy as np
 
 from env_utils import APP_ID, MASTER_KEY, REST_API_KEY, PG_HOST, PG_DATABASE, PG_PORT, PG_USERNAME, PG_PASSWORD
+
+def check_valid_field(field):
+    if isinstance(field, str):
+        check = 'test' in field.lower()
+    else:
+        check = field in [np.nan, None]
+    return check
 
 def connection():
     conn = psycopg2.connect(
