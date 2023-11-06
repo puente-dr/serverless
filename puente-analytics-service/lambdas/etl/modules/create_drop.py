@@ -72,7 +72,7 @@ def initialize_tables():
         phone_number VARCHAR(255),
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        household_id UUID REFERENCES household_dim (uuid)
+        household_id VARCHAR(255)
     )
     """
 
@@ -114,7 +114,7 @@ def initialize_tables():
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
         form_id UUID NOT NULL REFERENCES form_dim (uuid),
         patient_id UUID NOT NULL REFERENCES patient_dim (uuid),
-        household_id UUID NOT NULL REFERENCES household_dim (uuid)
+        household_id VARCHAR(255)
     );
     """
 

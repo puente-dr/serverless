@@ -315,6 +315,7 @@ def get_patient_dim(df):
 
     missing_rows = []
     missing_hhid = []
+    missing_names = []
     #patients = df[].unique()
     now = datetime.datetime.utcnow()
     for i, patient_row in patients.iterrows():
@@ -327,13 +328,15 @@ def get_patient_dim(df):
         age = patient_row.get('age')
         if age in ['11 meses']:
             age = '0'
+        if age not in [np.nan, None]:
+            chars_to_remove = ['-', ',', '.']
+            for char in chars_to_remove:
+                age = age.replace(char, '')
+
         phone_number = patient_row.get('telephoneNumber')
-        #if (patient_id in ['', ' ', None, np.nan])|(household_id in ['', ' ', None, np.nan]):
-        #    continue
-        #if patient_id == '4ABNhV9swN':
-            #print(patient_id, patient_id, household_id, first_name, last_name, age, phone_number)
+
         check_list = []
-        for field in [household_id]:
+        for field in [first_name, last_name, household_id]:
             if isinstance(field, str):
                 check = 'test' in field.lower()
                 check_list.append(check)
@@ -341,10 +344,16 @@ def get_patient_dim(df):
             continue
 
         if household_id is None:
-            missing_hhid.append((uuid, first_name, last_name, nick_name, sex, age, phone_number, household_id, household_uuid))
+            household_uuid = None
+        else:
+            household_uuid = md5_encode(household_id)
+           
+           
+        if (first_name in [np.nan, None])|(last_name in [np.nan, None]):
+            missing_names.append((first_name, last_name, patient_id, household_id))
             continue
         uuid = md5_encode(patient_id)
-        household_uuid = md5_encode(household_id)
+        
         try:
             cur.execute(
                     f"""
@@ -376,11 +385,15 @@ def get_patient_dim(df):
     if missing_hhid_df.shape[0] > 0:
         missing_hhid_df.to_csv('missing_hhid_patient.csv', index=False)
 
-    missing_rows_df = pd.DataFrame.from_records(missing_rows)
-    missing_rows_df.columns = ['patient_id', 'household_id', 'household_uuid']
+    cols = ['patient_id', 'household_id', 'household_uuid']
+    missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
     if missing_rows_df.shape[0] > 0:
-        missing_rows_df.to_csv('./patient_dim.csv', index=False)
-            
+        missing_rows_df.to_csv('./missing_patient_id_patient_dim.csv', index=False)
+
+    cols = ['first_name', 'last_name', 'patient_id', 'household_id']
+    missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
+    if missing_names_df.shape[0] > 0:
+        missing_names_df.to_csv('./missing_names_patient.csv', index=False)            
 
     # Commit the changes to the database
     con.commit()

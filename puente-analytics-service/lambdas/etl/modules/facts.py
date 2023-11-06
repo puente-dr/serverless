@@ -70,8 +70,11 @@ def get_custom_forms(df):
             continue
                     
         if household in [None, np.nan]:
-            missing_dict['hhids'].append(row_insert)
-            continue
+            household_id = None 
+            # missing_dict['hhids'].append(row_insert)
+            # continue
+        else:
+            household_id = md5_encode(household)
 
         if community_name in [None, np.nan]:
             missing_dict['comms'].append(row_insert)
@@ -90,7 +93,6 @@ def get_custom_forms(df):
         user_id = md5_encode(user)
         surveying_organization_id = md5_encode(survey_org)
         form_id = md5_encode(form)
-        household_id = md5_encode(household)
         community_id = md5_encode(community_name)
 
         #for title, question_answer in questions.items():
@@ -281,9 +283,12 @@ def add_nosql_to_fact(table_name, survey_df):
 
         row_insert = (object_id, survey_org, user, community_name, nosql_household_id, question_name, question_answer, table_name)
         if nosql_household_id in [None, np.nan]:
-            missing_dict['hhids'].append(row_insert)
+            household_id = None
+        else:
+            household_id = md5_encode(nosql_household_id)
+            #missing_dict['hhids'].append(row_insert)
             #missing_hhids.append(row_insert)
-            continue
+            #continue
         if user in [None, np.nan]:
             missing_dict['users'].append(row_insert)
             #missing_users.append(row_insert)
@@ -296,7 +301,6 @@ def add_nosql_to_fact(table_name, survey_df):
         surveying_organization_id = md5_encode(survey_org)
         user_id = str(md5_encode(user))
         community_id = md5_encode(community_name)
-        household_id = md5_encode(nosql_household_id)
         question_id = md5_encode(question_name)
         form_id = md5_encode(table_name)
 
