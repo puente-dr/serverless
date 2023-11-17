@@ -1,11 +1,25 @@
 import hashlib
 import requests
-from pandas import json_normalize
+from pandas import json_normalize, read_sql_query
 import json
 import psycopg2
 import numpy as np
 
 from env_utils import APP_ID, MASTER_KEY, REST_API_KEY, PG_HOST, PG_DATABASE, PG_PORT, PG_USERNAME, PG_PASSWORD
+
+def query_db(query):
+    conn = connection()
+    df = read_sql_query(query, conn)
+    conn.close()
+    return df
+
+def query_bronze_layer(table):
+    query = f"""
+    SELECT *
+    FROM {table.lower()}_bronze
+    """
+    df = query_db(query)
+    return df
 
 def check_valid_field(field):
     if isinstance(field, str):
@@ -133,6 +147,7 @@ def coalesce_pkey(val_df, pkey):
 
 def get_subquestions(d):
         ans = d.get('answer')
+
         if isinstance(ans, dict):
             return [{'title': title, 'answer': answer} for title, answer in ans.items()]
         else:

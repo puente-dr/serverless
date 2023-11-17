@@ -433,7 +433,7 @@ def get_question_dim(df):
         #print(form_row.index)
         #print(form_row)
 
-        question_list = form_row.get('fields')
+        question_list = json.loads(form_row.get('fields'))
         #print('question list')
         #print(question_list)
         #if isinstance(question_list, float):

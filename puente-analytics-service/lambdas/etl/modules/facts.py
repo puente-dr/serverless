@@ -5,7 +5,7 @@ import uuid
 from psycopg2.errors import ForeignKeyViolation
 import time
 
-from utils import get_subquestions, connection, md5_encode, restCall, parse_json_config, check_valid_field
+from utils import get_subquestions, connection, md5_encode, restCall, parse_json_config, check_valid_field, query_bronze_layer
 from env_utils import CONFIGS
 
 def get_custom_forms(df):
@@ -14,6 +14,7 @@ def get_custom_forms(df):
 
     fk_missing_rows = []
     missing_qa_rows = []
+    df['fields'] = df['fields'].apply(json.loads)
     exploded_df = df.explode('fields')
 
     exploded_df['fields'] = exploded_df['fields'].apply(lambda x: get_subquestions(x))
@@ -203,12 +204,13 @@ def add_nosql_to_fact(table_name, survey_df):
                 'numberofIndividualsLivingintheHouse': 'numberofIndividualsLivingintheHouseSupplementary'
             }
     
-    for i in range(1,11):
-        print(i)
-        time.sleep(15)
+    # for i in range(1,11):
+    #     print(i)
+    #     time.sleep(15)
 
     print(table_name)
-    nosql_df = restCall(table_name, None).rename(rename_dict, axis=1)
+    #nosql_df = restCall(table_name, None).rename(rename_dict, axis=1)
+    nosql_df = query_bronze_layer(table_name).rename(rename_dict, axis=1)
     #print('nosql')
     #print(nosql_df.columns)
     #print(nosql_df)
@@ -252,7 +254,8 @@ def add_nosql_to_fact(table_name, survey_df):
     missing_dict = {
         'hhids': [],
         'users': [],
-        'comms': []
+        'comms': [],
+        'answers': []
         }
 
     for i, row in comb_df.iterrows():
@@ -264,6 +267,7 @@ def add_nosql_to_fact(table_name, survey_df):
         if question_name in ignore_questions:
             continue
         question_answer = row['answer']
+
         object_id = row['objectId']
         survey_org = row['surveyingOrganization']
         user = row['surveyingUser']
@@ -296,6 +300,9 @@ def add_nosql_to_fact(table_name, survey_df):
         if community_name in [None, np.nan]:
             missing_dict['comms'].append(row_insert)
             #missing_comms.append(row_insert)
+            continue
+        if question_answer in [None, np.nan]:
+            missing_dict['answers'].append(row_insert)
             continue
         patient_id = md5_encode(object_id)
         surveying_organization_id = md5_encode(survey_org)

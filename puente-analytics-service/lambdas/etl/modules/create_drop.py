@@ -130,3 +130,11 @@ def initialize_tables():
     # Close the database connection and cursor
     cur.close()
     conn.close()
+
+def get_existing_tables():
+    conn = connection()
+    cursor = conn.cursor()
+    cursor.execute("""SELECT table_name FROM information_schema.tables
+       WHERE table_schema = 'public'""")
+    for table in cursor.fetchall():
+        print(table)
