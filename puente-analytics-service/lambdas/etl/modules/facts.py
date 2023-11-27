@@ -23,8 +23,6 @@ def get_custom_forms(df):
     exploded_df['title'] = exploded_df['fields'].apply(lambda x: x.get('title'))
     exploded_df['question_answer'] = exploded_df['fields'].apply(lambda x: x.get('answer'))
 
-    #print(exploded_df.loc[exploded_df['question_answer'].isnull(), ['fields', 'title', 'question_answer']])
-
     missing_dict = {
         'hhids': [],
         'comms': [],
@@ -41,27 +39,13 @@ def get_custom_forms(df):
         updated_at = row.get('updatedAt')
         household = row.get('household')
         community_name = row.get('communityname')
-        #questions = row.get('fields')
         title = row.get('title')
         question_answer = row.get('question_answer')
 
         if title == 'appVersion':
             continue
 
-        #if len(str(question_answer)) > 250:
-        #    print(question_answer)
-
-        #print(object_id, survey_org, user, community_name)
-
-        # if (object_id in ['', ' ',None, np.nan])|(survey_org in ['', ' ',None, np.nan])|(user in ['', ' ',None, np.nan])|(community_name in ['', ' ',None, np.nan]):
-        #     continue
-
-        # if household in [np.nan, None]:
-        #     household = ' '
-
-       #print('got past nulls')
         row_insert = (object_id, user, survey_org, form, household, community_name, title, question_answer)
-        #print(row_insert)
         check_list = []
         for field in [household, community_name, question_answer, user]:
             if isinstance(field, str):
@@ -72,8 +56,6 @@ def get_custom_forms(df):
                     
         if household in [None, np.nan]:
             household_id = None 
-            # missing_dict['hhids'].append(row_insert)
-            # continue
         else:
             household_id = md5_encode(household)
 
@@ -96,23 +78,12 @@ def get_custom_forms(df):
         form_id = md5_encode(form)
         community_id = md5_encode(community_name)
 
-        #for title, question_answer in questions.items():
-            
-            #if isinstance(question, dict):
-            #    for title, question in 
-            #title = question['title']
         question_id = md5_encode(title)
-        #question_answer = question['answer']
 
         id = str(uuid.uuid4())
 
         insert_tuple = (id, surveying_organization_id, user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
-        #for x in insert_tuple:
-        #    if isinstance(x, dict):
-        #        print('something was a dict')
-        #        print(insert_tuple)
-        #        print('the final insert tuple')
-        #        return insert_tuple
+
         try:
             cur.execute(
             f"""
@@ -124,9 +95,7 @@ def get_custom_forms(df):
         
         except ForeignKeyViolation:
             insert_tuple = tuple(list(insert_tuple)[:5] + [title, object_id] + list(insert_tuple[5:]))
-            #print('foreign key violation')
             fk_missing_rows.append(insert_tuple)
-            #print(insert_tuple)
             cur.execute("ROLLBACK")
             continue
 
