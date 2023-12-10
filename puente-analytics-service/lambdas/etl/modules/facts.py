@@ -3,7 +3,6 @@ import numpy as np
 import json
 import uuid
 from psycopg2.errors import ForeignKeyViolation
-import time
 
 from utils import (
     get_subquestions,
@@ -12,7 +11,7 @@ from utils import (
     parse_json_config,
     query_bronze_layer,
 )
-from env_utils import CONFIGS
+from env_utils import CONFIGS, CSV_PATH
 
 
 def get_custom_forms(df):
@@ -157,7 +156,7 @@ def get_custom_forms(df):
     for table, missing in missing_dict.items():
         missing_df = pd.DataFrame.from_records(missing, columns=cols)
         if missing_df.shape[0] > 0:
-            missing_df.to_csv(f"customforms_missing_{table}.csv", index=False)
+            missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
 
     cols = [
         "uuid",
@@ -177,10 +176,10 @@ def get_custom_forms(df):
 
     fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
     if fk_missing_rows_df.shape[0] > 0:
-        fk_missing_rows_df.to_csv("custom_fk.csv", index=False)
+        fk_missing_rows_df.to_csv(f"{CSV_PATH}/custom_fk.csv", index=False)
     missing_qa_rows_df = pd.DataFrame.from_records(missing_qa_rows, columns=cols)
     if missing_qa_rows_df.shape[0] > 0:
-        missing_qa_rows_df.to_csv("custom_nullqa.csv", index=False)
+        missing_qa_rows_df.to_csv(f"{CSV_PATH}/custom_nullqa.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -368,16 +367,16 @@ def add_nosql_to_fact(table_name, survey_df):
         missing_df = pd.DataFrame.from_records(missing, columns=cols)
         if missing_df.shape[0] > 0:
             missing_df.to_csv(
-                f"add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
+                f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
             )
 
     if notnull_missing_rows_df.shape[0] > 0:
         notnull_missing_rows_df.to_csv(
-            f"./add_nosql_to_fact_notnull_{table_name}.csv", index=False
+            f"{CSV_PATH}/add_nosql_to_fact_notnull_{table_name}.csv", index=False
         )
     if fk_missing_rows_df.shape[0] > 0:
         fk_missing_rows_df.to_csv(
-            f"./add_nosql_to_fact_fk_{table_name}.csv", index=False
+            f"{CSV_PATH}/add_nosql_to_fact_fk_{table_name}.csv", index=False
         )
 
     return {

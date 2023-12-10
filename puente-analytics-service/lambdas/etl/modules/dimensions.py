@@ -6,14 +6,13 @@ from utils import (
     add_surveyuser_column,
     parse_json_config,
 )
-from env_utils import CONFIGS
+from env_utils import CONFIGS, CSV_PATH
 
 import pandas as pd
 import numpy as np
 import json
 import datetime
 from psycopg2.errors import ForeignKeyViolation
-import uuid
 
 """
 The following is a huge series of creating all the dimension tables
@@ -252,11 +251,11 @@ def get_users_dim(df):
     ]
     missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
     if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv("missing_surveyorgs_usersdim.csv", index=False)
+        missing_names_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
     missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
     if missing_surveyorgs_df.shape[0] > 0:
-        missing_surveyorgs_df.to_csv("missing_surveyorgs_usersdim.csv", index=False)
+        missing_surveyorgs_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -315,10 +314,10 @@ def get_household_dim(df):
     cols = ["household_id", "community_name", "lat", "lon"]
     missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
     if missing_comms_df.shape[0] > 0:
-        missing_comms_df.to_csv("missing_comms_householddim.csv", index=False)
+        missing_comms_df.to_csv(f"{CSV_PATH}/missing_comms_householddim.csv", index=False)
     missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
     if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv("missing_hhid_householddim.csv", index=False)
+        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_householddim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -425,17 +424,17 @@ def get_patient_dim(df):
 
     missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
     if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv("missing_hhid_patient.csv", index=False)
+        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_patient.csv", index=False)
 
     cols = ["patient_id", "household_id", "household_uuid"]
     missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
     if missing_rows_df.shape[0] > 0:
-        missing_rows_df.to_csv("./missing_patient_id_patient_dim.csv", index=False)
+        missing_rows_df.to_csv(f"{CSV_PATH}/missing_patient_id_patient_dim.csv", index=False)
 
     cols = ["first_name", "last_name", "patient_id", "household_id"]
     missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
     if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv("./missing_names_patient.csv", index=False)
+        missing_names_df.to_csv(f"{CSV_PATH}./missing_names_patient.csv", index=False)
 
     # Commit the changes to the database
     con.commit()
@@ -568,10 +567,10 @@ def get_question_dim(df):
     ]
     missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
     if missing_ids_df.shape[0] > 0:
-        missing_ids_df.to_csv("missing_ids_question.csv", index=False)
+        missing_ids_df.to_csv(f"{CSV_PATH}/missing_ids_question.csv", index=False)
     missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
     if missing_labels_df.shape[0] > 0:
-        missing_labels_df.to_csv("missing_labels_question.csv", index=False)
+        missing_labels_df.to_csv(f"{CSV_PATH}/missing_labels_question.csv", index=False)
 
     return {
         "statusCode": 200,
