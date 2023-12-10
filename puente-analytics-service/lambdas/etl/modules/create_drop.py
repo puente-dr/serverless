@@ -1,16 +1,27 @@
 from utils import connection
 
+
 def drop_tables():
-    #be very sure about running this lol
+    # be very sure about running this lol
     conn = connection()
     cur = conn.cursor()
-    tables = ['surveying_organization_dim', 'users_dim', 'community_dim', 'household_dim', 'patient_dim', "question_dim", 'form_dim', 'survey_fact']
+    tables = [
+        "surveying_organization_dim",
+        "users_dim",
+        "community_dim",
+        "household_dim",
+        "patient_dim",
+        "question_dim",
+        "form_dim",
+        "survey_fact",
+    ]
     for table in tables:
-       cur.execute(f"DROP TABLE {table} CASCADE")
-       conn.commit()
+        cur.execute(f"DROP TABLE {table} CASCADE")
+        conn.commit()
 
     cur.close()
     conn.close()
+
 
 def initialize_tables():
     conn = connection()
@@ -100,8 +111,6 @@ def initialize_tables():
     );
     """
 
-    #surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
-    #surveying_user_id VARCHAR(1000),
     survey_fact_q = f"""
     CREATE TABLE survey_fact (
         uuid UUID PRIMARY KEY,
@@ -118,11 +127,27 @@ def initialize_tables():
     );
     """
 
-    create_qs = [surveying_org_q, users_q, community_q, household_q, patient_q, form_q, question_q, survey_fact_q]
-    q_names = ['survey_org', 'users', 'comm', 'house', 'patient', 'form', 'question', 'survey_fact']
+    create_qs = [
+        surveying_org_q,
+        users_q,
+        community_q,
+        household_q,
+        patient_q,
+        form_q,
+        question_q,
+        survey_fact_q,
+    ]
+    q_names = [
+        "survey_org",
+        "users",
+        "comm",
+        "house",
+        "patient",
+        "form",
+        "question",
+        "survey_fact",
+    ]
     for q, name in zip(create_qs, q_names):
-        #print('query:')
-        #print(name)
         cur.execute(q)
         # Commit the changes to the database
         conn.commit()
@@ -131,10 +156,13 @@ def initialize_tables():
     cur.close()
     conn.close()
 
+
 def get_existing_tables():
     conn = connection()
     cursor = conn.cursor()
-    cursor.execute("""SELECT table_name FROM information_schema.tables
-       WHERE table_schema = 'public'""")
+    cursor.execute(
+        """SELECT table_name FROM information_schema.tables
+       WHERE table_schema = 'public'"""
+    )
     for table in cursor.fetchall():
         print(table)
