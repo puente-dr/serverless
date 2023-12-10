@@ -24,13 +24,10 @@ rename_dict = {
 for table in tables_to_ingest:
     df = restCall(table, None)#.rename(rename_dict, axis=1)
 
-    print(df.dtypes)
     for i, row in df.iterrows():
         row_arr = row.array
         for val in row_arr:
             if isinstance(val, dict):
-                print(val)
-                print(row)
                 break
 
     dict_cols = ['fields']
@@ -41,7 +38,11 @@ for table in tables_to_ingest:
             df[col] = df[col].apply(json.dumps)
             applied_json += 1
 
-    engine = create_engine(f'postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}')
+    engine_str = f'postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}'
+
+    print(engine_str)
+
+    engine = create_engine(engine_str)
 
     table_name = f"{table.lower()}_bronze"
 
