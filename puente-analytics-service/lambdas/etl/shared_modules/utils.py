@@ -5,7 +5,7 @@ import json
 import psycopg2
 import numpy as np
 
-from env_utils import (
+from shared_modules.env_utils import (
     APP_ID,
     MASTER_KEY,
     REST_API_KEY,

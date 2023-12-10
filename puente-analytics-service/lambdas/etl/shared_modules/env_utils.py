@@ -1,6 +1,6 @@
 import json
 
-with open("../actual_env.json") as file:
+with open("./env.json") as file:
     env = json.load(file)["AnalyticsLambdaFunctionETL"]
 
 PG_HOST = env.get("PG_HOST")
@@ -19,9 +19,9 @@ NOSQL_TABLES = {
 }
 
 CONFIGS = {
-    "HistoryEnvironmentalHealth": "env_health_config.json",
-    "EvaluationMedical": "eval_medical_config.json",
-    "Vitals": "vitals_config.json",
+    "HistoryEnvironmentalHealth": "./silver/configs/env_health_config.json",
+    "EvaluationMedical": "./silver/configs/eval_medical_config.json",
+    "Vitals": "./silver/configs/vitals_config.json",
 }
 
 CSV_PATH = "./Data"

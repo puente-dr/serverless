@@ -6,9 +6,9 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from create_drop import drop_tables, initialize_tables
-from env_utils import NOSQL_TABLES
-from utils import query_bronze_layer
+from create_drop import initialize_tables
+from shared_modules.env_utils import NOSQL_TABLES
+from shared_modules.utils import query_bronze_layer
 
 from dimensions import (
     get_community_dim,
@@ -74,8 +74,3 @@ def fill_tables():
 def create_tables():
     initialize_tables()
     fill_tables()
-
-
-
-drop_tables()
-create_tables()

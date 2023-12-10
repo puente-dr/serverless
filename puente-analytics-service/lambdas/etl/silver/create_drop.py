@@ -1,4 +1,4 @@
-from utils import connection
+from shared_modules.utils import connection
 
 
 def drop_tables():

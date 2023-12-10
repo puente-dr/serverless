@@ -1,4 +1,4 @@
-from utils import (
+from shared_modules.utils import (
     connection,
     unique_combos,
     coalesce_pkey,
@@ -6,7 +6,7 @@ from utils import (
     add_surveyuser_column,
     parse_json_config,
 )
-from env_utils import CONFIGS, CSV_PATH
+from shared_modules.env_utils import CONFIGS, CSV_PATH
 
 import pandas as pd
 import numpy as np
@@ -149,7 +149,7 @@ def get_users_dim(df):
     grouped = users.groupby("survey_user").nunique().reset_index()
     dups = grouped.loc[grouped["objectId"] > 1]
     if dups.shape[0] > 0:
-        dups.to_csv("all_duplicates.csv", index=False)
+        dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
     missing_names = []
     missing_surveyorgs = []
     for i, user_row in users.iterrows():
@@ -209,25 +209,41 @@ def get_users_dim(df):
                 )
             )
             continue
-
-        cur.execute(
-            f"""
-                INSERT INTO users_dim (uuid, survey_user, user_name, first_name, last_name, created_at, updated_at, phone_number, role, surveying_organization_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-            (
-                uuid,
-                survey_user,
-                user_name,
-                first_name,
-                last_name,
-                created_at,
-                updated_at,
-                phone_number,
-                role,
-                survey_org_id,
-            ),
-        )
+        try:
+            cur.execute(
+                f"""
+                    INSERT INTO users_dim (uuid, survey_user, user_name, first_name, last_name, created_at, updated_at, phone_number, role, surveying_organization_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                (
+                    uuid,
+                    survey_user,
+                    user_name,
+                    first_name,
+                    last_name,
+                    created_at,
+                    updated_at,
+                    phone_number,
+                    role,
+                    survey_org_id,
+                ),
+            )
+        except:
+            missing_surveyorgs.append((
+                    uuid,
+                    survey_user,
+                    user_name,
+                    first_name,
+                    last_name,
+                    created_at,
+                    updated_at,
+                    phone_number,
+                    role,
+                    survey_org,
+                    None,
+                ))
+            cur.execute("ROLLBACK")
+            continue
 
     # Commit the changes to the database
     con.commit()
@@ -626,6 +642,9 @@ def ingest_nosql_configs(configs):
 
 
 def ingest_nosql_table_questions(table_name):
+    import os
+    print(os.getcwd())
+    print(CONFIGS[table_name])
     config = parse_json_config(CONFIGS[table_name])
 
     con = connection()
