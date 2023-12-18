@@ -24,37 +24,38 @@ from dimensions import (
 
 from facts import add_nosql_to_fact, get_custom_forms
 
-
-def fill_tables():
+def fill_tables(get_dimensions=True):
     survey_df = query_bronze_layer("SurveyData")
     print("survey df")
-    get_community_dim(survey_df)
-    print("community dim")
-    get_surveying_organization_dim(survey_df)
-    print("survey org dim")
-    form_specs = query_bronze_layer("FormSpecificationsV2")
-    print("form specs")
-    get_form_dim(form_specs)
-    print("form dim")
-    users_df = query_bronze_layer("users")
-    print("users")
-    get_users_dim(users_df)
-    print("users dim")
-    get_household_dim(survey_df)
-    print("household dim")
-    get_patient_dim(survey_df)
-    print("patient dim")
-    get_question_dim(form_specs)
-    print("question dim")
+    if get_dimensions:
+        get_community_dim(survey_df)
+        print("community dim")
+        get_surveying_organization_dim(survey_df)
+        print("survey org dim")
+        form_specs = query_bronze_layer("FormSpecificationsV2")
+        print("form specs")
+        get_form_dim(form_specs)
+        print("form dim")
+        users_df = query_bronze_layer("users")
+        print("users")
+        get_users_dim(users_df)
+        print("users dim")
+        get_household_dim(survey_df)
+        print("household dim")
+        get_patient_dim(survey_df)
+        print("patient dim")
+        get_question_dim(form_specs)
+        print("question dim")
 
     for table_name, table_desc in NOSQL_TABLES.items():
         now = datetime.datetime.now()
         print("table name, desc")
         print(table_name, table_desc)
-        add_nosql_to_forms(table_name, table_desc, now)
-        print("add nosql to forms")
-        ingest_nosql_table_questions(table_name)
-        print("insert qs")
+        if get_dimensions:
+            add_nosql_to_forms(table_name, table_desc, now)
+            print("add nosql to forms")
+            ingest_nosql_table_questions(table_name)
+            print("insert qs")
 
         add_nosql_to_fact(table_name, survey_df)
         print("add to fact")

@@ -169,3 +169,7 @@ def get_subquestions(d):
         return [{"title": title, "answer": answer} for title, answer in ans.items()]
     else:
         return [d]
+
+
+def na_check(df, col):
+    df[col].isna()
