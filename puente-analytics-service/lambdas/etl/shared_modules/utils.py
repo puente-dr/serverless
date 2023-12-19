@@ -176,3 +176,9 @@ def title_str(s):
         return s.strip().title()
     else:
         return s
+
+def encode(s):
+    if s:
+        return md5_encode(s)
+    else:
+        return s

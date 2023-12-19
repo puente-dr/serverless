@@ -12,7 +12,8 @@ from shared_modules.utils import (
     md5_encode,
     parse_json_config,
     query_bronze_layer,
-    title_str
+    title_str,
+    encode
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
 
@@ -71,7 +72,7 @@ def get_custom_forms(df):
         created_at = row.get("createdAt")
         updated_at = row.get("updatedAt")
         household = row.get("household")
-        community_name = title_str(row.get("communityname"))
+        community_name = row.get("communityname")
         title = row.get("title")
         question_answer = row.get("question_answer")
 
@@ -100,18 +101,6 @@ def get_custom_forms(df):
             household_id = None
         else:
             household_id = md5_encode(household)
-
-        # if community_name in [None, np.nan]:
-        #     missing_dict["comms"].append(row_insert)
-        #     continue
-
-        # if question_answer in [None, np.nan]:
-        #     missing_dict["answers"].append(row_insert)
-        #     continue
-
-        # if user in [None, np.nan]:
-        #     missing_dict["users"].append(row_insert)
-        #     continue
 
         patient_id = md5_encode(object_id)
         user_id = md5_encode(user)
@@ -228,12 +217,6 @@ def get_custom_forms(df):
         "isBase64Encoded": False,
     }
 
-def encode(s):
-    if s:
-        return md5_encode(s)
-    else:
-        return s
-
 
 def add_nosql_to_fact(table_name, survey_df):
     con = connection()
@@ -270,8 +253,6 @@ def add_nosql_to_fact(table_name, survey_df):
         questions.append(formik_key)
 
     questions = [question for question in questions if question in list(merged.columns)]
-    print("questions")
-    print(questions)
     merged.to_csv(F"{CSV_PATH}/merged_{table_name}.csv", index=False)
     comb_df = merged[id_cols + questions].melt(
         id_vars=id_cols, var_name="question", value_name="answer"
@@ -308,26 +289,14 @@ def add_nosql_to_fact(table_name, survey_df):
     missing_ind_dict = {col: comb_df[col].notnull() for col in cols_to_check}
     missing_rows_dict = {col: comb_df[~idx] for col, idx in missing_ind_dict.items()}
 
-    print("counts of nulls")
-    print({col: series.sum() for col, series in missing_ind_dict.items()})
-
     conditions = list(missing_ind_dict.values())
 
     # only not na in all check columns
     combined_condition = reduce(lambda x, y: x & y, conditions)
 
-    print("comb condition")
-    print(combined_condition.value_counts())
-    print(combined_condition.value_counts().sum())
-
     # Filter the DataFrame based on the combined condition
-    print("initial")
-    print(comb_df.shape)
+
     comb_df = comb_df[combined_condition].reset_index(drop=True)
-    print("after")
-    print(comb_df.shape)
-    print(comb_df["communityname"].isnull().sum())
-    print({col: comb_df[col].isnull().sum() for col in cols_to_check})
 
     title_cols =[
         "surveyingOrganization",
@@ -339,39 +308,39 @@ def add_nosql_to_fact(table_name, survey_df):
 
     # TODO: use to_sql instead of insert 
     # will have to use pd.apply to get all the ids and do all checks
-    encode_cols = {
-        "surveying_organization_id": "surveyingOrganization",
-        "household_id": "householdId",
-        "patient_id": "objectId",
-        "community_id": "communityname",
-        "question_id": "question",
-        "user_id": "surveyingUser"
-    }
+    # encode_cols = {
+    #     "surveying_organization_id": "surveyingOrganization",
+    #     "household_id": "householdId",
+    #     "patient_id": "objectId",
+    #     "community_id": "communityname",
+    #     "question_id": "question",
+    #     "user_id": "surveyingUser"
+    # }
 
-    for new_name, col in encode_cols.items():
-        comb_df[new_name] = comb_df[col].apply(lambda x: encode(x))
+    # for new_name, col in encode_cols.items():
+    #     comb_df[new_name] = comb_df[col].apply(lambda x: encode(x))
 
-    comb_df['form_id'] = encode(table_name)
-    def generate_uuid():
-        return str(uuid.uuid4())
-    comb_df['uuid'] = comb_df.apply(generate_uuid, axis=1)
-    comb_df['question_answer'] = comb_df['answer']
+    # comb_df['form_id'] = encode(table_name)
+    # def generate_uuid():
+    #     return str(uuid.uuid4())
+    # comb_df['uuid'] = comb_df.apply(generate_uuid, axis=1)
+    # comb_df['question_answer'] = comb_df['answer']
 
-    final_cols = [
-        "uuid",
-        "surveying_organization_id",
-        "surveying_user_id",
-        "community_id",
-        "question_id",
-        "question_answer",
-        "created_at",
-        "updated_at",
-        "patient_id",
-        "household_id",
-        "form_id"
-    ]
+    # final_cols = [
+    #     "uuid",
+    #     "surveying_organization_id",
+    #     "surveying_user_id",
+    #     "community_id",
+    #     "question_id",
+    #     "question_answer",
+    #     "created_at",
+    #     "updated_at",
+    #     "patient_id",
+    #     "household_id",
+    #     "form_id"
+    # ]
 
-    comb_df = comb_df[final_cols]
+    # comb_df = comb_df[final_cols]
 
     # engine_str = get_engine_str()
 
@@ -382,17 +351,10 @@ def add_nosql_to_fact(table_name, survey_df):
 
     # # Close the database connection
     # engine.dispose()
-    print(comb_df.shape)
     for i, row in comb_df.iterrows():
-        if i%10000 == 0:
-            print(i)
-        #print(i)
         created_at = row["createdAt"]
         updated_at = row["updatedAt"]
         question_name = row["question"]
-        # if question_name in ignore_questions:
-        #     ignore_questions_count+=1
-        #     continue
         question_answer = row["answer"]
 
         object_id = row["objectId"]
@@ -425,19 +387,9 @@ def add_nosql_to_fact(table_name, survey_df):
         else:
             household_id = md5_encode(nosql_household_id)
 
-        # if user in [None, np.nan]:
-        #     missing_dict["users"].append(row_insert)
-        #     continue
-        # if community_name in [None, np.nan]:
-        #     missing_dict["comms"].append(row_insert)
-        #     continue
-        # if question_answer in [None, np.nan]:
-        #     missing_dict["answers"].append(row_insert)
-        #     continue
         patient_id = md5_encode(object_id)
         surveying_organization_id = md5_encode(survey_org)
         user_id = str(md5_encode(user))
-        #print(community_name)
         community_id = md5_encode(community_name)
         question_id = md5_encode(question_name)
         form_id = md5_encode(table_name)
@@ -480,19 +432,14 @@ def add_nosql_to_fact(table_name, survey_df):
             insert_count += 1
 
         except ForeignKeyViolation as e:
-            #print("except")
-            #print(e)
             if "surveying_user_id" in str(e):
-                #print("user fk")
                 user_fk.append(insert_tuple)
                 user_fk_count += 1
             elif "patient_id" in str(e):
-                #print("user fk")
                 patient_fk.append(insert_tuple)
                 patient_fk_count += 1
             else:
                 # Handle other integrity errors if needed
-                print(f"Unhandled IntegrityError: {e}")
                 fk_missing_rows.append(insert_tuple)
                 fk_count += 1
             cur.execute("ROLLBACK")
