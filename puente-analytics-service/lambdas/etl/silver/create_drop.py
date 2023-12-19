@@ -115,7 +115,7 @@ def initialize_tables():
     CREATE TABLE survey_fact (
         uuid UUID PRIMARY KEY,
         surveying_organization_id UUID NOT NULL REFERENCES surveying_organization_dim (uuid),
-        surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
+        surveying_user_id VARCHAR(255),
         community_id UUID NOT NULL REFERENCES community_dim (uuid),
         question_id UUID NOT NULL REFERENCES question_dim (uuid),
         question_answer VARCHAR(10000) NOT NULL,
@@ -126,6 +126,8 @@ def initialize_tables():
         household_id VARCHAR(255)
     );
     """
+
+    # surveying_user_id UUID NOT NULL REFERENCES users_dim (uuid),
 
     create_qs = [
         surveying_org_q,

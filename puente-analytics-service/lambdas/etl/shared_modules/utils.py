@@ -171,5 +171,8 @@ def get_subquestions(d):
         return [d]
 
 
-def na_check(df, col):
-    df[col].isna()
+def title_str(s):
+    if s:
+        return s.strip().title()
+    else:
+        return s

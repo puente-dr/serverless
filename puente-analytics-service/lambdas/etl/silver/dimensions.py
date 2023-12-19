@@ -5,6 +5,7 @@ from shared_modules.utils import (
     md5_encode,
     add_surveyuser_column,
     parse_json_config,
+    title_str,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -24,6 +25,7 @@ And keeps it clear what is happening in all the tables
 def get_community_dim(df):
     con = connection()
     cur = con.cursor()
+    df['communityname'] = df['communityname'].apply(lambda x: title_str(x))
     communities = unique_combos(df, ["communityname", "city", "region"])
     communities = coalesce_pkey(communities, "communityname")
     now = datetime.datetime.utcnow()
@@ -100,6 +102,7 @@ def get_form_dim(df):
 def get_surveying_organization_dim(df):
     con = connection()
     cur = con.cursor()
+    df['surveyingOrganization'] = df['surveyingOrganization'].apply(lambda x: title_str(x))
     survey_orgs = df["surveyingOrganization"].unique()
     now = datetime.datetime.utcnow()
     for survey_org in survey_orgs:
@@ -173,7 +176,7 @@ def get_users_dim(df):
         if any(check_list):
             continue
 
-        uuid = md5_encode(survey_user)
+        uuid = md5_encode(title_str(survey_user))
         if survey_org is None:
             missing_surveyorgs.append(
                 (
@@ -191,7 +194,7 @@ def get_users_dim(df):
                 )
             )
             continue
-        survey_org_id = md5_encode(survey_org)
+        survey_org_id = md5_encode(title_str(survey_org))
         if first_name is None or last_name is None:
             missing_names.append(
                 (
@@ -400,6 +403,7 @@ def get_patient_dim(df):
         if (first_name in [np.nan, None]) | (last_name in [np.nan, None]):
             missing_names.append((first_name, last_name, patient_id, household_id))
             continue
+
         uuid = md5_encode(patient_id)
 
         try:
