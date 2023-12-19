@@ -646,9 +646,6 @@ def ingest_nosql_configs(configs):
 
 
 def ingest_nosql_table_questions(table_name):
-    import os
-    print(os.getcwd())
-    print(CONFIGS[table_name])
     config = parse_json_config(CONFIGS[table_name])
 
     con = connection()
@@ -682,3 +679,6 @@ def ingest_nosql_table_questions(table_name):
         "body": json.dumps({"questions": config}),
         "isBase64Encoded": False,
     }
+
+def get_custom_form_questions(custom_forms):
+    
