@@ -182,3 +182,30 @@ def encode(s):
         return md5_encode(s)
     else:
         return s
+    
+def explode_json(df, col="fields"):
+    df[col] = df[col].apply(json.loads)
+    exploded_df = df.explode(col)
+
+    exploded_df[col] = exploded_df[col].apply(lambda x: get_subquestions(x))
+    exploded_df = exploded_df.explode(col)
+
+    exploded_df["title"] = exploded_df[col].apply(lambda x: x.get("title"))
+    exploded_df["question_answer"] = exploded_df[col].apply(
+        lambda x: x.get("answer")
+    )
+
+    return exploded_df
+
+
+def unique_values(items):
+    unique = []
+    for item in items:
+        # If the item is a list, check for any list in 'unique' that is equal to 'item'.
+        # If not a list, just check if the item is already in 'unique'.
+        if isinstance(item, list):
+            if not any(existing_item == item for existing_item in unique if isinstance(existing_item, list)):
+                unique.append(item)
+        elif item not in unique:
+            unique.append(item)
+    return unique

@@ -6,6 +6,8 @@ from shared_modules.utils import (
     add_surveyuser_column,
     parse_json_config,
     title_str,
+    unique_values,
+    query_db,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -680,5 +682,88 @@ def ingest_nosql_table_questions(table_name):
         "isBase64Encoded": False,
     }
 
-def get_custom_form_questions(custom_forms):
+def get_custom_form_questions(form_results):
+    con = connection()
+    cur = con.cursor()
+
+    ignore_questions = [
+        "surveyingUser",
+        "surveyingOrganization",
+        "appVersion",
+        "phoneOS"
+    ]
+    options_fr = form_results[~form_results["title"].isin(ignore_questions)]
+    options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
+    options["num_answers"] = options["options"].apply(len)
     
+    print("options")
+    print(options.columns)
+    print(options.head())
+
+    options_fr = options_fr.merge(options, on="title", how="left")
+
+    options_fr["field_type"] = None
+    options_fr["is_list"] = options_fr["question_answer"].apply(lambda x: isinstance(x, list))
+
+    options_fr.loc[options_fr["num_answers"] == 1, "field_type"] = "input"
+    options_fr.loc[options_fr["num_answers"] > 1, "field_type"] = "select"
+    options_fr.loc[options_fr["is_list"], "field_type"] = "selectMulti"
+
+    print("bad question")
+    print(options_fr[options_fr["title"]=="Largo de la casa metros"])
+
+
+    print(options_fr.columns)
+    print(options_fr.head())
+
+    inserted_uuids = [] 
+    existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
+
+    options_fr = options_fr[~options_fr["title"].isin(existing_qs)]
+    options_fr = coalesce_pkey(options_fr, "title")
+
+    for i, row in options_fr.iterrows():
+        form = row.get("formSpecificationsId")
+        form_created_at = row.get("createdAt")
+        form_updated_at = row.get("updatedAt")
+        question = row.get("title")
+        options_list = row.get("options")
+        field_type = row.get("field_type")
+        # TODO: come up with a way of defining this
+        formik_key = None
+
+        uuid = md5_encode(question)
+        form_id = md5_encode(form)
+
+        if uuid == '3177b447-a152-d690-21a8-add57cf775eb':
+            print("if statement")
+            print(uuid in inserted_uuids)
+        if uuid in inserted_uuids:
+            continue
+        else:
+            cur.execute(
+                f"""
+                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    uuid,
+                    question,
+                    field_type,
+                    formik_key,
+                    options_list,
+                    form_created_at,
+                    form_updated_at,
+                    form_id,
+                ),
+            )
+            inserted_uuids.append(uuid)
+
+        # Commit the changes to the database
+        con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+

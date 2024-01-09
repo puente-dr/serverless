@@ -1,11 +1,13 @@
 from silver.create_silver import fill_tables
 from silver.create_drop import drop_tables, initialize_tables
 
-DROP_TABLES = True
-GET_DIMENSIONS = True
+DROP_TABLES = False
+INITIALZE = False
+GET_DIMENSIONS = False
 
 if __name__=="__main__": 
     if DROP_TABLES:
         drop_tables()
-    initialize_tables()
+    if INITIALZE:
+        initialize_tables()
     fill_tables(GET_DIMENSIONS) 

@@ -24,16 +24,16 @@ def get_custom_forms(df):
 
     fk_missing_rows = []
     missing_qa_rows = []
-    df["fields"] = df["fields"].apply(json.loads)
-    exploded_df = df.explode("fields")
+    # df["fields"] = df["fields"].apply(json.loads)
+    # exploded_df = df.explode("fields")
 
-    exploded_df["fields"] = exploded_df["fields"].apply(lambda x: get_subquestions(x))
-    exploded_df = exploded_df.explode("fields")
+    # exploded_df["fields"] = exploded_df["fields"].apply(lambda x: get_subquestions(x))
+    # exploded_df = exploded_df.explode("fields")
 
-    exploded_df["title"] = exploded_df["fields"].apply(lambda x: x.get("title"))
-    exploded_df["question_answer"] = exploded_df["fields"].apply(
-        lambda x: x.get("answer")
-    )
+    # exploded_df["title"] = exploded_df["fields"].apply(lambda x: x.get("title"))
+    # exploded_df["question_answer"] = exploded_df["fields"].apply(
+    #     lambda x: x.get("answer")
+    # )
 
     cols_to_check = [
         "surveyingUser",
