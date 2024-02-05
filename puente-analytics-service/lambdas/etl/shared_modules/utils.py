@@ -16,6 +16,16 @@ from shared_modules.env_utils import (
     PG_PASSWORD,
 )
 
+def replace_bad_characters(s):
+    s = s.replace(")", "").replace("(", "").replace("?", "").replace("¿", "").replace(":", "")
+    return s
+
+def replace_bad_characters_pd(df, col):
+    # Assuming df is your DataFrame and 'column_name' is the name of your column
+    df[col] = df[col].replace(['\)', '\(', '\?', '¿'], '', regex=True)
+    return df
+
+
 
 def query_db(query):
     conn = connection()

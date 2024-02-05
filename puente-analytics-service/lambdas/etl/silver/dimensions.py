@@ -8,6 +8,7 @@ from shared_modules.utils import (
     title_str,
     unique_values,
     query_db,
+    replace_bad_characters,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -519,7 +520,7 @@ def get_question_dim(df):
             if any(check_list):
                 continue
 
-            if question_label == "geolocation":
+            if question_label in ["geolocation", "surveyingUser"]:
                 continue
 
             if id is None:
@@ -548,6 +549,8 @@ def get_question_dim(df):
                     )
                 )
                 continue
+
+            question_label = replace_bad_characters(question_label)
             uuid = md5_encode(id)
 
             if uuid in inserted_uuids:
@@ -659,6 +662,9 @@ def ingest_nosql_table_questions(table_name):
 
     for question_tuple in config:
         uuid, label, formik_key, field_type, options = question_tuple  #
+        label = replace_bad_characters(label)
+        if label in ["surveyingUser"]:
+            continue
         uuid = md5_encode(formik_key)
         cur.execute(
             f"""
@@ -686,19 +692,18 @@ def get_custom_form_questions(form_results):
     con = connection()
     cur = con.cursor()
 
+    #form_results = form_results[~form_results["formSpecificationsId"].isin(inactive_forms)]
+
     ignore_questions = [
         "surveyingUser",
         "surveyingOrganization",
         "appVersion",
         "phoneOS"
     ]
+
     options_fr = form_results[~form_results["title"].isin(ignore_questions)]
     options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
     options["num_answers"] = options["options"].apply(len)
-    
-    print("options")
-    print(options.columns)
-    print(options.head())
 
     options_fr = options_fr.merge(options, on="title", how="left")
 
@@ -709,12 +714,10 @@ def get_custom_form_questions(form_results):
     options_fr.loc[options_fr["num_answers"] > 1, "field_type"] = "select"
     options_fr.loc[options_fr["is_list"], "field_type"] = "selectMulti"
 
-    print("bad question")
-    print(options_fr[options_fr["title"]=="Largo de la casa metros"])
+    options_fr["form_id"] = options_fr["formSpecificationsId"].apply(lambda x: md5_encode(x))
 
-
-    print(options_fr.columns)
-    print(options_fr.head())
+    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
+    options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
 
     inserted_uuids = [] 
     existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
@@ -735,9 +738,6 @@ def get_custom_form_questions(form_results):
         uuid = md5_encode(question)
         form_id = md5_encode(form)
 
-        if uuid == '3177b447-a152-d690-21a8-add57cf775eb':
-            print("if statement")
-            print(uuid in inserted_uuids)
         if uuid in inserted_uuids:
             continue
         else:

@@ -1,9 +1,9 @@
 from silver.create_silver import fill_tables
 from silver.create_drop import drop_tables, initialize_tables
 
-DROP_TABLES = False
-INITIALZE = False
-GET_DIMENSIONS = False
+DROP_TABLES = True
+INITIALZE = True
+GET_DIMENSIONS = True
 
 if __name__=="__main__": 
     if DROP_TABLES:

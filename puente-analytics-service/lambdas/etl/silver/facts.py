@@ -13,7 +13,9 @@ from shared_modules.utils import (
     parse_json_config,
     query_bronze_layer,
     title_str,
-    encode
+    encode,
+    query_db,
+    replace_bad_characters,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
 
@@ -40,8 +42,8 @@ def get_custom_forms(df):
         "communityname",
         "question_answer"
     ]
-    missing_ind_dict = {col: exploded_df[col].notnull() for col in cols_to_check}
-    missing_rows_dict = {col: exploded_df[~idx] for col, idx in missing_ind_dict.items()}
+    missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
+    missing_rows_dict = {col: df[~idx] for col, idx in missing_ind_dict.items()}
 
     conditions = list(missing_ind_dict.values())
 
@@ -49,7 +51,7 @@ def get_custom_forms(df):
     combined_condition = reduce(lambda x, y: x & y, conditions)
 
     # Filter the DataFrame based on the combined condition
-    exploded_df = exploded_df[combined_condition].reset_index(drop=True)
+    exploded_df = df[combined_condition].reset_index(drop=True)
 
     missing_dict = {"hhids": [], "comms": [], "answers": [], "users": []}
 
@@ -62,6 +64,11 @@ def get_custom_forms(df):
     ]
     for col in title_cols:
         exploded_df[col] = exploded_df[col].apply(lambda x: title_str(x))
+
+    inserted_uuids = [] 
+    existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
+
+    exploded_df = exploded_df[~exploded_df["title"].isin(existing_qs)]
 
 
     for i, row in exploded_df.iterrows():
@@ -108,7 +115,22 @@ def get_custom_forms(df):
         form_id = md5_encode(form)
         community_id = md5_encode(community_name)
 
+        ignore_questions = [
+            'surveyinguser',
+            'surveyingorganization',
+            'phoneos'
+        ]
+
+        if title.lower().strip() in ignore_questions:
+            continue
+
+        title = replace_bad_characters(title)
+
         question_id = md5_encode(title)
+
+        print("title")
+        print(title)
+        print(question_id)
 
         id = str(uuid.uuid4())
 
@@ -249,8 +271,8 @@ def add_nosql_to_fact(table_name, survey_df):
     config = parse_json_config(CONFIGS[table_name])
     questions = []
     for question_tuple in config:
-        _, _, formik_key, _, _ = question_tuple
-        questions.append(formik_key)
+        _, label, formik_key, _, _ = question_tuple
+        questions.append(label)
 
     questions = [question for question in questions if question in list(merged.columns)]
     merged.to_csv(F"{CSV_PATH}/merged_{table_name}.csv", index=False)
@@ -258,7 +280,7 @@ def add_nosql_to_fact(table_name, survey_df):
         id_vars=id_cols, var_name="question", value_name="answer"
     )
 
-    ignore_questions = ["searchIndex"] + [col for col in questions if "location" in col]
+    ignore_questions = ["searchIndex", "surveyingUser"] + [col for col in questions if "location" in col]
     comb_df = comb_df[~comb_df['question'].isin(ignore_questions)]
 
     comb_df.to_csv(f"{CSV_PATH}/comb_df_{table_name}.csv")
@@ -362,14 +384,19 @@ def add_nosql_to_fact(table_name, survey_df):
         user = row["surveyingUser"]
         community_name = row["communityname"]
         nosql_household_id = row["householdId"]
+
+        question_name = replace_bad_characters(question_name)
        
         check_list = []
         for field in [nosql_household_id, user, community_name]:
             if isinstance(field, str):
-                check = ("test" in field.lower()) or ("forgot" in field.lower())
+                check = ("test" in field.lower()) or ("forgot" in field.lower()) or ("experimental" in field.lower())
                 check_list.append(check)
         if any(check_list):
             test_check_count += 1
+            continue
+
+        if question_name.lower().strip() in ['surveyinguser']:
             continue
 
         row_insert = (
