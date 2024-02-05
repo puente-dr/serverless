@@ -26,6 +26,7 @@ def get_custom_forms(df):
 
     fk_missing_rows = []
     missing_qa_rows = []
+
     # df["fields"] = df["fields"].apply(json.loads)
     # exploded_df = df.explode("fields")
 
@@ -69,6 +70,8 @@ def get_custom_forms(df):
     existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
 
     exploded_df = exploded_df[~exploded_df["title"].isin(existing_qs)]
+
+    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
 
 
     for i, row in exploded_df.iterrows():
@@ -114,6 +117,11 @@ def get_custom_forms(df):
         surveying_organization_id = md5_encode(survey_org)
         form_id = md5_encode(form)
         community_id = md5_encode(community_name)
+
+        if form_id not in existing_forms:
+            continue
+
+
 
         ignore_questions = [
             'surveyinguser',

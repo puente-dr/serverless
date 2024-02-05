@@ -701,11 +701,17 @@ def get_custom_form_questions(form_results):
         "phoneOS"
     ]
 
+    print("1")
+    print(form_results[form_results['title']=='Nombre de Medicamento'])
+
     options_fr = form_results[~form_results["title"].isin(ignore_questions)]
     options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
     options["num_answers"] = options["options"].apply(len)
 
     options_fr = options_fr.merge(options, on="title", how="left")
+
+    print("2")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
 
     options_fr["field_type"] = None
     options_fr["is_list"] = options_fr["question_answer"].apply(lambda x: isinstance(x, list))
@@ -719,11 +725,17 @@ def get_custom_form_questions(form_results):
     existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
     options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
 
+    print("3")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
+
     inserted_uuids = [] 
     existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
 
     options_fr = options_fr[~options_fr["title"].isin(existing_qs)]
     options_fr = coalesce_pkey(options_fr, "title")
+
+    print("4")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
 
     for i, row in options_fr.iterrows():
         form = row.get("formSpecificationsId")
