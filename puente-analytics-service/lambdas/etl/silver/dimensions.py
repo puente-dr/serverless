@@ -5,6 +5,10 @@ from shared_modules.utils import (
     md5_encode,
     add_surveyuser_column,
     parse_json_config,
+    title_str,
+    unique_values,
+    query_db,
+    replace_bad_characters,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -24,6 +28,7 @@ And keeps it clear what is happening in all the tables
 def get_community_dim(df):
     con = connection()
     cur = con.cursor()
+    df['communityname'] = df['communityname'].apply(lambda x: title_str(x))
     communities = unique_combos(df, ["communityname", "city", "region"])
     communities = coalesce_pkey(communities, "communityname")
     now = datetime.datetime.utcnow()
@@ -100,6 +105,7 @@ def get_form_dim(df):
 def get_surveying_organization_dim(df):
     con = connection()
     cur = con.cursor()
+    df['surveyingOrganization'] = df['surveyingOrganization'].apply(lambda x: title_str(x))
     survey_orgs = df["surveyingOrganization"].unique()
     now = datetime.datetime.utcnow()
     for survey_org in survey_orgs:
@@ -173,7 +179,7 @@ def get_users_dim(df):
         if any(check_list):
             continue
 
-        uuid = md5_encode(survey_user)
+        uuid = md5_encode(title_str(survey_user))
         if survey_org is None:
             missing_surveyorgs.append(
                 (
@@ -191,7 +197,7 @@ def get_users_dim(df):
                 )
             )
             continue
-        survey_org_id = md5_encode(survey_org)
+        survey_org_id = md5_encode(title_str(survey_org))
         if first_name is None or last_name is None:
             missing_names.append(
                 (
@@ -400,6 +406,7 @@ def get_patient_dim(df):
         if (first_name in [np.nan, None]) | (last_name in [np.nan, None]):
             missing_names.append((first_name, last_name, patient_id, household_id))
             continue
+
         uuid = md5_encode(patient_id)
 
         try:
@@ -513,7 +520,7 @@ def get_question_dim(df):
             if any(check_list):
                 continue
 
-            if question_label == "geolocation":
+            if question_label in ["geolocation", "surveyingUser"]:
                 continue
 
             if id is None:
@@ -542,6 +549,8 @@ def get_question_dim(df):
                     )
                 )
                 continue
+
+            question_label = replace_bad_characters(question_label)
             uuid = md5_encode(id)
 
             if uuid in inserted_uuids:
@@ -642,9 +651,6 @@ def ingest_nosql_configs(configs):
 
 
 def ingest_nosql_table_questions(table_name):
-    import os
-    print(os.getcwd())
-    print(CONFIGS[table_name])
     config = parse_json_config(CONFIGS[table_name])
 
     con = connection()
@@ -656,6 +662,9 @@ def ingest_nosql_table_questions(table_name):
 
     for question_tuple in config:
         uuid, label, formik_key, field_type, options = question_tuple  #
+        label = replace_bad_characters(label)
+        if label in ["surveyingUser"]:
+            continue
         uuid = md5_encode(formik_key)
         cur.execute(
             f"""
@@ -678,3 +687,95 @@ def ingest_nosql_table_questions(table_name):
         "body": json.dumps({"questions": config}),
         "isBase64Encoded": False,
     }
+
+def get_custom_form_questions(form_results):
+    con = connection()
+    cur = con.cursor()
+
+    #form_results = form_results[~form_results["formSpecificationsId"].isin(inactive_forms)]
+
+    ignore_questions = [
+        "surveyingUser",
+        "surveyingOrganization",
+        "appVersion",
+        "phoneOS"
+    ]
+
+    print("1")
+    print(form_results[form_results['title']=='Nombre de Medicamento'])
+
+    options_fr = form_results[~form_results["title"].isin(ignore_questions)]
+    options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
+    options["num_answers"] = options["options"].apply(len)
+
+    options_fr = options_fr.merge(options, on="title", how="left")
+
+    print("2")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
+
+    options_fr["field_type"] = None
+    options_fr["is_list"] = options_fr["question_answer"].apply(lambda x: isinstance(x, list))
+
+    options_fr.loc[options_fr["num_answers"] == 1, "field_type"] = "input"
+    options_fr.loc[options_fr["num_answers"] > 1, "field_type"] = "select"
+    options_fr.loc[options_fr["is_list"], "field_type"] = "selectMulti"
+
+    options_fr["form_id"] = options_fr["formSpecificationsId"].apply(lambda x: md5_encode(x))
+
+    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
+    options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
+
+    print("3")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
+
+    inserted_uuids = [] 
+    existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
+
+    options_fr = options_fr[~options_fr["title"].isin(existing_qs)]
+    options_fr = coalesce_pkey(options_fr, "title")
+
+    print("4")
+    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
+
+    for i, row in options_fr.iterrows():
+        form = row.get("formSpecificationsId")
+        form_created_at = row.get("createdAt")
+        form_updated_at = row.get("updatedAt")
+        question = row.get("title")
+        options_list = row.get("options")
+        field_type = row.get("field_type")
+        # TODO: come up with a way of defining this
+        formik_key = None
+
+        uuid = md5_encode(question)
+        form_id = md5_encode(form)
+
+        if uuid in inserted_uuids:
+            continue
+        else:
+            cur.execute(
+                f"""
+                INSERT INTO question_dim (uuid, question, field_type, formik_key, options, created_at, updated_at, form_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    uuid,
+                    question,
+                    field_type,
+                    formik_key,
+                    options_list,
+                    form_created_at,
+                    form_updated_at,
+                    form_id,
+                ),
+            )
+            inserted_uuids.append(uuid)
+
+        # Commit the changes to the database
+        con.commit()
+
+    # Close the database connection and cursor
+    cur.close()
+    con.close()
+
+

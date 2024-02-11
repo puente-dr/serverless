@@ -25,3 +25,9 @@ CONFIGS = {
 }
 
 CSV_PATH = "./Data"
+
+def get_engine_str():
+    engine_str = (
+            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+        )
+    return engine_str

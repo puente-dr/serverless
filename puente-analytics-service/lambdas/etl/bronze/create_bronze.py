@@ -4,13 +4,9 @@ import json
 
 from shared_modules.env_utils import (
     NOSQL_TABLES,
-    PG_HOST,
-    PG_DATABASE,
-    PG_PORT,
-    PG_USERNAME,
-    PG_PASSWORD,
+    get_engine_str
 )
-from shared_modules.utils import restCall, connection
+from shared_modules.utils import restCall
 
 not_nosql_tables = ["SurveyData", "FormSpecificationsV2", "FormResults", "users"]
 tables_to_ingest = list(NOSQL_TABLES.keys()) + not_nosql_tables
@@ -47,9 +43,7 @@ def create_bronze_layer(tables_to_ingest):
                 df[col] = df[col].apply(json.dumps)
                 applied_json += 1
 
-        engine_str = (
-            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
-        )
+        engine_str = get_engine_str()
 
         engine = create_engine(engine_str)
 
