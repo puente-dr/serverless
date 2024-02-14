@@ -457,7 +457,7 @@ def get_patient_dim(df):
     cols = ["first_name", "last_name", "patient_id", "household_id"]
     missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
     if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv(f"{CSV_PATH}./missing_names_patient.csv", index=False)
+        missing_names_df.to_csv(f"{CSV_PATH}/missing_names_patient.csv", index=False)
 
     # Commit the changes to the database
     con.commit()
