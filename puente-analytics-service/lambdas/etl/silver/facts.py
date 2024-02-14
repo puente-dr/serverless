@@ -279,8 +279,8 @@ def add_nosql_to_fact(table_name, survey_df):
     config = parse_json_config(CONFIGS[table_name])
     questions = []
     for question_tuple in config:
-        _, label, formik_key, _, _ = question_tuple
-        questions.append(label)
+        _, _, formik_key, _, _ = question_tuple
+        questions.append(formik_key)
 
     questions = [question for question in questions if question in list(merged.columns)]
     merged.to_csv(F"{CSV_PATH}/merged_{table_name}.csv", index=False)
@@ -292,7 +292,6 @@ def add_nosql_to_fact(table_name, survey_df):
     comb_df = comb_df[~comb_df['question'].isin(ignore_questions)]
 
     comb_df.to_csv(f"{CSV_PATH}/comb_df_{table_name}.csv")
-    print("comb df")
 
     fk_missing_rows = []
     notnull_missing_rows = []
@@ -307,9 +306,6 @@ def add_nosql_to_fact(table_name, survey_df):
     test_check_count = 0
     ignore_questions_count = 0
     patient_fk_count = 0
-
-    #print("comb df size")
-    #print(comb_df.shape)
 
     cols_to_check = [
         "surveyingUser",
