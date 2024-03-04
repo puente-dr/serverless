@@ -25,8 +25,7 @@ And keeps it clear what is happening in all the tables
 """
 
 
-def get_community_dim(df):
-    con = connection()
+def get_community_dim(con, df):
     cur = con.cursor()
     df['communityname'] = df['communityname'].apply(lambda x: title_str(x))
     communities = unique_combos(df, ["communityname", "city", "region"])
@@ -52,7 +51,6 @@ def get_community_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -62,9 +60,8 @@ def get_community_dim(df):
     }
 
 
-def get_form_dim(df):
+def get_form_dim(con, df):
     # this comes from formspecificationsv2
-    con = connection()
     cur = con.cursor()
     forms = unique_combos(
         df, ["objectId", "name", "description", "customForm", "createdAt", "updatedAt"]
@@ -92,7 +89,6 @@ def get_form_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -102,8 +98,7 @@ def get_form_dim(df):
     }
 
 
-def get_surveying_organization_dim(df):
-    con = connection()
+def get_surveying_organization_dim(con, df):
     cur = con.cursor()
     df['surveyingOrganization'] = df['surveyingOrganization'].apply(lambda x: title_str(x))
     survey_orgs = df["surveyingOrganization"].unique()
@@ -123,7 +118,6 @@ def get_surveying_organization_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -133,8 +127,7 @@ def get_surveying_organization_dim(df):
     }
 
 
-def get_users_dim(df):
-    con = connection()
+def get_users_dim(con, df):
     cur = con.cursor()
     users = unique_combos(
         df,
@@ -256,7 +249,6 @@ def get_users_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     cols = [
         "uuid",
@@ -287,8 +279,7 @@ def get_users_dim(df):
     }
 
 
-def get_household_dim(df):
-    con = connection()
+def get_household_dim(con, df):
     cur = con.cursor()
     households = unique_combos(
         df, ["householdId", "latitude", "longitude", "communityname"]
@@ -331,7 +322,6 @@ def get_household_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     cols = ["household_id", "community_name", "lat", "lon"]
     missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
@@ -349,9 +339,8 @@ def get_household_dim(df):
     }
 
 
-def get_patient_dim(df):
+def get_patient_dim(con, df):
     # this data comes from surveyfact
-    con = connection()
     cur = con.cursor()
     df["age"] = df["age"].replace({"nan": None, "": None, " ": None, np.nan: None})
     patients = unique_combos(
@@ -464,7 +453,6 @@ def get_patient_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -474,9 +462,8 @@ def get_patient_dim(df):
     }
 
 
-def get_question_dim(df):
+def get_question_dim(con, df):
     # this comes from formspecificationsv2
-    con = connection()
     cur = con.cursor()
 
     # grouping by fields returns nan for some reason??
@@ -579,7 +566,6 @@ def get_question_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     cols = [
         "id",
@@ -605,10 +591,9 @@ def get_question_dim(df):
     }
 
 
-def add_nosql_to_forms(name, description, now):
+def add_nosql_to_forms(con, name, description, now):
     uuid = md5_encode(name)
 
-    con = connection()
     cur = con.cursor()
     cur.execute(
         f"""
@@ -623,11 +608,9 @@ def add_nosql_to_forms(name, description, now):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
 
-def ingest_nosql_configs(configs):
-    con = connection()
+def ingest_nosql_configs(con, configs):
     cur = con.cursor()
     for table_name, config_path in configs.items():
         form_id = md5_encode(table_name)
@@ -647,13 +630,11 @@ def ingest_nosql_configs(configs):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
 
-def ingest_nosql_table_questions(table_name):
+def ingest_nosql_table_questions(con, table_name):
     config = parse_json_config(CONFIGS[table_name])
 
-    con = connection()
     cur = con.cursor()
 
     now = datetime.datetime.now()
@@ -679,7 +660,6 @@ def ingest_nosql_table_questions(table_name):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -688,8 +668,7 @@ def ingest_nosql_table_questions(table_name):
         "isBase64Encoded": False,
     }
 
-def get_custom_form_questions(form_results):
-    con = connection()
+def get_custom_form_questions(con, form_results):
     cur = con.cursor()
 
     #form_results = form_results[~form_results["formSpecificationsId"].isin(inactive_forms)]
@@ -776,6 +755,5 @@ def get_custom_form_questions(form_results):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
 

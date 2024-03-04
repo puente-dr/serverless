@@ -27,19 +27,23 @@ def replace_bad_characters_pd(df, col):
 
 
 
-def query_db(query):
-    conn = connection()
-    df = read_sql_query(query, conn)
-    conn.close()
+def query_db(query, conn_in=None):
+    if conn_in is None:
+        conn = connection()
+        df = read_sql_query(query, conn)
+        conn.close()
+    else:
+        df = read_sql_query(query, conn_in)
+
     return df
 
 
-def query_bronze_layer(table):
+def query_bronze_layer(table, conn=None):
     query = f"""
     SELECT *
     FROM {table.lower()}_bronze
     """
-    df = query_db(query)
+    df = query_db(query, conn)
     return df
 
 

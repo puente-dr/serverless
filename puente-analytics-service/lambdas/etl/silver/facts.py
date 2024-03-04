@@ -20,9 +20,8 @@ from shared_modules.utils import (
 from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
 
 
-def get_custom_forms(df):
-    con = connection()
-    cur = con.cursor()
+def get_custom_forms(conn, df):
+    cur = conn.cursor()
 
     fk_missing_rows = []
     missing_qa_rows = []
@@ -187,11 +186,10 @@ def get_custom_forms(df):
         #     cur.execute("ROLLBACK")
         #     continue
 
-    con.commit()
+    conn.commit()
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     print("custom form insert count")
     print(insert_count)
@@ -248,8 +246,7 @@ def get_custom_forms(df):
     }
 
 
-def add_nosql_to_fact(table_name, survey_df):
-    con = connection()
+def add_nosql_to_fact(con, table_name, survey_df):
     cur = con.cursor()
     rename_dict = {
         "objectId": "objectIdSupplementary",
@@ -480,7 +477,6 @@ def add_nosql_to_fact(table_name, survey_df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     total_missing = sum(len(lst) for lst in missing_dict.values())
 
