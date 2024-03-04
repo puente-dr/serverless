@@ -1,9 +1,9 @@
 import json
 
-ACTUAL_ENV = True 
+PRODUCTION = False 
 
-if ACTUAL_ENV:
-    env_file = "./actual_env.json"
+if PRODUCTION:
+    env_file = "./env.prod.json"
 else:
     env_file = "./env.json"
 
