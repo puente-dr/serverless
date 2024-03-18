@@ -1,6 +1,6 @@
 import json
 
-PRODUCTION = False 
+PRODUCTION = False
 
 if PRODUCTION:
     env_file = "./env.prod.json"

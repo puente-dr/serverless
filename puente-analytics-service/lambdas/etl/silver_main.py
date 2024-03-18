@@ -5,6 +5,7 @@ from shared_modules.utils import connection
 DROP_TABLES = True
 INITIALZE = True
 GET_DIMENSIONS = True
+GET_PUENTE_TABLES = False
 
 
 
@@ -14,6 +15,6 @@ if __name__=="__main__":
         drop_tables(conn)
     if INITIALZE:
         initialize_tables(conn)
-    fill_tables(conn, GET_DIMENSIONS) 
+    fill_tables(conn, GET_DIMENSIONS, GET_PUENTE_TABLES) 
     conn.close()
 

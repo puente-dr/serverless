@@ -23,7 +23,7 @@ from dimensions import (
 
 from facts import add_nosql_to_fact, get_custom_forms
 
-def fill_tables(conn, get_dimensions=True):
+def fill_tables(conn, get_dimensions=True, get_puente_tables=True):
     survey_df = query_bronze_layer("SurveyData")
     form_specs = query_bronze_layer("FormSpecificationsV2")
     inactive_forms = form_specs.loc[form_specs["active"]=="false", "objectId"].unique().tolist()
@@ -48,18 +48,19 @@ def fill_tables(conn, get_dimensions=True):
         get_question_dim(conn, form_specs)
         print("question dim")
 
-    for table_name, table_desc in NOSQL_TABLES.items():
-        now = datetime.datetime.now()
-        print("table name, desc")
-        print(table_name, table_desc)
-        if get_dimensions:
-            add_nosql_to_forms(conn, table_name, table_desc, now)
-            print("add nosql to forms")
-            ingest_nosql_table_questions(conn, table_name)
-            print("insert qs")
+    if get_puente_tables:
+        for table_name, table_desc in NOSQL_TABLES.items():
+            now = datetime.datetime.now()
+            print("table name, desc")
+            print(table_name, table_desc)
+            if get_dimensions:
+                add_nosql_to_forms(conn, table_name, table_desc, now)
+                print("add nosql to forms")
+                ingest_nosql_table_questions(conn, table_name)
+                print("insert qs")
 
-        add_nosql_to_fact(conn, table_name, survey_df)
-        print("add to fact")
+            add_nosql_to_fact(conn, table_name, survey_df)
+            print("add to fact")
 
     form_results = query_bronze_layer("FormResults", conn)
     form_results = form_results.merge(
