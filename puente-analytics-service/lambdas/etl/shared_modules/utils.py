@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 import requests
 from pandas import json_normalize, read_sql_query
 import json
@@ -27,19 +28,23 @@ def replace_bad_characters_pd(df, col):
 
 
 
-def query_db(query):
-    conn = connection()
-    df = read_sql_query(query, conn)
-    conn.close()
+def query_db(query, conn_in=None):
+    if conn_in is None:
+        conn = connection()
+        df = read_sql_query(query, conn)
+        conn.close()
+    else:
+        df = read_sql_query(query, conn_in)
+
     return df
 
 
-def query_bronze_layer(table):
+def query_bronze_layer(table, conn=None):
     query = f"""
     SELECT *
     FROM {table.lower()}_bronze
     """
-    df = query_db(query)
+    df = query_db(query, conn)
     return df
 
 
@@ -137,7 +142,11 @@ def to_camel_case(text):
 
 
 def md5_encode(s):
-    return hashlib.md5(s.encode("utf-8")).hexdigest()
+    namespace = uuid.NAMESPACE_DNS
+
+    # Generate UUID version 3
+    return str(uuid.uuid3(namespace, s))
+    #return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
 def parse_json_config(json_path):
@@ -209,13 +218,30 @@ def explode_json(df, col="fields"):
 
 
 def unique_values(items):
-    unique = []
+    unique = set()
     for item in items:
         # If the item is a list, check for any list in 'unique' that is equal to 'item'.
         # If not a list, just check if the item is already in 'unique'.
         if isinstance(item, list):
             if not any(existing_item == item for existing_item in unique if isinstance(existing_item, list)):
-                unique.append(item)
+                item_str = str(sorted(item)).replace("[", "\[").replace("]", "\]")
         elif item not in unique:
-            unique.append(item)
-    return unique
+            item_str = str(item)
+
+        unique.add(item_str)
+    
+    return list(unique)
+    # flat = items.values.ravel()
+    # flat_list = list(flat)
+    # flattened_list = [item for sublist in flat_list for item in sublist]
+    # try:
+    #     flat_set = set(flattened_list)
+    # except TypeError:
+    #     print(items)
+    #     print(flat)
+    #     print(flat_list)
+    #     print(flattened_list)
+    #     raise TypeError("HI")
+    # flat_set_list = list(flat_set)
+    # flat_str = str(flat_set_list)
+    # return flat_str

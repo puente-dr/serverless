@@ -55,6 +55,7 @@ def create_bronze_layer(tables_to_ingest):
                 engine,
                 if_exists="replace",
                 index=False,
+                chunksize=1000,
                 dtype={"dictionary_column": JSONB},
             )
         else:

@@ -20,9 +20,8 @@ from shared_modules.utils import (
 from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
 
 
-def get_custom_forms(df):
-    con = connection()
-    cur = con.cursor()
+def get_custom_forms(conn, df):
+    cur = conn.cursor()
 
     fk_missing_rows = []
     missing_qa_rows = []
@@ -57,6 +56,8 @@ def get_custom_forms(df):
     missing_dict = {"hhids": [], "comms": [], "answers": [], "users": []}
 
     insert_count = 0
+    ignore_count = 0
+    check_count = 0
 
     title_cols =[
         "surveyingOrganization",
@@ -69,13 +70,32 @@ def get_custom_forms(df):
     inserted_uuids = [] 
     existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
 
-    exploded_df = exploded_df[~exploded_df["title"].isin(existing_qs)]
+    existing_patients = list(query_db("SELECT DISTINCT  FROM question_dim")["question"].unique())
+
+    print(exploded_df.shape)
+    exploded_df = exploded_df[exploded_df["title"].isin(existing_qs)]
+    print("post qs")
+    print(exploded_df.shape)
+
+
+    exploded_df["form_id"] = exploded_df["formSpecificationsId"].apply(lambda x: md5_encode(x))
+
+    #print(exploded_df["form_id"].unique())
 
     existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
+    #print(existing_forms)
+    
+    exploded_df = exploded_df[exploded_df["form_id"].isin(existing_forms)]
+    print("final exploded shape")
+    print(exploded_df.shape)
+
+    print(len(exploded_df["title"].unique()))
+
+    error_dict = {}
 
 
     for i, row in exploded_df.iterrows():
-        object_id = row.get("objectId")
+        object_id = row.get("client.objectId")
         user = row.get("surveyingUser")
         survey_org = row.get("surveyingOrganization")
         form = row.get("formSpecificationsId")
@@ -85,9 +105,6 @@ def get_custom_forms(df):
         community_name = row.get("communityname")
         title = row.get("title")
         question_answer = row.get("question_answer")
-
-        if title == "appVersion":
-            continue
 
         row_insert = (
             object_id,
@@ -105,6 +122,7 @@ def get_custom_forms(df):
                 check = ("test" in field.lower()) or ("forgot" in field.lower())
                 check_list.append(check)
         if any(check_list):
+            check_count += 1
             continue
 
         if household in [None, np.nan]:
@@ -118,27 +136,28 @@ def get_custom_forms(df):
         form_id = md5_encode(form)
         community_id = md5_encode(community_name)
 
-        if form_id not in existing_forms:
-            continue
-
-
+        # if form_id not in existing_forms:
+        #     continue
 
         ignore_questions = [
             'surveyinguser',
             'surveyingorganization',
-            'phoneos'
+            'phoneos',
+            'appversion',
         ]
 
         if title.lower().strip() in ignore_questions:
+            ignore_count += 1
+            #print(title)
             continue
 
-        title = replace_bad_characters(title)
+        #title = replace_bad_characters(title)
 
         question_id = md5_encode(title)
 
-        print("title")
-        print(title)
-        print(question_id)
+        #print("title")
+        #print(title)
+        #print(question_id)
 
         id = str(uuid.uuid4())
 
@@ -156,8 +175,8 @@ def get_custom_forms(df):
             form_id,
         )
 
-        #try:
-        cur.execute(
+        try:
+            cur.execute(
                 f"""
             INSERT INTO survey_fact (uuid, surveying_organization_id, surveying_user_id, community_id, question_id, question_answer, created_at, updated_at, patient_id, household_id, form_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -177,24 +196,43 @@ def get_custom_forms(df):
                 ),
             )
 
-        insert_count += 1
+            insert_count += 1
 
-        # except ForeignKeyViolation:
-        #     insert_tuple = tuple(
-        #         list(insert_tuple)[:5] + [title, object_id] + list(insert_tuple[5:])
-        #     )
-        #     fk_missing_rows.append(insert_tuple)
-        #     cur.execute("ROLLBACK")
-        #     continue
+        except ForeignKeyViolation as e:
+            insert_tuple = tuple(
+                list(insert_tuple)[:5] + [title, object_id] + list(insert_tuple[5:])
+            )
+            fk_missing_rows.append(insert_tuple)
+            if "question_dim" in str(e):
+                error_table = "question_dim"
+            elif "patient_dim" in str(e):
+                error_table = "patient_dim"
+            else:
+                error_table = "other"
 
-    con.commit()
+            if error_table not in error_dict.keys():
+                error_dict[error_table] = 1
+            else:
+                error_dict[error_table] += 1
+            cur.execute("ROLLBACK")
+            continue
+
+    conn.commit()
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
+    # NOTE from 2024-03-11
+    # getting a ton of FK errors, so nothing is getting inserted
+    # first one I see is patient dim error
     print("custom form insert count")
     print(insert_count)
+    print("check count")
+    print(check_count)
+    print("ignore count")
+    print(ignore_count)
+    print("error dict")
+    print(error_dict)
 
     cols = [
         "object_id",
@@ -248,8 +286,7 @@ def get_custom_forms(df):
     }
 
 
-def add_nosql_to_fact(table_name, survey_df):
-    con = connection()
+def add_nosql_to_fact(con, table_name, survey_df):
     cur = con.cursor()
     rename_dict = {
         "objectId": "objectIdSupplementary",
@@ -279,8 +316,8 @@ def add_nosql_to_fact(table_name, survey_df):
     config = parse_json_config(CONFIGS[table_name])
     questions = []
     for question_tuple in config:
-        _, label, formik_key, _, _ = question_tuple
-        questions.append(label)
+        _, _, formik_key, _, _ = question_tuple
+        questions.append(formik_key)
 
     questions = [question for question in questions if question in list(merged.columns)]
     merged.to_csv(F"{CSV_PATH}/merged_{table_name}.csv", index=False)
@@ -292,7 +329,6 @@ def add_nosql_to_fact(table_name, survey_df):
     comb_df = comb_df[~comb_df['question'].isin(ignore_questions)]
 
     comb_df.to_csv(f"{CSV_PATH}/comb_df_{table_name}.csv")
-    print("comb df")
 
     fk_missing_rows = []
     notnull_missing_rows = []
@@ -307,9 +343,6 @@ def add_nosql_to_fact(table_name, survey_df):
     test_check_count = 0
     ignore_questions_count = 0
     patient_fk_count = 0
-
-    #print("comb df size")
-    #print(comb_df.shape)
 
     cols_to_check = [
         "surveyingUser",
@@ -484,7 +517,6 @@ def add_nosql_to_fact(table_name, survey_df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     total_missing = sum(len(lst) for lst in missing_dict.values())
 

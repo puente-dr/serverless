@@ -12,3 +12,5 @@ puente-etl/lambdas/etl/utils/secretz.py
 **/venv-prod/
 puente-analytics-service/lambdas/etl/env.json
 puente-analytics-service/lambdas/etl/.aws-sam/
+puente-analytics-service/lambdas/etl/env.other.json
+puente-analytics-service/lambdas/etl/env.prod.json
