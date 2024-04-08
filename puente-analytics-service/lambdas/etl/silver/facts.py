@@ -4,18 +4,14 @@ import json
 import uuid
 from functools import reduce
 from psycopg2.errors import ForeignKeyViolation
-from sqlalchemy import create_engine
 
 from shared_modules.utils import (
-    get_subquestions,
-    connection,
     md5_encode,
     parse_json_config,
     query_bronze_layer,
     title_str,
-    encode,
-    query_db,
     replace_bad_characters,
+    get_unique_from_table
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
 
@@ -26,22 +22,12 @@ def get_custom_forms(conn, df):
     fk_missing_rows = []
     missing_qa_rows = []
 
-    # df["fields"] = df["fields"].apply(json.loads)
-    # exploded_df = df.explode("fields")
-
-    # exploded_df["fields"] = exploded_df["fields"].apply(lambda x: get_subquestions(x))
-    # exploded_df = exploded_df.explode("fields")
-
-    # exploded_df["title"] = exploded_df["fields"].apply(lambda x: x.get("title"))
-    # exploded_df["question_answer"] = exploded_df["fields"].apply(
-    #     lambda x: x.get("answer")
-    # )
-
     cols_to_check = [
         "surveyingUser",
         "communityname",
         "question_answer"
     ]
+    # get rows with no missing values in key columns
     missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
     missing_rows_dict = {col: df[~idx] for col, idx in missing_ind_dict.items()}
 
@@ -68,33 +54,23 @@ def get_custom_forms(conn, df):
         exploded_df[col] = exploded_df[col].apply(lambda x: title_str(x))
 
     inserted_uuids = [] 
-    existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
-
-    existing_patients = list(query_db("SELECT DISTINCT  FROM question_dim")["question"].unique())
-
-    print(exploded_df.shape)
+    # only existing questions
+    existing_qs = get_unique_from_table("question_dim", "question")
     exploded_df = exploded_df[exploded_df["title"].isin(existing_qs)]
-    print("post qs")
-    print(exploded_df.shape)
 
+    existing_patients = get_unique_from_table("patient_dim", "uuid")
 
+    # only existing forms
     exploded_df["form_id"] = exploded_df["formSpecificationsId"].apply(lambda x: md5_encode(x))
-
-    #print(exploded_df["form_id"].unique())
-
-    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
-    #print(existing_forms)
-    
+    existing_forms = get_unique_from_table("form_dim", "uuid")
     exploded_df = exploded_df[exploded_df["form_id"].isin(existing_forms)]
-    print("final exploded shape")
-    print(exploded_df.shape)
-
-    print(len(exploded_df["title"].unique()))
 
     error_dict = {}
 
+    missing_patients = []
 
-    for i, row in exploded_df.iterrows():
+
+    for _, row in exploded_df.iterrows():
         object_id = row.get("client.objectId")
         user = row.get("surveyingUser")
         survey_org = row.get("surveyingOrganization")
@@ -106,16 +82,7 @@ def get_custom_forms(conn, df):
         title = row.get("title")
         question_answer = row.get("question_answer")
 
-        row_insert = (
-            object_id,
-            user,
-            survey_org,
-            form,
-            household,
-            community_name,
-            title,
-            question_answer,
-        )
+        # remove test rows
         check_list = []
         for field in [household, community_name, question_answer, user]:
             if isinstance(field, str):
@@ -131,33 +98,29 @@ def get_custom_forms(conn, df):
             household_id = md5_encode(household)
 
         patient_id = md5_encode(object_id)
+
+        # track patients that aren't already existing but in custom forms
+        if patient_id not in existing_patients:
+            missing_patients.append(object_id)
         user_id = md5_encode(user)
         surveying_organization_id = md5_encode(survey_org)
         form_id = md5_encode(form)
         community_id = md5_encode(community_name)
 
-        # if form_id not in existing_forms:
-        #     continue
-
+        # fake "questions" to ignore
         ignore_questions = [
             'surveyinguser',
             'surveyingorganization',
             'phoneos',
             'appversion',
         ]
-
         if title.lower().strip() in ignore_questions:
             ignore_count += 1
-            #print(title)
             continue
 
         #title = replace_bad_characters(title)
 
         question_id = md5_encode(title)
-
-        #print("title")
-        #print(title)
-        #print(question_id)
 
         id = str(uuid.uuid4())
 
@@ -203,6 +166,7 @@ def get_custom_forms(conn, df):
                 list(insert_tuple)[:5] + [title, object_id] + list(insert_tuple[5:])
             )
             fk_missing_rows.append(insert_tuple)
+            # show which table is doing the FK error
             if "question_dim" in str(e):
                 error_table = "question_dim"
             elif "patient_dim" in str(e):
@@ -233,6 +197,9 @@ def get_custom_forms(conn, df):
     print(ignore_count)
     print("error dict")
     print(error_dict)
+    print("missing patients")
+    print(len(list(set(missing_patients))))
+    print(list(set(missing_patients)))
 
     cols = [
         "object_id",
@@ -319,16 +286,16 @@ def add_nosql_to_fact(con, table_name, survey_df):
         _, _, formik_key, _, _ = question_tuple
         questions.append(formik_key)
 
+    # questions that are column names
     questions = [question for question in questions if question in list(merged.columns)]
-    merged.to_csv(F"{CSV_PATH}/merged_{table_name}.csv", index=False)
+    # melt these question columns into question and answer columns. Long data gang
     comb_df = merged[id_cols + questions].melt(
         id_vars=id_cols, var_name="question", value_name="answer"
     )
 
+    # ignore some questions
     ignore_questions = ["searchIndex", "surveyingUser"] + [col for col in questions if "location" in col]
     comb_df = comb_df[~comb_df['question'].isin(ignore_questions)]
-
-    comb_df.to_csv(f"{CSV_PATH}/comb_df_{table_name}.csv")
 
     fk_missing_rows = []
     notnull_missing_rows = []
@@ -414,7 +381,7 @@ def add_nosql_to_fact(con, table_name, survey_df):
 
     # # Close the database connection
     # engine.dispose()
-    for i, row in comb_df.iterrows():
+    for _, row in comb_df.iterrows():
         created_at = row["createdAt"]
         updated_at = row["updatedAt"]
         question_name = row["question"]
@@ -429,6 +396,7 @@ def add_nosql_to_fact(con, table_name, survey_df):
         question_name = replace_bad_characters(question_name)
        
         check_list = []
+        # remove test rows
         for field in [nosql_household_id, user, community_name]:
             if isinstance(field, str):
                 check = ("test" in field.lower()) or ("forgot" in field.lower()) or ("experimental" in field.lower())

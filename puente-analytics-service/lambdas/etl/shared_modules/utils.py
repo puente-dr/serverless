@@ -1,10 +1,10 @@
-import hashlib
 import uuid
 import requests
 from pandas import json_normalize, read_sql_query
 import json
 import psycopg2
 import numpy as np
+from functools import reduce
 
 from shared_modules.env_utils import (
     APP_ID,
@@ -231,17 +231,24 @@ def unique_values(items):
         unique.add(item_str)
     
     return list(unique)
-    # flat = items.values.ravel()
-    # flat_list = list(flat)
-    # flattened_list = [item for sublist in flat_list for item in sublist]
-    # try:
-    #     flat_set = set(flattened_list)
-    # except TypeError:
-    #     print(items)
-    #     print(flat)
-    #     print(flat_list)
-    #     print(flattened_list)
-    #     raise TypeError("HI")
-    # flat_set_list = list(flat_set)
-    # flat_str = str(flat_set_list)
-    # return flat_str
+    
+
+def get_unique_from_table(table, column):
+    existing_values = list(query_db(f"SELECT DISTINCT {column} FROM {table}")[column].unique())
+    return existing_values
+
+
+def get_missing_ind(df, cols_to_check):
+    cols_to_check = [
+        "surveyingUser",
+        "communityname",
+        "answer"
+    ]
+    missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
+    missing_rows_dict = {col: df[~idx] for col, idx in missing_ind_dict.items()}
+
+    conditions = list(missing_ind_dict.values())
+
+    # only not na in all check columns
+    combined_condition = reduce(lambda x, y: x & y, conditions)
+    return combined_condition

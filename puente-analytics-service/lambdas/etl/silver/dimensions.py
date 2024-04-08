@@ -1,5 +1,4 @@
 from shared_modules.utils import (
-    connection,
     unique_combos,
     coalesce_pkey,
     md5_encode,
@@ -7,8 +6,8 @@ from shared_modules.utils import (
     parse_json_config,
     title_str,
     unique_values,
-    query_db,
     replace_bad_characters,
+    get_unique_from_table,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -68,7 +67,7 @@ def get_form_dim(con, df):
     )
     forms = coalesce_pkey(forms, "objectId")
     now = datetime.datetime.utcnow()
-    for i, form_row in forms.iterrows():
+    for _, form_row in forms.iterrows():
         form = form_row.get("objectId")
         name = form_row.get("name")
         description = form_row.get("description")
@@ -154,7 +153,7 @@ def get_users_dim(con, df):
         dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
     missing_names = []
     missing_surveyorgs = []
-    for i, user_row in users.iterrows():
+    for _, user_row in users.iterrows():
         survey_user = user_row.get("survey_user")
         if survey_user in dups["survey_user"].values:
             continue
@@ -365,7 +364,7 @@ def get_patient_dim(con, df):
     missing_hhid = []
     missing_names = []
     now = datetime.datetime.utcnow()
-    for i, patient_row in patients.iterrows():
+    for _, patient_row in patients.iterrows():
         patient_id = patient_row.get("objectId")
         household_id = patient_row.get("householdId")
         first_name = patient_row.get("fname")
@@ -479,7 +478,7 @@ def get_question_dim(con, df):
     inserted_uuids = []
     missing_ids = []
     missing_labels = []
-    for i, form_row in forms.iterrows():
+    for _, form_row in forms.iterrows():
         form = form_row.get("objectId")
         form_created_at = form_row.get("createdAt")
         form_updated_at = form_row.get("updatedAt")
@@ -674,8 +673,6 @@ def ingest_nosql_table_questions(con, table_name):
 def get_custom_form_questions(con, form_results):
     cur = con.cursor()
 
-    #form_results = form_results[~form_results["formSpecificationsId"].isin(inactive_forms)]
-
     ignore_questions = [
         "surveyingUser",
         "surveyingOrganization",
@@ -683,46 +680,33 @@ def get_custom_form_questions(con, form_results):
         "phoneOS"
     ]
 
-    print("1")
-    print(form_results[form_results['title']=='Nombre de Medicamento'])
-
+    # remove fake "questions"
     options_fr = form_results[~form_results["title"].isin(ignore_questions)]
+    # get unique answers to each question, make them a list of options
     options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
     options["num_answers"] = options["options"].apply(len)
 
+    # options and form results together
     options_fr = options_fr.merge(options, on="title", how="left")
-
-    print("2")
-    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
 
     options_fr["field_type"] = None
     options_fr["is_list"] = options_fr["question_answer"].apply(lambda x: isinstance(x, list))
 
+    # define different field types based on number of answers
     options_fr.loc[options_fr["num_answers"] == 1, "field_type"] = "input"
     options_fr.loc[options_fr["num_answers"] > 1, "field_type"] = "select"
     options_fr.loc[options_fr["is_list"], "field_type"] = "selectMulti"
 
     options_fr["form_id"] = options_fr["formSpecificationsId"].apply(lambda x: md5_encode(x))
 
-    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
+    # make sure the form exists
+    existing_forms = get_unique_from_table("form_dim", "uuid")
     options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
 
-    print("3")
-    print(options_fr.shape)
-    #print(options_fr[options_fr['title']=='Nombre de Medicamento'])
-
     inserted_uuids = [] 
-    #existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
-
-    
-    #options_fr = options_fr[~options_fr["title"].isin(existing_qs)]
-    options_fr.to_csv("./custom_questions_options.csv")
     options_fr = coalesce_pkey(options_fr, "title")
 
-    print("4")
-    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
-
-    for i, row in options_fr.iterrows():
+    for _, row in options_fr.iterrows():
         form = row.get("formSpecificationsId")
         form_created_at = row.get("createdAt")
         form_updated_at = row.get("updatedAt")
@@ -730,9 +714,7 @@ def get_custom_form_questions(con, form_results):
         options_list = row.get("options")
         if not isinstance(options_list, list):
             print(options_list, type(options_list))
-        # if options_list:
-        #     options_list = options_list.replace("[", "{").replace("]", "}")
-        #     print(options_list)
+
         field_type = row.get("field_type")
         # TODO: come up with a way of defining this
         formik_key = None
