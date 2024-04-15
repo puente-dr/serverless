@@ -6,7 +6,7 @@ DROP_TABLES = True
 INITIALZE = True
 GET_DIMENSIONS = True
 GET_PUENTE_TABLES = False
-
+DEBUG = True
 
 
 if __name__=="__main__": 
@@ -15,6 +15,6 @@ if __name__=="__main__":
         drop_tables(conn)
     if INITIALZE:
         initialize_tables(conn)
-    fill_tables(conn, GET_DIMENSIONS, GET_PUENTE_TABLES) 
+    fill_tables(conn, GET_DIMENSIONS, GET_PUENTE_TABLES, DEBUG) 
     conn.close()
 

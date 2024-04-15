@@ -75,9 +75,6 @@ def get_form_dim(con, df):
         created_at = form_row.get("createdAt", now)
         updated_at = form_row.get("updatedAt", now)
         uuid = md5_encode(form)
-        if form == '2sabtrLat4':
-            print("TEST uuid")
-            print(uuid)
         cur.execute(
             f"""
                 INSERT INTO form_dim (uuid, name, description, is_custom_form, created_at, updated_at)
@@ -491,7 +488,7 @@ def get_question_dim(con, df):
             field_type = question.get("fieldType")
             formik_key = question.get("formikKey")
             question_label = question.get("label")
-            # note sure the best way to handle this
+            # not sure the best way to handle this
             if field_type in ["select", "selectMulti"]:
                 options = question.get("options")
                 options_list = [option["label"] for option in options]
@@ -712,8 +709,6 @@ def get_custom_form_questions(con, form_results):
         form_updated_at = row.get("updatedAt")
         question = row.get("title")
         options_list = row.get("options")
-        if not isinstance(options_list, list):
-            print(options_list, type(options_list))
 
         field_type = row.get("field_type")
         # TODO: come up with a way of defining this
@@ -748,7 +743,3 @@ def get_custom_form_questions(con, form_results):
 
     # Close the database connection and cursor
     cur.close()
-    print("num inserted")
-    print(len(inserted_uuids))
-
-

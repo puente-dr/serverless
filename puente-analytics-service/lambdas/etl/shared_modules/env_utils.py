@@ -32,23 +32,3 @@ CONFIGS = {
 }
 
 CSV_PATH = "./Data"
-
-def get_engine_str():
-    engine_str = (
-            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
-        )
-    return engine_str
-
-# from sqlalchemy import create_engine
-
-# engine_str = get_engine_str()
-
-# engine = create_engine(engine_str)
-# from sqlalchemy.orm import sessionmaker
-
-# # Bind the sessionmaker to the engine
-# Session = sessionmaker(bind=engine)
-# # Get a new session instance
-# session = Session()
-
-# session.rollback()

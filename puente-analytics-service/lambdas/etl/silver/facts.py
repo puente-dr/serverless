@@ -13,11 +13,14 @@ from shared_modules.utils import (
     replace_bad_characters,
     get_unique_from_table
 )
-from shared_modules.env_utils import CONFIGS, CSV_PATH, get_engine_str
+from shared_modules.env_utils import CONFIGS, CSV_PATH
 
 
-def get_custom_forms(conn, df):
+def get_custom_forms(conn, df, debug):
     cur = conn.cursor()
+
+    print("init df")
+    print(df.shape)
 
     fk_missing_rows = []
     missing_qa_rows = []
@@ -39,6 +42,9 @@ def get_custom_forms(conn, df):
     # Filter the DataFrame based on the combined condition
     exploded_df = df[combined_condition].reset_index(drop=True)
 
+    print("exploded after condition")
+    print(exploded_df.shape)
+
     missing_dict = {"hhids": [], "comms": [], "answers": [], "users": []}
 
     insert_count = 0
@@ -53,11 +59,15 @@ def get_custom_forms(conn, df):
     for col in title_cols:
         exploded_df[col] = exploded_df[col].apply(lambda x: title_str(x))
 
-    inserted_uuids = [] 
     # only existing questions
     existing_qs = get_unique_from_table("question_dim", "question")
     exploded_df = exploded_df[exploded_df["title"].isin(existing_qs)]
 
+    print("post qs")
+    print(exploded_df.shape)
+
+    # only existing patients
+    # handle this at the FK error level
     existing_patients = get_unique_from_table("patient_dim", "uuid")
 
     # only existing forms
@@ -65,9 +75,15 @@ def get_custom_forms(conn, df):
     existing_forms = get_unique_from_table("form_dim", "uuid")
     exploded_df = exploded_df[exploded_df["form_id"].isin(existing_forms)]
 
+    print("post forms")
+    print(exploded_df.shape)
+
     error_dict = {}
 
     missing_patients = []
+
+    print("exploded df")
+    print(exploded_df.shape)
 
 
     for _, row in exploded_df.iterrows():
@@ -186,64 +202,62 @@ def get_custom_forms(conn, df):
     # Close the database connection and cursor
     cur.close()
 
-    # NOTE from 2024-03-11
-    # getting a ton of FK errors, so nothing is getting inserted
-    # first one I see is patient dim error
-    print("custom form insert count")
-    print(insert_count)
-    print("check count")
-    print(check_count)
-    print("ignore count")
-    print(ignore_count)
-    print("error dict")
-    print(error_dict)
-    print("missing patients")
-    print(len(list(set(missing_patients))))
-    print(list(set(missing_patients)))
+    if debug:
+        print("custom form insert count")
+        print(insert_count)
+        print("check count")
+        print(check_count)
+        print("ignore count")
+        print(ignore_count)
+        print("error dict")
+        print(error_dict)
+        print("missing patients")
+        print(len(list(set(missing_patients))))
+        print(list(set(missing_patients)))
 
-    cols = [
-        "object_id",
-        "user",
-        "survey_org",
-        "form",
-        "household",
-        "community",
-        "question",
-        "question_answer",
-    ]
+        cols = [
+            "object_id",
+            "user",
+            "survey_org",
+            "form",
+            "household",
+            "community",
+            "question",
+            "question_answer",
+        ]
 
-    for table, missing_df in missing_rows_dict.items():
-        #missing_df = pd.DataFrame.from_records(missing, columns=cols)
-        if missing_df.shape[0] > 0:
-            missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
+        for table, missing_df in missing_rows_dict.items():
+            #missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            if missing_df.shape[0] > 0:
+                missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
 
-    for table, missing in missing_dict.items():
-        missing_df = pd.DataFrame.from_records(missing, columns=cols)
-        if missing_df.shape[0] > 0:
-            missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
+        for table, missing in missing_dict.items():
+            missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            if missing_df.shape[0] > 0:
+                missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
 
-    cols = [
-        "uuid",
-        "surveying_organization_id",
-        "user_id",
-        "community_id",
-        "question_id",
-        "question_title",
-        "objectId",
-        "question_answer",
-        "created_at",
-        "updated_at",
-        "patient_id",
-        "household_id",
-        "form_id",
-    ]
+        cols = [
+            "uuid",
+            "surveying_organization_id",
+            "user_id",
+            "community_id",
+            "question_id",
+            "question_title",
+            "objectId",
+            "question_answer",
+            "created_at",
+            "updated_at",
+            "patient_id",
+            "household_id",
+            "form_id",
+        ]
 
-    fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
-    if fk_missing_rows_df.shape[0] > 0:
-        fk_missing_rows_df.to_csv(f"{CSV_PATH}/custom_fk.csv", index=False)
-    missing_qa_rows_df = pd.DataFrame.from_records(missing_qa_rows, columns=cols)
-    if missing_qa_rows_df.shape[0] > 0:
-        missing_qa_rows_df.to_csv(f"{CSV_PATH}/custom_nullqa.csv", index=False)
+        fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
+        if fk_missing_rows_df.shape[0] > 0:
+            fk_missing_rows_df.to_csv(f"{CSV_PATH}/custom_fk.csv", index=False)
+        missing_qa_rows_df = pd.DataFrame.from_records(missing_qa_rows, columns=cols)
+        if missing_qa_rows_df.shape[0] > 0:
+            missing_qa_rows_df.to_csv(f"{CSV_PATH}/custom_nullqa.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -253,7 +267,7 @@ def get_custom_forms(conn, df):
     }
 
 
-def add_nosql_to_fact(con, table_name, survey_df):
+def add_nosql_to_fact(con, table_name, survey_df, debug):
     cur = con.cursor()
     rename_dict = {
         "objectId": "objectIdSupplementary",
@@ -336,51 +350,6 @@ def add_nosql_to_fact(con, table_name, survey_df):
     for col in title_cols:
         comb_df[col] = comb_df[col].apply(lambda x: title_str(x))
 
-    # TODO: use to_sql instead of insert 
-    # will have to use pd.apply to get all the ids and do all checks
-    # encode_cols = {
-    #     "surveying_organization_id": "surveyingOrganization",
-    #     "household_id": "householdId",
-    #     "patient_id": "objectId",
-    #     "community_id": "communityname",
-    #     "question_id": "question",
-    #     "user_id": "surveyingUser"
-    # }
-
-    # for new_name, col in encode_cols.items():
-    #     comb_df[new_name] = comb_df[col].apply(lambda x: encode(x))
-
-    # comb_df['form_id'] = encode(table_name)
-    # def generate_uuid():
-    #     return str(uuid.uuid4())
-    # comb_df['uuid'] = comb_df.apply(generate_uuid, axis=1)
-    # comb_df['question_answer'] = comb_df['answer']
-
-    # final_cols = [
-    #     "uuid",
-    #     "surveying_organization_id",
-    #     "surveying_user_id",
-    #     "community_id",
-    #     "question_id",
-    #     "question_answer",
-    #     "created_at",
-    #     "updated_at",
-    #     "patient_id",
-    #     "household_id",
-    #     "form_id"
-    # ]
-
-    # comb_df = comb_df[final_cols]
-
-    # engine_str = get_engine_str()
-
-    # engine = create_engine(engine_str)
-
-    # # Write the DataFrame to PostgreSQL
-    # comb_df.to_sql('survey_fact', engine, index=False, if_exists='append')
-
-    # # Close the database connection
-    # engine.dispose()
     for _, row in comb_df.iterrows():
         created_at = row["createdAt"]
         updated_at = row["updatedAt"]
@@ -488,78 +457,81 @@ def add_nosql_to_fact(con, table_name, survey_df):
 
     total_missing = sum(len(lst) for lst in missing_dict.values())
 
-    print("comb size")
-    print(comb_df.shape)
-    print("nosql insert count")
-    print(insert_count)
-    print("nosql fk count")
-    print(fk_count)
-    print("user fk")
-    print(user_fk_count)
-    print("patient fk")
-    print(patient_fk_count)
-    print("test check count")
-    print(test_check_count)
-    print("ignore questions count")
-    print(ignore_questions_count)
-    for name, lst in missing_dict.items():
-        print(f"{name} count")
-        print(len(lst))
-    print("total missing")
-    print(total_missing)
+    print("DEBUG IN NOSQL")
+    print(debug)
+    if debug:
+        print("comb size")
+        print(comb_df.shape)
+        print("nosql insert count")
+        print(insert_count)
+        print("nosql fk count")
+        print(fk_count)
+        print("user fk")
+        print(user_fk_count)
+        print("patient fk")
+        print(patient_fk_count)
+        print("test check count")
+        print(test_check_count)
+        print("ignore questions count")
+        print(ignore_questions_count)
+        for name, lst in missing_dict.items():
+            print(f"{name} count")
+            print(len(lst))
+        print("total missing")
+        print(total_missing)
 
-    cols = [
-        "uuid",
-        "surveying_organization_id",
-        "user_id",
-        "community_id",
-        "question_id",
-        "question_answer",
-        "created_at",
-        "updated_at",
-        "patient_id",
-        "household_id",
-        "form_id",
-    ]
+        cols = [
+            "uuid",
+            "surveying_organization_id",
+            "user_id",
+            "community_id",
+            "question_id",
+            "question_answer",
+            "created_at",
+            "updated_at",
+            "patient_id",
+            "household_id",
+            "form_id",
+        ]
 
-    notnull_missing_rows_df = pd.DataFrame.from_records(
-        notnull_missing_rows, columns=cols
-    )
-    fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
-
-    cols = [
-        "object_id",
-        "survey_org",
-        "user",
-        "community_name",
-        "household_id",
-        "question_name",
-        "question_answer",
-        "table_name",
-    ]
-
-    for table, missing_df in missing_rows_dict.items():
-        #missing_df = pd.DataFrame.from_records(missing, columns=cols)
-        if missing_df.shape[0] > 0:
-            missing_df.to_csv(
-                f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
-            )
-
-    for table, missing in missing_dict.items():
-        missing_df = pd.DataFrame.from_records(missing, columns=cols)
-        if missing_df.shape[0] > 0:
-            missing_df.to_csv(
-                f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
-            )
-
-    if notnull_missing_rows_df.shape[0] > 0:
-        notnull_missing_rows_df.to_csv(
-            f"{CSV_PATH}/add_nosql_to_fact_notnull_{table_name}.csv", index=False
+        notnull_missing_rows_df = pd.DataFrame.from_records(
+            notnull_missing_rows, columns=cols
         )
-    if fk_missing_rows_df.shape[0] > 0:
-        fk_missing_rows_df.to_csv(
-            f"{CSV_PATH}/add_nosql_to_fact_fk_{table_name}.csv", index=False
-        )
+        fk_missing_rows_df = pd.DataFrame.from_records(fk_missing_rows, columns=cols)
+
+        cols = [
+            "object_id",
+            "survey_org",
+            "user",
+            "community_name",
+            "household_id",
+            "question_name",
+            "question_answer",
+            "table_name",
+        ]
+
+        for table, missing_df in missing_rows_dict.items():
+            #missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            if missing_df.shape[0] > 0:
+                missing_df.to_csv(
+                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
+                )
+
+        for table, missing in missing_dict.items():
+            missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            if missing_df.shape[0] > 0:
+                missing_df.to_csv(
+                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
+                )
+
+        if notnull_missing_rows_df.shape[0] > 0:
+            notnull_missing_rows_df.to_csv(
+                f"{CSV_PATH}/add_nosql_to_fact_notnull_{table_name}.csv", index=False
+            )
+        if fk_missing_rows_df.shape[0] > 0:
+            fk_missing_rows_df.to_csv(
+                f"{CSV_PATH}/add_nosql_to_fact_fk_{table_name}.csv", index=False
+            )
 
     return {
         "statusCode": 200,

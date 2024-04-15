@@ -21,18 +21,17 @@ def replace_bad_characters(s):
     s = s.replace(")", "").replace("(", "").replace("?", "").replace("¿", "").replace(":", "")
     return s
 
+
 def replace_bad_characters_pd(df, col):
     # Assuming df is your DataFrame and 'column_name' is the name of your column
     df[col] = df[col].replace(['\)', '\(', '\?', '¿'], '', regex=True)
     return df
 
 
-
 def query_db(query, conn_in=None):
     if conn_in is None:
-        conn = connection()
+        conn = get_engine_str()
         df = read_sql_query(query, conn)
-        conn.close()
     else:
         df = read_sql_query(query, conn_in)
 
@@ -65,6 +64,13 @@ def connection():
         password=PG_PASSWORD,
     )
     return conn
+
+
+def get_engine_str():
+    engine_str = (
+            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+        )
+    return engine_str
 
 
 def add_surveyuser_column(df):
@@ -143,10 +149,8 @@ def to_camel_case(text):
 
 def md5_encode(s):
     namespace = uuid.NAMESPACE_DNS
-
     # Generate UUID version 3
     return str(uuid.uuid3(namespace, s))
-    #return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
 def parse_json_config(json_path):
@@ -245,7 +249,6 @@ def get_missing_ind(df, cols_to_check):
         "answer"
     ]
     missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
-    missing_rows_dict = {col: df[~idx] for col, idx in missing_ind_dict.items()}
 
     conditions = list(missing_ind_dict.values())
 
