@@ -19,9 +19,6 @@ from shared_modules.env_utils import CONFIGS, CSV_PATH
 def get_custom_forms(conn, df, debug):
     cur = conn.cursor()
 
-    print("init df")
-    print(df.shape)
-
     fk_missing_rows = []
     missing_qa_rows = []
 
@@ -42,9 +39,6 @@ def get_custom_forms(conn, df, debug):
     # Filter the DataFrame based on the combined condition
     exploded_df = df[combined_condition].reset_index(drop=True)
 
-    print("exploded after condition")
-    print(exploded_df.shape)
-
     missing_dict = {"hhids": [], "comms": [], "answers": [], "users": []}
 
     insert_count = 0
@@ -63,9 +57,6 @@ def get_custom_forms(conn, df, debug):
     existing_qs = get_unique_from_table("question_dim", "question")
     exploded_df = exploded_df[exploded_df["title"].isin(existing_qs)]
 
-    print("post qs")
-    print(exploded_df.shape)
-
     # only existing patients
     # handle this at the FK error level
     existing_patients = get_unique_from_table("patient_dim", "uuid")
@@ -75,16 +66,9 @@ def get_custom_forms(conn, df, debug):
     existing_forms = get_unique_from_table("form_dim", "uuid")
     exploded_df = exploded_df[exploded_df["form_id"].isin(existing_forms)]
 
-    print("post forms")
-    print(exploded_df.shape)
-
     error_dict = {}
 
     missing_patients = []
-
-    print("exploded df")
-    print(exploded_df.shape)
-
 
     for _, row in exploded_df.iterrows():
         object_id = row.get("client.objectId")
@@ -457,8 +441,6 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
 
     total_missing = sum(len(lst) for lst in missing_dict.values())
 
-    print("DEBUG IN NOSQL")
-    print(debug)
     if debug:
         print("comb size")
         print(comb_df.shape)

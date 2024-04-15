@@ -35,7 +35,7 @@ def fill_tables(conn, get_dimensions=True, get_puente_tables=True, debug=False):
         print("community dim")
         get_surveying_organization_dim(conn, survey_df)
         print("survey org dim")
-        form_specs = query_bronze_layer("FormSpecificationsV2", conn)
+        #form_specs = query_bronze_layer("FormSpecificationsV2", conn)
         get_form_dim(conn, form_specs)
         print("form dim")
         users_df = query_bronze_layer("users")

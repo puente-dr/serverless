@@ -706,6 +706,11 @@ def get_custom_form_questions(con, form_results):
     existing_forms = get_unique_from_table("form_dim", "uuid")
     options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
 
+    # only new questions
+    existing_qs = get_unique_from_table("question_dim", "uuid")
+    options_fr["question_id"] = options_fr["title"].apply(lambda x: md5_encode(x))
+    options_fr = options_fr[~options_fr["question_id"].isin(existing_qs)]
+
     inserted_uuids = [] 
     options_fr = coalesce_pkey(options_fr, "title")
 
@@ -714,13 +719,14 @@ def get_custom_form_questions(con, form_results):
         form_created_at = row.get("createdAt")
         form_updated_at = row.get("updatedAt")
         question = row.get("title")
+        uuid = row.get("question_id")
         options_list = row.get("options")
 
         field_type = row.get("field_type")
         # TODO: come up with a way of defining this
         formik_key = None
 
-        uuid = md5_encode(question)
+        #uuid = md5_encode(question)
         form_id = md5_encode(form)
 
         if uuid in inserted_uuids:

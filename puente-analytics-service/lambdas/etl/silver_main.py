@@ -5,8 +5,8 @@ from shared_modules.utils import connection
 DROP_TABLES = True
 INITIALZE = True
 GET_DIMENSIONS = True
-GET_PUENTE_TABLES = False
-DEBUG = True
+GET_PUENTE_TABLES = True
+DEBUG = False
 
 
 if __name__=="__main__": 

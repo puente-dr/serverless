@@ -30,8 +30,9 @@ def replace_bad_characters_pd(df, col):
 
 def query_db(query, conn_in=None):
     if conn_in is None:
-        conn = get_engine_str()
+        conn = connection()
         df = read_sql_query(query, conn)
+        conn.close()
     else:
         df = read_sql_query(query, conn_in)
 
