@@ -30,7 +30,7 @@ def get_community_dim(con, df):
     communities = unique_combos(df, ["communityname", "city", "region"])
     communities = coalesce_pkey(communities, "communityname")
     now = datetime.datetime.utcnow()
-    for i, community_row in communities.iterrows():
+    for _, community_row in communities.iterrows():
         community = community_row.get("communityname")
         city = community_row.get("city")
         region = community_row.get("region")
@@ -126,7 +126,7 @@ def get_surveying_organization_dim(con, df):
     }
 
 
-def get_users_dim(con, df):
+def get_users_dim(con, df, debug):
     cur = con.cursor()
     users = unique_combos(
         df,
@@ -146,8 +146,9 @@ def get_users_dim(con, df):
     users = add_surveyuser_column(users)
     grouped = users.groupby("survey_user").nunique().reset_index()
     dups = grouped.loc[grouped["objectId"] > 1]
-    if dups.shape[0] > 0:
-        dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
+    if debug:
+        if dups.shape[0] > 0:
+            dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
     missing_names = []
     missing_surveyorgs = []
     for _, user_row in users.iterrows():
@@ -249,26 +250,27 @@ def get_users_dim(con, df):
     # Close the database connection and cursor
     cur.close()
 
-    cols = [
-        "uuid",
-        "survey_user",
-        "user_name",
-        "first_name",
-        "last_name",
-        "created_at",
-        "updated_at",
-        "phone_number",
-        "role",
-        "survey_org",
-        "survey_org_id",
-    ]
-    missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
-    if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
+    if debug:
+        cols = [
+            "uuid",
+            "survey_user",
+            "user_name",
+            "first_name",
+            "last_name",
+            "created_at",
+            "updated_at",
+            "phone_number",
+            "role",
+            "survey_org",
+            "survey_org_id",
+        ]
+        missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
+        if missing_names_df.shape[0] > 0:
+            missing_names_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
-    missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
-    if missing_surveyorgs_df.shape[0] > 0:
-        missing_surveyorgs_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
+        missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
+        if missing_surveyorgs_df.shape[0] > 0:
+            missing_surveyorgs_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -278,7 +280,7 @@ def get_users_dim(con, df):
     }
 
 
-def get_household_dim(con, df):
+def get_household_dim(con, df, debug):
     cur = con.cursor()
     households = unique_combos(
         df, ["householdId", "latitude", "longitude", "communityname"]
@@ -322,13 +324,14 @@ def get_household_dim(con, df):
     # Close the database connection and cursor
     cur.close()
 
-    cols = ["household_id", "community_name", "lat", "lon"]
-    missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
-    if missing_comms_df.shape[0] > 0:
-        missing_comms_df.to_csv(f"{CSV_PATH}/missing_comms_householddim.csv", index=False)
-    missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_householddim.csv", index=False)
+    if debug:
+        cols = ["household_id", "community_name", "lat", "lon"]
+        missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
+        if missing_comms_df.shape[0] > 0:
+            missing_comms_df.to_csv(f"{CSV_PATH}/missing_comms_householddim.csv", index=False)
+        missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
+        if missing_hhid_df.shape[0] > 0:
+            missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_householddim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -338,7 +341,7 @@ def get_household_dim(con, df):
     }
 
 
-def get_patient_dim(con, df):
+def get_patient_dim(con, df, debug):
     # this data comes from surveyfact
     cur = con.cursor()
     df["age"] = df["age"].replace({"nan": None, "": None, " ": None, np.nan: None})
@@ -421,31 +424,33 @@ def get_patient_dim(con, df):
             cur.execute("ROLLBACK")
             continue
 
-    cols = [
-        "uuid",
-        "first_name",
-        "last_name",
-        "nick_name",
-        "sex",
-        "age",
-        "phone_number",
-        "household_id",
-        "household_uuid",
-    ]
+    if debug:
 
-    missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_patient.csv", index=False)
+        cols = [
+            "uuid",
+            "first_name",
+            "last_name",
+            "nick_name",
+            "sex",
+            "age",
+            "phone_number",
+            "household_id",
+            "household_uuid",
+        ]
 
-    cols = ["patient_id", "household_id", "household_uuid"]
-    missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
-    if missing_rows_df.shape[0] > 0:
-        missing_rows_df.to_csv(f"{CSV_PATH}/missing_patient_id_patient_dim.csv", index=False)
+        missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
+        if missing_hhid_df.shape[0] > 0:
+            missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_patient.csv", index=False)
 
-    cols = ["first_name", "last_name", "patient_id", "household_id"]
-    missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
-    if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv(f"{CSV_PATH}/missing_names_patient.csv", index=False)
+        cols = ["patient_id", "household_id", "household_uuid"]
+        missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
+        if missing_rows_df.shape[0] > 0:
+            missing_rows_df.to_csv(f"{CSV_PATH}/missing_patient_id_patient_dim.csv", index=False)
+
+        cols = ["first_name", "last_name", "patient_id", "household_id"]
+        missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
+        if missing_names_df.shape[0] > 0:
+            missing_names_df.to_csv(f"{CSV_PATH}/missing_names_patient.csv", index=False)
 
     # Commit the changes to the database
     con.commit()
@@ -461,7 +466,7 @@ def get_patient_dim(con, df):
     }
 
 
-def get_question_dim(con, df):
+def get_question_dim(con, df, debug):
     # this comes from formspecificationsv2
     cur = con.cursor()
 
@@ -566,21 +571,22 @@ def get_question_dim(con, df):
     # Close the database connection and cursor
     cur.close()
 
-    cols = [
-        "id",
-        "field_type",
-        "formik_key",
-        "question_label",
-        "options_list",
-        "form",
-        "form_id",
-    ]
-    missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
-    if missing_ids_df.shape[0] > 0:
-        missing_ids_df.to_csv(f"{CSV_PATH}/missing_ids_question.csv", index=False)
-    missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
-    if missing_labels_df.shape[0] > 0:
-        missing_labels_df.to_csv(f"{CSV_PATH}/missing_labels_question.csv", index=False)
+    if debug:
+        cols = [
+            "id",
+            "field_type",
+            "formik_key",
+            "question_label",
+            "options_list",
+            "form",
+            "form_id",
+        ]
+        missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
+        if missing_ids_df.shape[0] > 0:
+            missing_ids_df.to_csv(f"{CSV_PATH}/missing_ids_question.csv", index=False)
+        missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
+        if missing_labels_df.shape[0] > 0:
+            missing_labels_df.to_csv(f"{CSV_PATH}/missing_labels_question.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -738,8 +744,8 @@ def get_custom_form_questions(con, form_results):
             )
             inserted_uuids.append(uuid)
 
-        # Commit the changes to the database
-        con.commit()
+    # Commit the changes to the database
+    con.commit()
 
     # Close the database connection and cursor
     cur.close()
