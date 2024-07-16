@@ -11,7 +11,7 @@ from shared_modules.utils import (
     query_bronze_layer,
     title_str,
     replace_bad_characters,
-    get_unique_from_table
+    get_unique_from_table,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -22,11 +22,7 @@ def get_custom_forms(conn, df, debug):
     fk_missing_rows = []
     missing_qa_rows = []
 
-    cols_to_check = [
-        "surveyingUser",
-        "communityname",
-        "question_answer"
-    ]
+    cols_to_check = ["surveyingUser", "communityname", "question_answer"]
     # get rows with no missing values in key columns
     missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
     missing_rows_dict = {col: df[~idx] for col, idx in missing_ind_dict.items()}
@@ -45,11 +41,7 @@ def get_custom_forms(conn, df, debug):
     ignore_count = 0
     check_count = 0
 
-    title_cols =[
-        "surveyingOrganization",
-        "communityname",
-        "surveyingUser"
-    ]
+    title_cols = ["surveyingOrganization", "communityname", "surveyingUser"]
     for col in title_cols:
         exploded_df[col] = exploded_df[col].apply(lambda x: title_str(x))
 
@@ -62,7 +54,9 @@ def get_custom_forms(conn, df, debug):
     existing_patients = get_unique_from_table("patient_dim", "uuid")
 
     # only existing forms
-    exploded_df["form_id"] = exploded_df["formSpecificationsId"].apply(lambda x: md5_encode(x))
+    exploded_df["form_id"] = exploded_df["formSpecificationsId"].apply(
+        lambda x: md5_encode(x)
+    )
     existing_forms = get_unique_from_table("form_dim", "uuid")
     exploded_df = exploded_df[exploded_df["form_id"].isin(existing_forms)]
 
@@ -109,16 +103,16 @@ def get_custom_forms(conn, df, debug):
 
         # fake "questions" to ignore
         ignore_questions = [
-            'surveyinguser',
-            'surveyingorganization',
-            'phoneos',
-            'appversion',
+            "surveyinguser",
+            "surveyingorganization",
+            "phoneos",
+            "appversion",
         ]
         if title.lower().strip() in ignore_questions:
             ignore_count += 1
             continue
 
-        #title = replace_bad_characters(title)
+        # title = replace_bad_characters(title)
 
         question_id = md5_encode(title)
 
@@ -211,14 +205,18 @@ def get_custom_forms(conn, df, debug):
         ]
 
         for table, missing_df in missing_rows_dict.items():
-            #missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            # missing_df = pd.DataFrame.from_records(missing, columns=cols)
             if missing_df.shape[0] > 0:
-                missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
+                missing_df.to_csv(
+                    f"{CSV_PATH}/customforms_missing_{table}.csv", index=False
+                )
 
         for table, missing in missing_dict.items():
             missing_df = pd.DataFrame.from_records(missing, columns=cols)
             if missing_df.shape[0] > 0:
-                missing_df.to_csv(f"{CSV_PATH}/customforms_missing_{table}.csv", index=False)
+                missing_df.to_csv(
+                    f"{CSV_PATH}/customforms_missing_{table}.csv", index=False
+                )
 
         cols = [
             "uuid",
@@ -292,8 +290,10 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
     )
 
     # ignore some questions
-    ignore_questions = ["searchIndex", "surveyingUser"] + [col for col in questions if "location" in col]
-    comb_df = comb_df[~comb_df['question'].isin(ignore_questions)]
+    ignore_questions = ["searchIndex", "surveyingUser"] + [
+        col for col in questions if "location" in col
+    ]
+    comb_df = comb_df[~comb_df["question"].isin(ignore_questions)]
 
     fk_missing_rows = []
     notnull_missing_rows = []
@@ -309,11 +309,7 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
     ignore_questions_count = 0
     patient_fk_count = 0
 
-    cols_to_check = [
-        "surveyingUser",
-        "communityname",
-        "answer"
-    ]
+    cols_to_check = ["surveyingUser", "communityname", "answer"]
     missing_ind_dict = {col: comb_df[col].notnull() for col in cols_to_check}
     missing_rows_dict = {col: comb_df[~idx] for col, idx in missing_ind_dict.items()}
 
@@ -326,11 +322,7 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
 
     comb_df = comb_df[combined_condition].reset_index(drop=True)
 
-    title_cols =[
-        "surveyingOrganization",
-        "communityname",
-        "surveyingUser"
-    ]
+    title_cols = ["surveyingOrganization", "communityname", "surveyingUser"]
     for col in title_cols:
         comb_df[col] = comb_df[col].apply(lambda x: title_str(x))
 
@@ -347,18 +339,22 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
         nosql_household_id = row["householdId"]
 
         question_name = replace_bad_characters(question_name)
-       
+
         check_list = []
         # remove test rows
         for field in [nosql_household_id, user, community_name]:
             if isinstance(field, str):
-                check = ("test" in field.lower()) or ("forgot" in field.lower()) or ("experimental" in field.lower())
+                check = (
+                    ("test" in field.lower())
+                    or ("forgot" in field.lower())
+                    or ("experimental" in field.lower())
+                )
                 check_list.append(check)
         if any(check_list):
             test_check_count += 1
             continue
 
-        if question_name.lower().strip() in ['surveyinguser']:
+        if question_name.lower().strip() in ["surveyinguser"]:
             continue
 
         row_insert = (
@@ -493,17 +489,19 @@ def add_nosql_to_fact(con, table_name, survey_df, debug):
         ]
 
         for table, missing_df in missing_rows_dict.items():
-            #missing_df = pd.DataFrame.from_records(missing, columns=cols)
+            # missing_df = pd.DataFrame.from_records(missing, columns=cols)
             if missing_df.shape[0] > 0:
                 missing_df.to_csv(
-                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
+                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv",
+                    index=False,
                 )
 
         for table, missing in missing_dict.items():
             missing_df = pd.DataFrame.from_records(missing, columns=cols)
             if missing_df.shape[0] > 0:
                 missing_df.to_csv(
-                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv", index=False
+                    f"{CSV_PATH}/add_nosql_to_fact_{table_name}_missing_{table}.csv",
+                    index=False,
                 )
 
         if notnull_missing_rows_df.shape[0] > 0:
