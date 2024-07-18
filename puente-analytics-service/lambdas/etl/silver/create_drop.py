@@ -1,9 +1,8 @@
 from shared_modules.utils import connection
 
 
-def drop_tables():
+def drop_tables(conn):
     # be very sure about running this lol
-    conn = connection()
     cur = conn.cursor()
     tables = [
         "surveying_organization_dim",
@@ -20,11 +19,9 @@ def drop_tables():
         conn.commit()
 
     cur.close()
-    conn.close()
 
 
-def initialize_tables():
-    conn = connection()
+def initialize_tables(conn):
     cur = conn.cursor()
     users_q = f"""
     CREATE TABLE IF NOT EXISTS users_dim (
@@ -156,7 +153,6 @@ def initialize_tables():
 
     # Close the database connection and cursor
     cur.close()
-    conn.close()
 
 
 def get_existing_tables():

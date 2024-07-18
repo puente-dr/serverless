@@ -29,7 +29,7 @@ def create_bronze_layer(tables_to_ingest):
         df = restCall(table, None)
         print(table)
 
-        for i, row in df.iterrows():
+        for _, row in df.iterrows():
             row_arr = row.array
             for val in row_arr:
                 if isinstance(val, dict):
@@ -55,6 +55,7 @@ def create_bronze_layer(tables_to_ingest):
                 engine,
                 if_exists="replace",
                 index=False,
+                chunksize=1000,
                 dtype={"dictionary_column": JSONB},
             )
         else:

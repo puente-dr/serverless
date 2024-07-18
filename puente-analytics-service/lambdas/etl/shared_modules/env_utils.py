@@ -1,6 +1,13 @@
 import json
 
-with open("./env.json") as file:
+PRODUCTION = False
+
+if PRODUCTION:
+    env_file = "./env.prod.json"
+else:
+    env_file = "./env.json"
+
+with open(env_file) as file:
     env = json.load(file)["AnalyticsLambdaFunctionETL"]
 
 PG_HOST = env.get("PG_HOST")
@@ -25,9 +32,3 @@ CONFIGS = {
 }
 
 CSV_PATH = "./Data"
-
-def get_engine_str():
-    engine_str = (
-            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
-        )
-    return engine_str

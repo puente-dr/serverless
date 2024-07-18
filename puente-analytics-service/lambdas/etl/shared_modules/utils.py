@@ -1,9 +1,10 @@
-import hashlib
+import uuid
 import requests
 from pandas import json_normalize, read_sql_query
 import json
 import psycopg2
 import numpy as np
+from functools import reduce
 
 from shared_modules.env_utils import (
     APP_ID,
@@ -20,26 +21,30 @@ def replace_bad_characters(s):
     s = s.replace(")", "").replace("(", "").replace("?", "").replace("¿", "").replace(":", "")
     return s
 
+
 def replace_bad_characters_pd(df, col):
     # Assuming df is your DataFrame and 'column_name' is the name of your column
     df[col] = df[col].replace(['\)', '\(', '\?', '¿'], '', regex=True)
     return df
 
 
+def query_db(query, conn_in=None):
+    if conn_in is None:
+        conn = connection()
+        df = read_sql_query(query, conn)
+        conn.close()
+    else:
+        df = read_sql_query(query, conn_in)
 
-def query_db(query):
-    conn = connection()
-    df = read_sql_query(query, conn)
-    conn.close()
     return df
 
 
-def query_bronze_layer(table):
+def query_bronze_layer(table, conn=None):
     query = f"""
     SELECT *
     FROM {table.lower()}_bronze
     """
-    df = query_db(query)
+    df = query_db(query, conn)
     return df
 
 
@@ -60,6 +65,13 @@ def connection():
         password=PG_PASSWORD,
     )
     return conn
+
+
+def get_engine_str():
+    engine_str = (
+            f"postgresql://{PG_USERNAME}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+        )
+    return engine_str
 
 
 def add_surveyuser_column(df):
@@ -137,7 +149,9 @@ def to_camel_case(text):
 
 
 def md5_encode(s):
-    return hashlib.md5(s.encode("utf-8")).hexdigest()
+    namespace = uuid.NAMESPACE_DNS
+    # Generate UUID version 3
+    return str(uuid.uuid3(namespace, s))
 
 
 def parse_json_config(json_path):
@@ -209,13 +223,36 @@ def explode_json(df, col="fields"):
 
 
 def unique_values(items):
-    unique = []
+    unique = set()
     for item in items:
         # If the item is a list, check for any list in 'unique' that is equal to 'item'.
         # If not a list, just check if the item is already in 'unique'.
         if isinstance(item, list):
             if not any(existing_item == item for existing_item in unique if isinstance(existing_item, list)):
-                unique.append(item)
+                item_str = str(sorted(item)).replace("[", "\[").replace("]", "\]")
         elif item not in unique:
-            unique.append(item)
-    return unique
+            item_str = str(item)
+
+        unique.add(item_str)
+    
+    return list(unique)
+    
+
+def get_unique_from_table(table, column):
+    existing_values = list(query_db(f"SELECT DISTINCT {column} FROM {table}")[column].unique())
+    return existing_values
+
+
+def get_missing_ind(df, cols_to_check):
+    cols_to_check = [
+        "surveyingUser",
+        "communityname",
+        "answer"
+    ]
+    missing_ind_dict = {col: df[col].notnull() for col in cols_to_check}
+
+    conditions = list(missing_ind_dict.values())
+
+    # only not na in all check columns
+    combined_condition = reduce(lambda x, y: x & y, conditions)
+    return combined_condition

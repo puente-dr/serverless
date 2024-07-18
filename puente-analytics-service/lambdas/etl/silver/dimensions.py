@@ -1,5 +1,4 @@
 from shared_modules.utils import (
-    connection,
     unique_combos,
     coalesce_pkey,
     md5_encode,
@@ -7,8 +6,8 @@ from shared_modules.utils import (
     parse_json_config,
     title_str,
     unique_values,
-    query_db,
     replace_bad_characters,
+    get_unique_from_table,
 )
 from shared_modules.env_utils import CONFIGS, CSV_PATH
 
@@ -25,14 +24,13 @@ And keeps it clear what is happening in all the tables
 """
 
 
-def get_community_dim(df):
-    con = connection()
+def get_community_dim(con, df):
     cur = con.cursor()
     df['communityname'] = df['communityname'].apply(lambda x: title_str(x))
     communities = unique_combos(df, ["communityname", "city", "region"])
     communities = coalesce_pkey(communities, "communityname")
     now = datetime.datetime.utcnow()
-    for i, community_row in communities.iterrows():
+    for _, community_row in communities.iterrows():
         community = community_row.get("communityname")
         city = community_row.get("city")
         region = community_row.get("region")
@@ -52,7 +50,6 @@ def get_community_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -62,16 +59,15 @@ def get_community_dim(df):
     }
 
 
-def get_form_dim(df):
+def get_form_dim(con, df):
     # this comes from formspecificationsv2
-    con = connection()
     cur = con.cursor()
     forms = unique_combos(
         df, ["objectId", "name", "description", "customForm", "createdAt", "updatedAt"]
     )
     forms = coalesce_pkey(forms, "objectId")
     now = datetime.datetime.utcnow()
-    for i, form_row in forms.iterrows():
+    for _, form_row in forms.iterrows():
         form = form_row.get("objectId")
         name = form_row.get("name")
         description = form_row.get("description")
@@ -92,7 +88,6 @@ def get_form_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -102,8 +97,7 @@ def get_form_dim(df):
     }
 
 
-def get_surveying_organization_dim(df):
-    con = connection()
+def get_surveying_organization_dim(con, df):
     cur = con.cursor()
     df['surveyingOrganization'] = df['surveyingOrganization'].apply(lambda x: title_str(x))
     survey_orgs = df["surveyingOrganization"].unique()
@@ -123,7 +117,6 @@ def get_surveying_organization_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -133,8 +126,7 @@ def get_surveying_organization_dim(df):
     }
 
 
-def get_users_dim(df):
-    con = connection()
+def get_users_dim(con, df, debug):
     cur = con.cursor()
     users = unique_combos(
         df,
@@ -154,11 +146,12 @@ def get_users_dim(df):
     users = add_surveyuser_column(users)
     grouped = users.groupby("survey_user").nunique().reset_index()
     dups = grouped.loc[grouped["objectId"] > 1]
-    if dups.shape[0] > 0:
-        dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
+    if debug:
+        if dups.shape[0] > 0:
+            dups.to_csv(f"{CSV_PATH}/all_duplicates.csv", index=False)
     missing_names = []
     missing_surveyorgs = []
-    for i, user_row in users.iterrows():
+    for _, user_row in users.iterrows():
         survey_user = user_row.get("survey_user")
         if survey_user in dups["survey_user"].values:
             continue
@@ -256,28 +249,28 @@ def get_users_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
-    cols = [
-        "uuid",
-        "survey_user",
-        "user_name",
-        "first_name",
-        "last_name",
-        "created_at",
-        "updated_at",
-        "phone_number",
-        "role",
-        "survey_org",
-        "survey_org_id",
-    ]
-    missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
-    if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
+    if debug:
+        cols = [
+            "uuid",
+            "survey_user",
+            "user_name",
+            "first_name",
+            "last_name",
+            "created_at",
+            "updated_at",
+            "phone_number",
+            "role",
+            "survey_org",
+            "survey_org_id",
+        ]
+        missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
+        if missing_names_df.shape[0] > 0:
+            missing_names_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
-    missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
-    if missing_surveyorgs_df.shape[0] > 0:
-        missing_surveyorgs_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
+        missing_surveyorgs_df = pd.DataFrame.from_records(missing_surveyorgs, columns=cols)
+        if missing_surveyorgs_df.shape[0] > 0:
+            missing_surveyorgs_df.to_csv(f"{CSV_PATH}/missing_surveyorgs_usersdim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -287,8 +280,7 @@ def get_users_dim(df):
     }
 
 
-def get_household_dim(df):
-    con = connection()
+def get_household_dim(con, df, debug):
     cur = con.cursor()
     households = unique_combos(
         df, ["householdId", "latitude", "longitude", "communityname"]
@@ -331,15 +323,15 @@ def get_household_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
-    cols = ["household_id", "community_name", "lat", "lon"]
-    missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
-    if missing_comms_df.shape[0] > 0:
-        missing_comms_df.to_csv(f"{CSV_PATH}/missing_comms_householddim.csv", index=False)
-    missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_householddim.csv", index=False)
+    if debug:
+        cols = ["household_id", "community_name", "lat", "lon"]
+        missing_comms_df = pd.DataFrame.from_records(missing_comms, columns=cols)
+        if missing_comms_df.shape[0] > 0:
+            missing_comms_df.to_csv(f"{CSV_PATH}/missing_comms_householddim.csv", index=False)
+        missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
+        if missing_hhid_df.shape[0] > 0:
+            missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_householddim.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -349,9 +341,8 @@ def get_household_dim(df):
     }
 
 
-def get_patient_dim(df):
+def get_patient_dim(con, df, debug):
     # this data comes from surveyfact
-    con = connection()
     cur = con.cursor()
     df["age"] = df["age"].replace({"nan": None, "": None, " ": None, np.nan: None})
     patients = unique_combos(
@@ -373,7 +364,7 @@ def get_patient_dim(df):
     missing_hhid = []
     missing_names = []
     now = datetime.datetime.utcnow()
-    for i, patient_row in patients.iterrows():
+    for _, patient_row in patients.iterrows():
         patient_id = patient_row.get("objectId")
         household_id = patient_row.get("householdId")
         first_name = patient_row.get("fname")
@@ -433,38 +424,39 @@ def get_patient_dim(df):
             cur.execute("ROLLBACK")
             continue
 
-    cols = [
-        "uuid",
-        "first_name",
-        "last_name",
-        "nick_name",
-        "sex",
-        "age",
-        "phone_number",
-        "household_id",
-        "household_uuid",
-    ]
+    if debug:
 
-    missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
-    if missing_hhid_df.shape[0] > 0:
-        missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_patient.csv", index=False)
+        cols = [
+            "uuid",
+            "first_name",
+            "last_name",
+            "nick_name",
+            "sex",
+            "age",
+            "phone_number",
+            "household_id",
+            "household_uuid",
+        ]
 
-    cols = ["patient_id", "household_id", "household_uuid"]
-    missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
-    if missing_rows_df.shape[0] > 0:
-        missing_rows_df.to_csv(f"{CSV_PATH}/missing_patient_id_patient_dim.csv", index=False)
+        missing_hhid_df = pd.DataFrame.from_records(missing_hhid, columns=cols)
+        if missing_hhid_df.shape[0] > 0:
+            missing_hhid_df.to_csv(f"{CSV_PATH}/missing_hhid_patient.csv", index=False)
 
-    cols = ["first_name", "last_name", "patient_id", "household_id"]
-    missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
-    if missing_names_df.shape[0] > 0:
-        missing_names_df.to_csv(f"{CSV_PATH}./missing_names_patient.csv", index=False)
+        cols = ["patient_id", "household_id", "household_uuid"]
+        missing_rows_df = pd.DataFrame.from_records(missing_rows, columns=cols)
+        if missing_rows_df.shape[0] > 0:
+            missing_rows_df.to_csv(f"{CSV_PATH}/missing_patient_id_patient_dim.csv", index=False)
+
+        cols = ["first_name", "last_name", "patient_id", "household_id"]
+        missing_names_df = pd.DataFrame.from_records(missing_names, columns=cols)
+        if missing_names_df.shape[0] > 0:
+            missing_names_df.to_csv(f"{CSV_PATH}/missing_names_patient.csv", index=False)
 
     # Commit the changes to the database
     con.commit()
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -474,9 +466,8 @@ def get_patient_dim(df):
     }
 
 
-def get_question_dim(df):
+def get_question_dim(con, df, debug):
     # this comes from formspecificationsv2
-    con = connection()
     cur = con.cursor()
 
     # grouping by fields returns nan for some reason??
@@ -489,7 +480,7 @@ def get_question_dim(df):
     inserted_uuids = []
     missing_ids = []
     missing_labels = []
-    for i, form_row in forms.iterrows():
+    for _, form_row in forms.iterrows():
         form = form_row.get("objectId")
         form_created_at = form_row.get("createdAt")
         form_updated_at = form_row.get("updatedAt")
@@ -502,7 +493,7 @@ def get_question_dim(df):
             field_type = question.get("fieldType")
             formik_key = question.get("formikKey")
             question_label = question.get("label")
-            # note sure the best way to handle this
+            # not sure the best way to handle this
             if field_type in ["select", "selectMulti"]:
                 options = question.get("options")
                 options_list = [option["label"] for option in options]
@@ -579,23 +570,23 @@ def get_question_dim(df):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
-    cols = [
-        "id",
-        "field_type",
-        "formik_key",
-        "question_label",
-        "options_list",
-        "form",
-        "form_id",
-    ]
-    missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
-    if missing_ids_df.shape[0] > 0:
-        missing_ids_df.to_csv(f"{CSV_PATH}/missing_ids_question.csv", index=False)
-    missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
-    if missing_labels_df.shape[0] > 0:
-        missing_labels_df.to_csv(f"{CSV_PATH}/missing_labels_question.csv", index=False)
+    if debug:
+        cols = [
+            "id",
+            "field_type",
+            "formik_key",
+            "question_label",
+            "options_list",
+            "form",
+            "form_id",
+        ]
+        missing_ids_df = pd.DataFrame.from_records(missing_ids, columns=cols)
+        if missing_ids_df.shape[0] > 0:
+            missing_ids_df.to_csv(f"{CSV_PATH}/missing_ids_question.csv", index=False)
+        missing_labels_df = pd.DataFrame.from_records(missing_labels, columns=cols)
+        if missing_labels_df.shape[0] > 0:
+            missing_labels_df.to_csv(f"{CSV_PATH}/missing_labels_question.csv", index=False)
 
     return {
         "statusCode": 200,
@@ -605,10 +596,9 @@ def get_question_dim(df):
     }
 
 
-def add_nosql_to_forms(name, description, now):
+def add_nosql_to_forms(con, name, description, now):
     uuid = md5_encode(name)
 
-    con = connection()
     cur = con.cursor()
     cur.execute(
         f"""
@@ -623,11 +613,9 @@ def add_nosql_to_forms(name, description, now):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
 
-def ingest_nosql_configs(configs):
-    con = connection()
+def ingest_nosql_configs(con, configs):
     cur = con.cursor()
     for table_name, config_path in configs.items():
         form_id = md5_encode(table_name)
@@ -647,13 +635,11 @@ def ingest_nosql_configs(configs):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
 
-def ingest_nosql_table_questions(table_name):
+def ingest_nosql_table_questions(con, table_name):
     config = parse_json_config(CONFIGS[table_name])
 
-    con = connection()
     cur = con.cursor()
 
     now = datetime.datetime.now()
@@ -679,7 +665,6 @@ def ingest_nosql_table_questions(table_name):
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
 
     return {
         "statusCode": 200,
@@ -688,11 +673,8 @@ def ingest_nosql_table_questions(table_name):
         "isBase64Encoded": False,
     }
 
-def get_custom_form_questions(form_results):
-    con = connection()
+def get_custom_form_questions(con, form_results):
     cur = con.cursor()
-
-    #form_results = form_results[~form_results["formSpecificationsId"].isin(inactive_forms)]
 
     ignore_questions = [
         "surveyingUser",
@@ -701,53 +683,50 @@ def get_custom_form_questions(form_results):
         "phoneOS"
     ]
 
-    print("1")
-    print(form_results[form_results['title']=='Nombre de Medicamento'])
-
+    # remove fake "questions"
     options_fr = form_results[~form_results["title"].isin(ignore_questions)]
+    # get unique answers to each question, make them a list of options
     options = options_fr.groupby(["title"])["question_answer"].agg(lambda x: unique_values(x)).reset_index().rename({"question_answer": "options"}, axis=1)
     options["num_answers"] = options["options"].apply(len)
 
+    # options and form results together
     options_fr = options_fr.merge(options, on="title", how="left")
-
-    print("2")
-    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
 
     options_fr["field_type"] = None
     options_fr["is_list"] = options_fr["question_answer"].apply(lambda x: isinstance(x, list))
 
+    # define different field types based on number of answers
     options_fr.loc[options_fr["num_answers"] == 1, "field_type"] = "input"
     options_fr.loc[options_fr["num_answers"] > 1, "field_type"] = "select"
     options_fr.loc[options_fr["is_list"], "field_type"] = "selectMulti"
 
     options_fr["form_id"] = options_fr["formSpecificationsId"].apply(lambda x: md5_encode(x))
 
-    existing_forms = list(query_db("SELECT DISTINCT uuid FROM form_dim")["uuid"].unique())
+    # make sure the form exists
+    existing_forms = get_unique_from_table("form_dim", "uuid")
     options_fr = options_fr[options_fr["form_id"].isin(existing_forms)]
 
-    print("3")
-    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
+    # only new questions
+    existing_qs = get_unique_from_table("question_dim", "uuid")
+    options_fr["question_id"] = options_fr["title"].apply(lambda x: md5_encode(x))
+    options_fr = options_fr[~options_fr["question_id"].isin(existing_qs)]
 
     inserted_uuids = [] 
-    existing_qs = list(query_db("SELECT DISTINCT question FROM question_dim")["question"].unique())
-
-    options_fr = options_fr[~options_fr["title"].isin(existing_qs)]
     options_fr = coalesce_pkey(options_fr, "title")
 
-    print("4")
-    print(options_fr[options_fr['title']=='Nombre de Medicamento'])
-
-    for i, row in options_fr.iterrows():
+    for _, row in options_fr.iterrows():
         form = row.get("formSpecificationsId")
         form_created_at = row.get("createdAt")
         form_updated_at = row.get("updatedAt")
         question = row.get("title")
+        uuid = row.get("question_id")
         options_list = row.get("options")
+
         field_type = row.get("field_type")
         # TODO: come up with a way of defining this
         formik_key = None
 
-        uuid = md5_encode(question)
+        #uuid = md5_encode(question)
         form_id = md5_encode(form)
 
         if uuid in inserted_uuids:
@@ -771,11 +750,8 @@ def get_custom_form_questions(form_results):
             )
             inserted_uuids.append(uuid)
 
-        # Commit the changes to the database
-        con.commit()
+    # Commit the changes to the database
+    con.commit()
 
     # Close the database connection and cursor
     cur.close()
-    con.close()
-
-
