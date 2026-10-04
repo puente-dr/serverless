@@ -1,0 +1,19 @@
+{
+  "region": "us-east-1",
+  "disabled_rules": [
+    "AnalyticsLambdaEventsRule-dev",
+    "puente-etl-dev-CronjobsScheduledRule-1RG2IUYPJ49QI"
+  ],
+  "disabled_functions": [
+    "puente-analytics-service-dev",
+    "puente-etl-dev",
+    "puente-data-exporter-dev"
+  ],
+  "preserved_functions": [
+    "puente-analytics-service-prod",
+    "puente-etl-prod",
+    "puente-data-exporter-prod",
+    "s3-json-to-client"
+  ],
+  "reason": "Retire persistent development execution while retaining resources and data for rollback. Production service lifecycle is a separate decision. Use isolated temporary staging for future changes."
+}
