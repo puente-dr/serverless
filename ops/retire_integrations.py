@@ -86,13 +86,17 @@ def apply(plan):
 def rollback(plan):
     region = plan['manifest']['region']
     check_account(region, plan['account'])
+    # Other lifecycle decisions may have changed protected functions since this
+    # plan was captured. Preserve their state at recovery time, not a stale value.
+    protected = {n: function_state(region, n) for n in plan['preserved_before']}
     # Restore function capacity before re-enabling a schedule.
     for name, before in plan['functions_before'].items():
         restore_one(region, 'function', name, before)
     for name, before in plan['rules_before'].items():
         restore_one(region, 'rule', name, before)
     result = snapshot(plan['manifest'], plan['account'])
-    if result != plan:
+    expected = {**plan, 'preserved_before': protected}
+    if result != expected:
         raise RuntimeError('Rollback verification differs from original state')
     return result
 

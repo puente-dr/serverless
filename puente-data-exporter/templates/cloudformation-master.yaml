@@ -121,6 +121,8 @@ Resources:
       FunctionName: !Sub "puente-data-exporter-${version}"
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
       MemorySize: 2048
+      # Owner-retired service: retain the definition without executing it.
+      ReservedConcurrentExecutions: 0
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.9
       Layers:

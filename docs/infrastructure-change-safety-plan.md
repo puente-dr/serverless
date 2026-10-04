@@ -1,6 +1,6 @@
 # Infrastructure testing and rollback plan
 
-Status: proposed release gates, not an executed migration or a zero-downtime certification.
+Status: release gates for retained services, not a zero-downtime certification. Bounded owner-approved retirement operations and their executed checks are recorded in `service-lifecycle.md`; this plan does not imply that every migration gate has passed.
 
 Goal: reduce cost and bring retained infrastructure under version control while preserving client behavior and data. A reviewer must be able to trace each change to its tests, deployed artifact, rollback target and operating owner. No production change may depend on an untested rollback.
 
@@ -96,6 +96,6 @@ Target: initiate routing reversal within 5 minutes of a trigger; measure actual 
 
 A release record must identify the exact commit/artifacts, successful checks, representative test inputs, private metrics, reviewed infrastructure preview, routing and pipeline targets, rollback rehearsal result, owner, observation window and final resource inventory. Check actual billing after the changes settle. Mark each gate passed, failed or not run; do not label this plan itself as a passing test.
 
-Current state when this plan was written: repository and AWS configuration were inspected; no candidate was provisioned, no load/integration/rollback rehearsal was run, and no service or credential was changed. Existing unit tests were inspected but not rerun for this documentation-only change. Production deployment is not yet cleared by this plan.
+For current executed changes and verification, see `service-lifecycle.md`. No retained-service capacity change, runtime migration, complete business-flow certification or peak-memory/load test has been performed. Owner-approved retirement is distinct from approval to resize the active Flask service or deploy drifted stacks.
 
 References: [AWS Beanstalk blue/green deployment](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.CNAMESwap.html), [Beanstalk configuration precedence](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options.html), [CloudFormation drift detection and limitations](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html), [GitHub repository roles](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization).

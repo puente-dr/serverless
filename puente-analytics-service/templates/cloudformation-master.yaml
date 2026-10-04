@@ -35,6 +35,8 @@ Resources:
       FunctionName: !Sub "puente-analytics-service-${version}"
       Handler: index.handler
       MemorySize: 2048
+      # Owner-retired service: retain the definition without executing it.
+      ReservedConcurrentExecutions: 0
       Role: !GetAtt CloudWatchRole.Arn
       Runtime: python3.9
       Layers:
@@ -51,7 +53,7 @@ Resources:
       Name: AnalyticsLambdaEventsRule
       Description: Rule to trigger the analytics Lambda function everyday
       ScheduleExpression: rate(1 day)
-      State: ENABLED
+      State: DISABLED
       Targets:
         - Id: AnalyticsLambdaFunctionETLEventsRule
           Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn
@@ -101,4 +103,3 @@ Resources:
                   - 'events:PutTargets'
                   - 'events:PutRule'
                 Resource: '*'
-

@@ -67,5 +67,15 @@ class RetirementTests(unittest.TestCase):
         with self.assertRaises(RuntimeError): r.apply(plan)
         self.assertEqual(self.mutations, [])
 
+    def test_rollback_preserves_later_independent_retirement(self):
+        plan = r.snapshot(self.manifest, 'expected')
+        r.apply(plan)
+        self.functions['reader'] = 0  # A separate, subsequently approved change.
+        restored = r.rollback(plan)
+        self.assertEqual(restored['functions_before'], plan['functions_before'])
+        self.assertEqual(restored['rules_before'], plan['rules_before'])
+        self.assertEqual(self.functions['reader'], 0)
+        self.assertNotIn(('delete-function-concurrency', 'reader'), self.mutations)
+
 
 if __name__ == '__main__': unittest.main()
