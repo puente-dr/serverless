@@ -2,9 +2,6 @@ name: Retirement safety checks
 
 on:
   pull_request:
-    paths:
-      - 'ops/**'
-      - '.github/workflows/retirement-checks.yaml'
   workflow_dispatch:
 
 permissions:
