@@ -13,10 +13,8 @@ env:
   pAnalyticsDbPort      : ${{ secrets.pAnalyticsDbPort }}
 
 on:
-  push:
-    branches:    
-      - master
-      - dev
+  # Retired service. Reconcile stack drift before any intentional restoration.
+  workflow_dispatch:
 jobs:
   cloudformation-deployer:
     runs-on: ubuntu-latest

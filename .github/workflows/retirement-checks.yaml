@@ -1,0 +1,22 @@
+name: Retirement safety checks
+
+on:
+  pull_request:
+    paths:
+      - 'ops/**'
+      - '.github/workflows/retirement-checks.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retirement-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test retirement guards and recovery with mocked AWS boundaries
+        run: python3 -m unittest discover -s ops -p 'test_*.py' -v

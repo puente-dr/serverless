@@ -15,9 +15,8 @@ env:
 
 
 on:
-  push:
-    branches:    
-      - master
+  # Retired service. Reconcile stack drift before any intentional restoration.
+  workflow_dispatch:
 jobs:
   cloudformation-deployer:
     runs-on: ubuntu-latest
