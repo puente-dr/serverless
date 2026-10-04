@@ -75,3 +75,8 @@ References: [AWS scaling-process suspension considerations](https://docs.aws.ama
 Apply disables the map repository's Beanstalk deployment workflow, suspends scaling/replacement and stops all recorded instances. Rollback starts the retained instances and requires every ALB target and the application probes to recover before restoring original automation. It preserves workflows or scaling processes that were already disabled. Use separate private map before/result files and rehearse recovery before the final pause.
 
 The ALB, its hostname, security groups, disks and resource definitions remain. ALB, ALB public IPv4 and disk charges continue. Automatically assigned EC2 public addresses are released on stop and can change on recovery; the retained ALB route is the recovery endpoint. The pause does not certify a snapshot-based rebuild or a permanent ALB deletion. These operations must not be followed by an unrelated deployment to the retired environment.
+
+The separate [map backup-recovery procedure](map-recovery.md) and
+`map-recovery-test.yaml` prepare and test recovery without the retired Beanstalk
+platform. Completing that rehearsal does not itself terminate the original
+environment or preserve its hostname after deletion.

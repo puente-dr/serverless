@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Temporary isolated map recovery test from a private EBS-backed AMI.
+Parameters:
+  RecoveryAmi:
+    Type: AWS::EC2::Image::Id
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+  TesterCidr:
+    Type: String
+    AllowedPattern: '^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/32$'
+    ConstraintDescription: Use one trusted IPv4 address with a /32 mask.
+Resources:
+  RecoverySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Temporary map recovery; HTTP only from the release operator.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref TesterCidr
+      # An explicit unusable rule prevents CloudFormation's default allow-all
+      # outbound rule. Application traffic cannot reach external dependencies.
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 9
+          ToPort: 9
+          CidrIp: 127.0.0.1/32
+      Tags:
+        - Key: Purpose
+          Value: RetiredServiceRecoveryTest
+  RecoveryInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref RecoveryAmi
+      InstanceType: t2.micro
+      # Deliberately no instance profile, SSH ingress or production
+      # security group. This copy must not obtain a production AWS identity.
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -euo pipefail
+          # Retire Beanstalk control agents in the isolated copy. Keep the
+          # already-installed app; no downloads or package installation.
+          systemctl disable --now cfn-hup.service healthd.service 2>/dev/null || true
+          # Beanstalk starts nginx during deployments but leaves it disabled
+          # at boot. Recovery outside Beanstalk must start it explicitly.
+          systemctl enable web.service nginx.service
+          systemctl restart web.service nginx.service
+      MetadataOptions:
+        HttpTokens: required
+        HttpPutResponseHopLimit: 1
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          SubnetId: !Ref SubnetId
+          GroupSet:
+            - !Ref RecoverySecurityGroup
+      Tags:
+        - Key: Name
+          Value: puente-map-isolated-recovery-test
+        - Key: Purpose
+          Value: RetiredServiceRecoveryTest
+Outputs:
+  InstanceId:
+    Value: !Ref RecoveryInstance
+  TestIp:
+    Value: !GetAtt RecoveryInstance.PublicIp
