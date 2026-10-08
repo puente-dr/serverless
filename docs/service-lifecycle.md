@@ -4,7 +4,7 @@ Updated October 8, 2026. This records owner decisions and bounded evidence; abse
 
 | Service | Intended state | Current action / unresolved condition |
 | --- | --- | --- |
-| Flask exports | Keep | Used by Manage; capacity and HTTPS unchanged. |
+| Flask exports | Keep | Used by Manage; capacity and HTTPS unchanged. All 93 regression tests pass on Python 3.8.20, but synthetic export memory peaks make smaller-instance sizing premature; see `flask-sizing-evidence.md`. |
 | GraphQL / Apollo | Retire, per owner | Compute stopped after a successful stop/restart rehearsal, including a read-only query and exact restoration of deployment/scaling controls in approximately 91 seconds. Disk and IP retained. |
 | Map | Retire, per owner | Beanstalk environment and its compute, disk, load balancer and associated resources removed October 8. Verified private image and snapshots retained. Independent recovery passed nine application probes in approximately six minutes; owner accepted recovery at a new URL. |
 | Production serverless exporter | Retire execution | Owner confirmed retirement. Function execution disabled; definition and API retained for rollback. |
