@@ -6,7 +6,7 @@ Updated October 8, 2026. This records owner decisions and bounded evidence; abse
 | --- | --- | --- |
 | Flask exports | Keep | Used by Manage; capacity and HTTPS unchanged. |
 | GraphQL / Apollo | Retire, per owner | Compute stopped after a successful stop/restart rehearsal, including a read-only query and exact restoration of deployment/scaling controls in approximately 91 seconds. Disk and IP retained. |
-| Map | Retire, per owner | Compute stopped. Retained-instance recovery passed in approximately 66 seconds; independent private-image recovery passed nine application probes in approximately six minutes. Original disk, load balancer and hostname retained pending a decision on the changed recovery route after permanent deletion. |
+| Map | Retire, per owner | Beanstalk environment and its compute, disk, load balancer and associated resources removed October 8. Verified private image and snapshots retained. Independent recovery passed nine application probes in approximately six minutes; owner accepted recovery at a new URL. |
 | Production serverless exporter | Retire execution | Owner confirmed retirement. Function execution disabled; definition and API retained for rollback. |
 | Production ETL | Retire execution | Owner confirmed retirement. Function execution and daily schedule disabled; definitions retained. |
 | Production analytics | Retire execution | Owner confirmed retirement. Function execution and daily schedule disabled. Declared databases remain absent; no database recreated or backup deleted. |
@@ -19,7 +19,7 @@ Updated October 8, 2026. This records owner decisions and bounded evidence; abse
 
 Usage review window: July 1 through October 2, 2026, UTC (end exclusive October 3). Invocations made by audit smoke tests occur after that window. GitHub code search has indexing limits; code absence and low traffic do not establish consumer absence.
 
-The retirement operations are in `ops/`. Private account evidence and rollback state are stored outside this public repository. The initial changes are reversible execution restrictions; no resource definitions, databases or storage were deleted. See `infrastructure-change-safety-plan.md` for the remaining release gates.
+The retirement operations are in `ops/`. Private account evidence and rollback state are stored outside this public repository. Lambda changes are reversible execution restrictions and GraphQL retains its instance. Map removal uses the independently verified backup for recovery; its old instance and disk were deleted. No database or pre-existing backup was deleted. See `infrastructure-change-safety-plan.md` for the remaining release gates.
 
 Validation completed October 4: 19 mocked operation/failure tests passed locally and in GitHub Actions; AWS accepted all six changed CloudFormation templates in syntax validation. Templates were not deployed against drifted stacks. Live stop/restart rehearsals passed for GraphQL and map before their final pauses. Final checks verified ten retired functions and five schedules disabled. Flask health, the website and community reader returned HTTP 200; the reader's count and checksum were unchanged. These checks are not a full client, resolver or load-test certification.
 
@@ -35,6 +35,13 @@ disks and security groups were removed; their absence and the private image's
 availability were reconfirmed October 8. See `ops/map-recovery.md` for the tested
 procedure and its routing limits.
 
-October 8 verification: GraphQL and map compute remain stopped; Flask health,
-the website and the community reader returned HTTP 200. The reader count and
-checksum remain unchanged. Permanent environment deletion has not occurred.
+October 8 verification: the map environment terminated and its generated stack
+reached `DELETE_COMPLETE`. Its instance, root disk, scaling group, load balancer,
+target group, security groups and launch template are removed. The image and
+completed snapshots remain private and unshared. No custom DNS records in the
+account pointed to the retired hostname/load balancer. GraphQL remains stopped;
+Flask health, the website and the community reader returned HTTP 200, with the
+reader count and checksum unchanged. Ten functions and five schedules remain
+disabled. Twenty mocked operation/failure tests pass, including rejection of the
+old map rollback when its environment no longer exists. Recovery now follows
+`ops/map-recovery.md`; the earlier 66-second restart no longer applies to map.

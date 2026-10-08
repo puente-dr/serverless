@@ -1,15 +1,15 @@
 # Map recovery without the retired Beanstalk platform
 
 The map's existing Python 3.8 / Amazon Linux 2 Beanstalk branch is retired. A
-successful restart of its retained instance does not prove that Beanstalk can
-recreate the environment. Keep the paused original intact until a recovery from
-backup has been demonstrated and the changed recovery contract is accepted.
+successful restart of its retained instance did not prove that Beanstalk could
+recreate the environment. Independent recovery was demonstrated before the
+owner accepted permanent removal and recovery at a new URL on October 8.
 
 The final October 4 rehearsal passed automatically in approximately six minutes:
 a fresh instance restored from the private image passed all nine application
 probes and the isolation/EC2 checks. Temporary test resources were removed, with
-cleanup and private-image availability reconfirmed October 8. The original
-paused environment remains available for the earlier restart-based recovery.
+cleanup and private-image availability reconfirmed October 8. Keep the verified
+private image and snapshots independently of the original environment.
 
 ## Backup and isolated rehearsal
 
@@ -82,9 +82,33 @@ or routing change. The isolated test deliberately does not create a public
 production endpoint or TLS configuration. Image availability, VPC/subnet access,
 operator access and future runtime compatibility also affect recovery time.
 
-Permanent retirement therefore needs an explicit decision to accept slower
-recovery and a potentially different URL. Until then, use `pause_map.py rollback`
-and its private before-plan to recover the retained original route.
+The owner accepted slower recovery at a new URL on October 8. After termination,
+`pause_map.py rollback` and its old before-plan cannot restore the original
+environment. Use the private image and this isolated recovery procedure; public
+routing/TLS needs a separate reviewed configuration before serving users again.
+
+## Approved environment removal
+
+Before removal, verify the environment/application identity, stopped instance,
+private image and completed snapshots, successful recovery evidence, and absence
+of custom DNS records referencing the old hostname or load balancer. Preserve a
+private inventory of the generated CloudFormation stack's physical resources.
+
+Keep replacement processes suspended, but resume the Auto Scaling `Terminate`
+process so parent-stack deletion can terminate its stopped instance. Then remove
+the environment through its owning API:
+
+```bash
+aws elasticbeanstalk terminate-environment --region us-east-1 \
+  --environment-name puente-map-env --environment-id "$VERIFIED_ENVIRONMENT_ID" \
+  --terminate-resources
+```
+
+Wait for termination and `DELETE_COMPLETE` on the generated stack. Verify the
+instance, disk, Auto Scaling group, load balancer, target group and associated
+security groups are removed, and that the private image/snapshots remain. Repeat
+the active Flask, website and community-reader probes. Never use
+`--no-terminate-resources`: it would leave the billable resources behind.
 
 References: [Creating EBS-backed AMIs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html),
 [CloudFormation security-group egress behavior](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroup.html).

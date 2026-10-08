@@ -45,7 +45,12 @@ def workflow():
 
 def state(account):
     check_account(REGION, account)
-    env = call('elasticbeanstalk', 'describe-environments', '--environment-names', ENV)['Environments'][0]
+    environments = call('elasticbeanstalk', 'describe-environments', '--environment-names', ENV)['Environments']
+    if not environments:
+        raise RuntimeError('Map environment no longer exists; use the private-image recovery procedure in ops/map-recovery.md')
+    if len(environments) != 1:
+        raise RuntimeError('Unexpected map environment identity')
+    env = environments[0]
     if env['ApplicationName'] != APP or env['Status'] != 'Ready':
         raise RuntimeError('Map environment is not ready')
     managed = call('elasticbeanstalk', 'describe-configuration-settings', '--application-name', APP,

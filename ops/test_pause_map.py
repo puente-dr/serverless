@@ -6,6 +6,17 @@ from unittest.mock import patch
 import pause_map as ops
 
 
+class RetiredEnvironmentTests(unittest.TestCase):
+    def test_missing_environment_blocks_old_rollback_before_mutation(self):
+        with patch.object(ops, 'check_account'), patch.object(ops, 'call',
+                return_value={'Environments': []}) as call, patch.object(ops, 'gh') as gh:
+            with self.assertRaisesRegex(RuntimeError, 'private-image recovery'):
+                ops.rollback({'account': 'test'})
+            call.assert_called_once_with('elasticbeanstalk', 'describe-environments',
+                                        '--environment-names', ops.ENV)
+            gh.assert_not_called()
+
+
 class MapPauseTests(unittest.TestCase):
     def setUp(self):
         self.plan = dict(account='test', environment_id='env', version='version', cname='example.invalid',
