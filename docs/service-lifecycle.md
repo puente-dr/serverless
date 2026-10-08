@@ -49,3 +49,10 @@ old map rollback when its environment no longer exists. Recovery now follows
 The pre-merge senior/staff review and mitigations are recorded in
 `retirement-review.md`. Retired deployment jobs are held in source as well as
 disabled in GitHub, and failed Lambda capacity recovery cannot enable schedules.
+
+The repository savings closeout is documented in `aws-savings-closeout.md`.
+The read-only retirement verifier and its drift tests bring the suite to 34
+tests. Credential cleanup is deferred by the owner's October 8 instruction;
+historical secret exposures must not be described as revoked without provider
+confirmation. This repository closeout does not redeploy drifted stacks or
+remove retained recovery resources.
