@@ -6,6 +6,7 @@ Requires AWS CLI credentials; the test instance itself must have no IAM profile.
 import argparse
 import datetime
 import hashlib
+import ipaddress
 import json
 import time
 import urllib.request
@@ -23,6 +24,14 @@ EXPECTED_CALLBACKS = {
 }
 
 
+class NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise RuntimeError('Recovery probes must not follow redirects outside the verified target')
+
+
+OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirects())
+
+
 def call(*args):
     return aws(REGION, *args)
 
@@ -33,22 +42,42 @@ def target(account):
     if stack['StackStatus'] != 'CREATE_COMPLETE':
         raise RuntimeError('Isolated recovery stack is not ready')
     outputs = {x['OutputKey']: x['OutputValue'] for x in stack['Outputs']}
+    parameters = {x['ParameterKey']: x['ParameterValue'] for x in stack['Parameters']}
+    resources = call('cloudformation', 'describe-stack-resources', '--stack-name', stack['StackId'])['StackResources']
+    identities = {x['LogicalResourceId']: x['PhysicalResourceId'] for x in resources}
+    if (len(resources) != 2 or set(identities) != {'RecoveryInstance', 'RecoverySecurityGroup'}
+            or identities['RecoveryInstance'] != outputs['InstanceId']):
+        raise RuntimeError('Recovery stack ownership differs from expected resources')
+    if not isinstance(ipaddress.ip_address(outputs['TestIp']), ipaddress.IPv4Address):
+        raise RuntimeError('Expected an IPv4 recovery target')
     instance = call('ec2', 'describe-instances', '--instance-ids', outputs['InstanceId'])['Reservations'][0]['Instances'][0]
     tags = {x['Key']: x['Value'] for x in instance.get('Tags', [])}
     if (tags.get('Purpose') != 'RetiredServiceRecoveryTest' or instance.get('IamInstanceProfile')
             or instance['PublicIpAddress'] != outputs['TestIp']
+            or instance['ImageId'] != parameters['RecoveryAmi']
+            or instance['SubnetId'] != parameters['SubnetId']
+            or instance['VpcId'] != parameters['VpcId']
             or instance['MetadataOptions']['HttpTokens'] != 'required'
-            or len(instance['SecurityGroups']) != 1):
+            or [x['GroupId'] for x in instance['SecurityGroups']] != [identities['RecoverySecurityGroup']]):
         raise RuntimeError('Recovery instance identity or isolation differs from expected state')
+    image = call('ec2', 'describe-images', '--image-ids', instance['ImageId'])['Images'][0]
+    permissions = call('ec2', 'describe-image-attribute', '--image-id', instance['ImageId'], '--attribute', 'launchPermission')
+    if (image['OwnerId'] != account or image['Public'] or image['State'] != 'available'
+            or permissions['LaunchPermissions']):
+        raise RuntimeError('Recovery image is not private, unshared and available in the expected account')
     group = call('ec2', 'describe-security-groups', '--group-ids', instance['SecurityGroups'][0]['GroupId'])['SecurityGroups'][0]
-    cidr = next(x['ParameterValue'] for x in stack['Parameters'] if x['ParameterKey'] == 'TesterCidr')
+    cidr = parameters['TesterCidr']
+    if ipaddress.IPv4Network(cidr).prefixlen != 32:
+        raise RuntimeError('Recovery ingress must use one operator IPv4 address')
     ingress, egress = group['IpPermissions'], group['IpPermissionsEgress']
     if (len(ingress) != 1 or ingress[0]['IpProtocol'] != 'tcp'
             or ingress[0]['FromPort'] != 80 or ingress[0]['ToPort'] != 80
             or ingress[0]['IpRanges'] != [{'CidrIp': cidr}] or not cidr.endswith('/32')
             or any(ingress[0].get(k) for k in ('Ipv6Ranges', 'PrefixListIds', 'UserIdGroupPairs'))):
         raise RuntimeError('Unexpected recovery ingress rules')
-    if (len(egress) != 1 or egress[0]['IpRanges'] != [{'CidrIp': '127.0.0.1/32'}]
+    if (len(egress) != 1 or egress[0]['IpProtocol'] != 'tcp'
+            or egress[0]['FromPort'] != 9 or egress[0]['ToPort'] != 9
+            or egress[0]['IpRanges'] != [{'CidrIp': '127.0.0.1/32'}]
             or any(egress[0].get(k) for k in ('Ipv6Ranges', 'PrefixListIds', 'UserIdGroupPairs'))):
         raise RuntimeError('Unexpected recovery egress rules')
     return stack, outputs
@@ -63,7 +92,7 @@ def probes(ip):
             headers['Content-Type'] = 'application/json'
         req = urllib.request.Request('http://' + ip + path,
             json.dumps(payload).encode() if payload is not None else None, headers)
-        with urllib.request.urlopen(req, timeout=20) as response:
+        with OPENER.open(req, timeout=20) as response:
             raw = response.read(10 * 1024 * 1024 + 1)
             if response.status != 200 or len(raw) > 10 * 1024 * 1024:
                 raise RuntimeError('Unexpected recovery response status or size')

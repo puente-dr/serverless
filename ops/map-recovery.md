@@ -63,10 +63,13 @@ python3 ops/probe_map_recovery.py --expected-account "$EXPECTED_AWS_ACCOUNT" \
   --result "$PRIVATE_RELEASE_DIR/map-cold-recovery-probes.json"
 ```
 
-The probe verifies the stack's instance identity, absent IAM profile, restricted
-network rules, EC2 status checks, root page, Dash layout/dependencies, and all six
+The probe verifies the stack's instance/security-group ownership, selected image,
+VPC/subnet identity, private/unshared image availability, absent IAM profile,
+exact restricted network rules, EC2 status checks, root page, Dash layout/dependencies, and all six
 known read-only dashboard callbacks. Only response status, size and checksums
-are saved. It does not verify client-side map-tile delivery or certify every
+are saved. HTTP uses a direct connection to the verified instance address and
+rejects redirects; operator proxy settings cannot redirect the probe elsewhere.
+It does not verify client-side map-tile delivery or certify every
 historic dataset. Use a new private result file for each run.
 
 ## What permanent retirement changes

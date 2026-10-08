@@ -17,6 +17,8 @@ on:
   workflow_dispatch:
 jobs:
   cloudformation-deployer:
+    # Retired: restoration requires a reviewed source change and drift reconciliation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout

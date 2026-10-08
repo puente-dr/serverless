@@ -6,7 +6,7 @@ These manifests record the intended disabled execution state for retired integra
 - `retire-dev-execution.json`: disables the dev exporter, ETL and analytics functions and the two dev schedules. Production counterparts remain unchanged.
 - `retire-prod-execution.json`: independently disables the production exporter, ETL and analytics functions and their two schedules, following the owner's subsequent decision to retire all three.
 - All six dev/production CloudFormation templates now declare reserved concurrency zero; ETL and analytics schedules declare `DISABLED`. Reconcile existing stack drift before deploying them. Applying these files to the live stacks was intentionally avoided while analytics has deleted database resources.
-- The three retired-service deployment workflows no longer trigger on branch pushes. Their live GitHub workflow states are disabled and recorded privately. Re-enabling deployment is a separate restoration decision; restoring Lambda execution alone does not re-enable CI deployment. The new retirement test workflow uses mocked AWS boundaries, read-only repository permissions and no deployment credentials.
+- The three retired-service deployment workflows no longer trigger on branch pushes. Their live GitHub workflow states are disabled and recorded privately; their jobs are also unconditionally skipped in source, even if a workflow is manually re-enabled. Restoring deployment requires a reviewed source change and stack-drift reconciliation. Restoring Lambda execution alone does not re-enable CI deployment. The new retirement test workflow uses mocked AWS boundaries, read-only repository permissions and no deployment credentials.
 
 The operation requires an explicit expected AWS account. It first records prior concurrency and schedule settings, rejects changed settings at apply time, verifies the result and attempts restoration if an operation fails. It never invokes a business Lambda, sends an SMS or deletes data. Use a deployment identity authorized only for these resources.
 
@@ -39,7 +39,7 @@ Run the unit tests with:
 python3 -m unittest discover -s ops -p 'test_*.py' -v
 ```
 
-Coverage includes a read-only plan, account mismatch, protected-function exclusions, exact restoration of both reserved and unreserved concurrency, partial-failure rollback and pre-apply configuration drift. These tests use a fake AWS boundary; they are not a live production rollback rehearsal.
+Coverage includes a read-only plan, account mismatch, protected-function exclusions, exact restoration of both reserved and unreserved concurrency, partial-failure rollback and pre-apply configuration drift. Plans must match their manifest's exact resource scope before changes. Each restored function's capacity is verified before any schedule is enabled; if partial capacity recovery fails, schedules stay disabled. Verification gates also run under optimized Python. Private output files are created with mode 0600 rather than narrowing permissions afterward. These tests use a fake AWS boundary; they are not a live production rollback rehearsal.
 
 After applying an integration retirement, verify the protected reader returns the expected status, record count and response checksum using a private smoke test. Do not log the response body in public CI. These operations do not verify mobile end-to-end workflows or provision staging.
 

@@ -42,6 +42,10 @@ completed snapshots remain private and unshared. No custom DNS records in the
 account pointed to the retired hostname/load balancer. GraphQL remains stopped;
 Flask health, the website and the community reader returned HTTP 200, with the
 reader count and checksum unchanged. Ten functions and five schedules remain
-disabled. Twenty mocked operation/failure tests pass, including rejection of the
+disabled. Thirty mocked operation/failure tests pass, including rejection of the
 old map rollback when its environment no longer exists. Recovery now follows
 `ops/map-recovery.md`; the earlier 66-second restart no longer applies to map.
+
+The pre-merge senior/staff review and mitigations are recorded in
+`retirement-review.md`. Retired deployment jobs are held in source as well as
+disabled in GitHub, and failed Lambda capacity recovery cannot enable schedules.
