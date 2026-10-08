@@ -5,6 +5,12 @@ successful restart of its retained instance does not prove that Beanstalk can
 recreate the environment. Keep the paused original intact until a recovery from
 backup has been demonstrated and the changed recovery contract is accepted.
 
+The final October 4 rehearsal passed automatically in approximately six minutes:
+a fresh instance restored from the private image passed all nine application
+probes and the isolation/EC2 checks. Temporary test resources were removed, with
+cleanup and private-image availability reconfirmed October 8. The original
+paused environment remains available for the earlier restart-based recovery.
+
 ## Backup and isolated rehearsal
 
 1. Confirm the AWS account and that the source instance is stopped. Record the

@@ -1,12 +1,12 @@
 # Service lifecycle decisions
 
-Updated October 4, 2026. This records owner decisions and bounded evidence; absence of a metric is not proof that a feature has no users.
+Updated October 8, 2026. This records owner decisions and bounded evidence; absence of a metric is not proof that a feature has no users.
 
 | Service | Intended state | Current action / unresolved condition |
 | --- | --- | --- |
 | Flask exports | Keep | Used by Manage; capacity and HTTPS unchanged. |
 | GraphQL / Apollo | Retire, per owner | Compute stopped after a successful stop/restart rehearsal, including a read-only query and exact restoration of deployment/scaling controls in approximately 91 seconds. Disk and IP retained. |
-| Map | Retire, per owner | Compute stopped after a successful stop/restart rehearsal recovered the ALB targets and root/layout/dependency endpoints in approximately 66 seconds. Disks, load balancer and hostname retained. |
+| Map | Retire, per owner | Compute stopped. Retained-instance recovery passed in approximately 66 seconds; independent private-image recovery passed nine application probes in approximately six minutes. Original disk, load balancer and hostname retained pending a decision on the changed recovery route after permanent deletion. |
 | Production serverless exporter | Retire execution | Owner confirmed retirement. Function execution disabled; definition and API retained for rollback. |
 | Production ETL | Retire execution | Owner confirmed retirement. Function execution and daily schedule disabled; definitions retained. |
 | Production analytics | Retire execution | Owner confirmed retirement. Function execution and daily schedule disabled. Declared databases remain absent; no database recreated or backup deleted. |
@@ -24,3 +24,17 @@ The retirement operations are in `ops/`. Private account evidence and rollback s
 Validation completed October 4: 19 mocked operation/failure tests passed locally and in GitHub Actions; AWS accepted all six changed CloudFormation templates in syntax validation. Templates were not deployed against drifted stacks. Live stop/restart rehearsals passed for GraphQL and map before their final pauses. Final checks verified ten retired functions and five schedules disabled. Flask health, the website and community reader returned HTTP 200; the reader's count and checksum were unchanged. These checks are not a full client, resolver or load-test certification.
 
 The retired-service deployment workflows are disabled in GitHub and changed to manual triggers in source. The previously tracked Google service-account credential file is removed from this branch and ignored. Removal does not revoke the credential or remove it from Git history or other deployed copies; provider-side revocation remains required. Do not restore the exposed credential when recovering retired integrations.
+
+Independent map recovery on October 4: a fresh CloudFormation instance restored
+from a private image passed the root page, layout/dependency JSON, all six known
+read-only dashboard callbacks, EC2 checks and network/IAM isolation checks in
+approximately six minutes. The recovery template explicitly starts nginx,
+which the captured Beanstalk image leaves disabled at boot. No manual service
+startup was needed in the final rehearsal. The temporary stacks, instances,
+disks and security groups were removed; their absence and the private image's
+availability were reconfirmed October 8. See `ops/map-recovery.md` for the tested
+procedure and its routing limits.
+
+October 8 verification: GraphQL and map compute remain stopped; Flask health,
+the website and the community reader returned HTTP 200. The reader count and
+checksum remain unchanged. Permanent environment deletion has not occurred.
