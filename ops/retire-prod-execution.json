@@ -1,0 +1,16 @@
+{
+  "region": "us-east-1",
+  "disabled_rules": [
+    "AnalyticsLambdaEventsRule",
+    "puente-etl-master-CronjobsScheduledRule-1SNL3SHDEXJU9"
+  ],
+  "disabled_functions": [
+    "puente-analytics-service-prod",
+    "puente-etl-prod",
+    "puente-data-exporter-prod"
+  ],
+  "preserved_functions": [
+    "s3-json-to-client"
+  ],
+  "reason": "Owner approved retiring all three production services on October 4, 2026. Disable execution and schedules; retain definitions, storage and backups for rollback."
+}

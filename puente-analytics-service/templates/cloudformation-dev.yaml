@@ -37,6 +37,8 @@ Resources:
       Description: Lambda Function for Data exporter
       FunctionName: !Sub "puente-analytics-service-${version}"
       Handler: index.handler
+      # Persistent dev execution retired; provision isolated staging when needed.
+      ReservedConcurrentExecutions: 0
       MemorySize: 2048
       Role: !GetAtt CloudWatchRole.Arn
       Runtime: python3.9
@@ -64,7 +66,7 @@ Resources:
       Name: !Sub "AnalyticsLambdaEventsRule-${version}"
       Description: Rule to trigger the analytics Lambda function everyday
       ScheduleExpression: rate(1 day)
-      State: ENABLED
+      State: DISABLED
       Targets:
         - Id: AnalyticsLambdaFunctionETLEventsRule
           Arn: !GetAtt AnalyticsLambdaFunctionETL.Arn

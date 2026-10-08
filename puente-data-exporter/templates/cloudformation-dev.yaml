@@ -120,6 +120,8 @@ Resources:
       Description: Lambda Function for Data exporter
       FunctionName: !Sub "puente-data-exporter-${version}"
       Handler: puente-data-exporter/lambdas/data-exporter/index.handler
+      # Persistent dev execution retired; provision isolated staging when needed.
+      ReservedConcurrentExecutions: 0
       MemorySize: 2048
       Role: !GetAtt LambdaIamRole.Arn
       Runtime: python3.9

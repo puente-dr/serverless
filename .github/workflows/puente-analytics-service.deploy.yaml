@@ -13,12 +13,12 @@ env:
   pAnalyticsDbPort      : ${{ secrets.pAnalyticsDbPort }}
 
 on:
-  push:
-    branches:    
-      - master
-      - dev
+  # Retired service. Reconcile stack drift before any intentional restoration.
+  workflow_dispatch:
 jobs:
   cloudformation-deployer:
+    # Retired: restoration requires a reviewed source change and drift reconciliation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout

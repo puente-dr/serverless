@@ -1,0 +1,12 @@
+{
+  "region": "us-east-1",
+  "disabled_rules": ["Trigger_google_sheet_update"],
+  "disabled_functions": [
+    "googlesheets-to-s3",
+    "google-sheets-to-dynamodb",
+    "twilio-to-send-sms",
+    "twilio-to-send-sms-takeAction"
+  ],
+  "preserved_functions": ["s3-json-to-client"],
+  "reason": "Retire Sheets ingestion and SMS execution; preserve the community-data reader required by installed Collect clients. Keep resource definitions for reversible rollback."
+}

@@ -10,11 +10,12 @@ env:
   AWS_S3_BUCKET         : ${{ secrets.AWS_S3_BUCKET }}
 
 on:
-  push:
-    branches:    
-      - master
+  # Retired service. Reconcile stack drift before any intentional restoration.
+  workflow_dispatch:
 jobs:
   cloudformation-deployer:
+    # Retired: restoration requires a reviewed source change and drift reconciliation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
 
     steps:
