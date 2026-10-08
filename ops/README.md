@@ -2,6 +2,12 @@
 
 These manifests record the intended disabled execution state for retired integrations and persistent development services. They do not delete Lambda definitions, API Gateway endpoints, IAM roles, storage or backups. This is a staged retirement with a retained rollback path, not a full infrastructure ownership migration.
 
+For a repeatable read-only check of all three manifests, use
+`verify_retirement_state.py --expected-account "$EXPECTED_AWS_ACCOUNT" --result
+"$PRIVATE_RELEASE_DIR/new-verification.json"`. It reports any retired function or
+schedule that is re-enabled and checks that the community reader remains
+preserved. It never repairs drift automatically or invokes business functions.
+
 - `retire-integrations.json`: disables Sheets ingestion, its refresh schedule and SMS functions. The community-data reader remains available because installed Collect clients call it.
 - `retire-dev-execution.json`: disables the dev exporter, ETL and analytics functions and the two dev schedules. Production counterparts remain unchanged.
 - `retire-prod-execution.json`: independently disables the production exporter, ETL and analytics functions and their two schedules, following the owner's subsequent decision to retire all three.

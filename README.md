@@ -1,40 +1,59 @@
-# Puente's Cloud Infrastructure
+# Puente cloud infrastructure
 
-<!-- <img align="right" width="300" src="https://s3-us-west-2.amazonaws.com/assets.site.serverless.com/email/sls-getting-started.gif" /> -->
+This public repository contains Puente's serverless definitions, retained legacy
+services and account-checked retirement/recovery tools. The October 2026 work
+retired unused execution while preserving the community-data reader required by
+installed Collect clients.
 
-A collection of AWS orchestration
+| Service | Current intended state |
+| --- | --- |
+| Community-data reader (`s3-json-to-client`) | Keep active; preserve its endpoint and cached S3 data until clients have a compatible replacement. |
+| Google Sheets ingestion | Retired: execution and refresh schedule disabled. Cached data no longer refreshes automatically. |
+| SMS integrations | Retired: both AWS function executions disabled. |
+| Dev and production exporter, ETL and analytics | Retired: execution and schedules disabled; definitions, APIs, stored data and backups retained for recovery. |
 
-## Table of Contents
-<details>
-<summary>Click to expand</summary>
+The six exporter/ETL/analytics templates declare zero reserved concurrency;
+ETL/analytics schedules declare `DISABLED`. Their GitHub deployment workflows
+are disabled, have no push triggers and have unconditional job holds in source.
+Do not redeploy a retired stack merely to apply these settings: analytics has
+database drift, and a full deployment could recreate unwanted paid resources.
 
-- [Getting Started](#getting-started)
-- [Lambdas](#lambdas)
-- [Contributing](#contributing)
+## Operations and validation
 
-</details>
-<!-- AUTO-GENERATED-CONTENT:END -->
+- [Service lifecycle and owner decisions](docs/service-lifecycle.md)
+- [AWS savings closeout and remaining scope](docs/aws-savings-closeout.md)
+- [Retirement and recovery commands](ops/README.md)
+- [Testing and rollback gates](docs/infrastructure-change-safety-plan.md)
+- [Engineering review and mitigations](docs/retirement-review.md)
+- [Map recovery from its verified private backup](ops/map-recovery.md)
+- [Flask sizing evidence](docs/flask-sizing-evidence.md)
 
-## Getting Started
+Run the mocked operation/failure tests locally:
 
-<!-- If you are new to serverless, we recommend getting started with by creating an HTTP API Endpoint in [NodeJS](https://github.com/serverless/examples/tree/master/aws-node-simple-http-endpoint), [Python](https://github.com/serverless/examples/tree/master/aws-python-simple-http-endpoint), [Java](https://github.com/serverless/examples/tree/master/aws-java-simple-http-endpoint), or [Golang](https://github.com/serverless/examples/tree/master/aws-golang-simple-http-endpoint). -->
+```bash
+python3 -m unittest discover -s ops -p 'test_*.py' -v
+```
 
-## Infra
+Verify the serverless execution restrictions against AWS without changing them:
 
-Each lambda contains a `README.md` with an explanation about the service and it's use cases.
+```bash
+python3 ops/verify_retirement_state.py \
+  --expected-account "$EXPECTED_AWS_ACCOUNT" \
+  --result "$PRIVATE_RELEASE_DIR/retirement-verification.json"
+```
 
-<!-- AUTO-GENERATED-CONTENT:START (SERVERLESS_EXAMPLE_TABLE) t generated w/ `npm run docs` -->
-| Name | Runtime  |
-|:--------------------------- |:-----|
-| [Twilio to Send SMS](https://github.com/puente-development-international/puente-serverless/tree/master/twilio/node-send-sms) <br/> Using Twilio to send SMS | nodeJS |
-| [Twilio to Return SMS and DynamoDB to Store Them](https://github.com/puente-development-international/puente-serverless/tree/master/twilio/node-return-response) <br/> Using Twilio to receive SMS and AWS DynamoDB to store recipients response  | nodeJS |
-| [Google Sheets to Send Data from Spreadsheet](https://github.com/puente-development-international/puente-serverless/tree/master/google/sheets-python-communitydata-endpoint) <br/> Using Google Sheets to store data and have an endpoint | nodeJS |
+This verifies control settings, not every application/client workflow. Keep
+plans, billing evidence, raw logs, records and credentials outside this public
+repository. Never restore the exposed Google credential from Git history.
 
-<!-- AUTO-GENERATED-CONTENT:END -->
+## Changes and restoration
 
+Use a feature branch and a reviewed PR. `master` requires the retirement CI check
+and an up-to-date branch; review approvals are dismissed when new commits arrive.
+Actions default to read-only permissions and cannot approve PRs. Secret scanning
+and push protection are enabled. Production credentials are not available to the
+validation workflow.
 
-## Contributing
-
-We are happy to accept more use cases for international development from the community! 
-
-
+Restoration is a separate lifecycle decision. Reconcile stack drift, prepare
+isolated staging and exercise recovery before changing execution or removing a
+deployment hold. Repository changes do not themselves deploy AWS resources.
