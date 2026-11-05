@@ -1,10 +1,17 @@
 # GraphQL recovery from an independent private backup
 
-The owner retired GraphQL. Its original single-instance environment is paused,
-with its root disk and Elastic IP retained. The earlier retained-instance restart
-took approximately 91 seconds; it does not establish recovery after deleting the
-environment. Keep that rollback option until the owner accepts permanent removal
-and recovery at a new address.
+The owner approved permanent GraphQL environment removal on November 5 and
+accepted private-image recovery at a new address. Keep the verified image and
+snapshots independently of the old environment. The earlier approximately
+91-second retained-instance restart cannot recreate a deleted environment;
+`pause_graphql.py rollback` rejects an absent original before making changes.
+
+The owning stack reached `DELETE_COMPLETE` on November 5. Its instance, root
+disk, Elastic IP, scaling group, launch template and security group were removed.
+The image and completed snapshots remain private/unshared, the pipeline Deploy
+transition remains held, and the active Flask, website and community reader
+passed availability checks with the reader checksum unchanged. Private release
+records contain the resource identities and verification results.
 
 The October 11 isolated restore passed all three protocol probes and EC2/network
 checks in 168.83 seconds (approximately three minutes). The original remained
@@ -87,14 +94,16 @@ to make the rehearsal pass.
 
 Delete the temporary stack after testing, including on failure. Confirm its
 instance terminates and its disk and security group are removed. Preserve the
-private backup and original paused environment until the removal decision.
+private backup. For any future retirement, preserve the original until its
+owner accepts the changed recovery contract.
 
-## Permanent retirement gate
+## Owner-approved permanent retirement
 
 Removing the environment releases its Elastic IP and removes its retained
 instance/disk. The old address and Beanstalk hostname cannot be guaranteed on
 recovery. This trades the previous quick restart for an image restore at a new
-address. Obtain the owner's acceptance of that recovery contract before removal.
+address. The owner accepted this recovery contract on November 5 after both
+private-image rehearsals; it supersedes the earlier retained-instance rollback.
 
 Before removal, recheck backup privacy/availability, successful rehearsal
 evidence, original resource/version identity, disabled deployment/replacement

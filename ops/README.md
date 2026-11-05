@@ -51,7 +51,14 @@ After applying an integration retirement, verify the protected reader returns th
 
 A complete shutdown of the community-data reader requires a compatible replacement for installed mobile clients. Disabling a Lambda does not revoke credentials embedded in its package; exposed provider credentials require separate provider-side revocation. Never put those values or backup packages into this repository.
 
-## Confirmed-unused GraphQL compute
+## Owner-approved GraphQL retirement
+
+The original environment and its instance, disk, Elastic IP, scaling group,
+launch template and security group were removed November 5 after explicit owner
+acceptance of recovery at a new address. The private image and completed,
+unshared snapshots remain. Use the [backup recovery procedure](graphql-recovery.md).
+The pause commands below describe the earlier retained-instance stage and
+cannot recreate the deleted environment.
 
 `pause_graphql.py` is a deliberately narrow operational retirement for the existing single-instance GraphQL Beanstalk environment. It discovers and records the instance, disk, Elastic IP, application version, scaling group and existing automation controls. It rejects unexpected ownership, capacity, active deployments and baseline probe failures. It does not resize or edit the Beanstalk-generated child stack.
 
@@ -74,7 +81,7 @@ The [independent GraphQL backup procedure](graphql-recovery.md) and
 `graphql-recovery-test.yaml` prepare an isolated image restore. Its probe checks
 GraphQL protocol execution without application database access. Completing the
 rehearsal does not delete the original or preserve its current IP/hostname after
-removal; the owner must accept that changed recovery contract first.
+removal. The owner accepted that changed recovery contract on November 5.
 Use `rehearse_graphql_recovery.py` to execute a previewed change set with paired
 probe/teardown, rather than launching a test and leaving cleanup for a later turn.
 It verifies deletion before reporting success; machine loss or an AWS teardown
