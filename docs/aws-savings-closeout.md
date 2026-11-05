@@ -1,6 +1,6 @@
 # Serverless AWS savings closeout
 
-Updated October 8, 2026. This closes the repository work for the owner-approved
+Updated November 5, 2026. This closes the repository work for the owner-approved
 serverless retirements; it does not claim that all AWS infrastructure has been
 adopted into IaC or that every possible saving has been exhausted.
 
@@ -18,6 +18,10 @@ adopted into IaC or that every possible saving has been exhausted.
 - The read-only verifier in `ops/verify_retirement_state.py` detects execution or
   schedule drift and refuses to certify a disabled protected reader. A failure
   requires investigation; the verifier never changes AWS resources.
+- PR #57 adds independent GraphQL backup recovery and paired rehearsal cleanup.
+  The owner then accepted permanent removal and recovery at a new address.
+  The original GraphQL environment, disk and IP were removed November 5; its
+  verified private backup remains available.
 
 ## Cost attribution
 
@@ -25,10 +29,10 @@ The disabled Lambda workloads previously contributed negligible AWS charges.
 Their retirement prevents unwanted execution and accidental restoration; it is
 not the source of the account's major recurring reduction.
 
-The material account savings came from downgrading paid AWS Support, stopping
-the owner-retired GraphQL compute, and removing the map environment's compute,
-load balancer and related billable resources. GraphQL retains its disk/address;
-map retains its independently verified private backup. Those retained recovery
+The material account savings came from downgrading paid AWS Support, removing
+the owner-retired GraphQL compute/disk/address, and removing the map environment's
+compute, load balancer and related billable resources. GraphQL and map retain
+their independently verified private backups. Those retained recovery
 resources still incur charges. Account billing figures and estimated run-rate
 calculations are recorded privately, not in this public repository.
 

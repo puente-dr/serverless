@@ -26,7 +26,7 @@ database drift, and a full deployment could recreate unwanted paid resources.
 - [Testing and rollback gates](docs/infrastructure-change-safety-plan.md)
 - [Engineering review and mitigations](docs/retirement-review.md)
 - [Map recovery from its verified private backup](ops/map-recovery.md)
-- [GraphQL backup and isolated recovery](ops/graphql-recovery.md)
+- [GraphQL backup recovery after retirement](ops/graphql-recovery.md)
 - [Flask sizing evidence](docs/flask-sizing-evidence.md)
 
 Run the mocked operation/failure tests locally:

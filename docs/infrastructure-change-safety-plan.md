@@ -19,7 +19,7 @@ Gate: no unresolved critical consumer, state ownership or restore question. The 
 
 ## 2. Make public-repository CI safe before using it for deployment
 
-The current workflows deploy on branch pushes; checked-in template changes can therefore be operational changes. Work on a feature branch. Establish the following before merging deployable infrastructure:
+The retired-service deployment workflows are disabled in GitHub and held in source. Restoring any deployment path makes checked-in infrastructure changes operational changes again. Work on a feature branch. Establish the following before merging deployable infrastructure:
 
 - Run unprivileged pull-request checks with synthetic fixtures and `contents: read`. Fork PRs receive no production credentials, OIDC deployment permissions or access to production data.
 - Do not execute untrusted PR code in a privileged `pull_request_target` job. Require review of workflow, infrastructure and dependency changes; review the exact commit being released.
