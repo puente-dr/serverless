@@ -114,5 +114,15 @@ class PauseTests(unittest.TestCase):
         self.assertEqual(self.writes, before)
 
 
+class RetiredEnvironmentTests(unittest.TestCase):
+    def test_missing_environment_blocks_old_rollback_before_mutation(self):
+        with patch.object(ops, 'check_account'), \
+                patch.object(ops, 'call', return_value={'Environments': []}) as call:
+            with self.assertRaisesRegex(RuntimeError, 'no longer exists'):
+                ops.rollback({'account': 'test'})
+        call.assert_called_once_with('elasticbeanstalk', 'describe-environments',
+                                     '--environment-names', ops.ENV)
+
+
 if __name__ == '__main__':
     unittest.main()
