@@ -27,8 +27,11 @@ def call(*args):
 
 
 def environment():
-    return call('elasticbeanstalk', 'describe-environments',
-                '--environment-names', ENV)['Environments'][0]
+    environments = call('elasticbeanstalk', 'describe-environments',
+                        '--environment-names', ENV)['Environments']
+    if not environments or environments[0]['Status'] == 'Terminated':
+        raise RuntimeError('GraphQL environment no longer exists; use the private-image recovery procedure')
+    return environments[0]
 
 
 def ready():

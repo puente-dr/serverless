@@ -36,9 +36,9 @@ def call(*args):
     return aws(REGION, *args)
 
 
-def target(account):
+def target(account, stack_name=STACK):
     check_account(REGION, account)
-    stack = call('cloudformation', 'describe-stacks', '--stack-name', STACK)['Stacks'][0]
+    stack = call('cloudformation', 'describe-stacks', '--stack-name', stack_name)['Stacks'][0]
     if stack['StackStatus'] != 'CREATE_COMPLETE':
         raise RuntimeError('Isolated recovery stack is not ready')
     outputs = {x['OutputKey']: x['OutputValue'] for x in stack['Outputs']}

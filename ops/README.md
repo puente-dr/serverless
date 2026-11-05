@@ -70,6 +70,16 @@ python3 ops/pause_graphql.py rollback --expected-account "$EXPECTED_AWS_ACCOUNT"
 
 Recovery starts the retained instance, waits for a read-only GraphQL `__typename` probe, then restores the original scaling, managed-update and pipeline settings. If the application fails to recover, the automation safeguards remain held for investigation. Application identity, disk or unrelated scaling changes require review. Retaining an instance is not a backup against disk deletion; permanent retirement requires separate artifact/data retention decisions.
 
+The [independent GraphQL backup procedure](graphql-recovery.md) and
+`graphql-recovery-test.yaml` prepare an isolated image restore. Its probe checks
+GraphQL protocol execution without application database access. Completing the
+rehearsal does not delete the original or preserve its current IP/hostname after
+removal; the owner must accept that changed recovery contract first.
+Use `rehearse_graphql_recovery.py` to execute a previewed change set with paired
+probe/teardown, rather than launching a test and leaving cleanup for a later turn.
+It verifies deletion before reporting success; machine loss or an AWS teardown
+failure still requires checking the saved private stack ARN.
+
 Before leaving the environment stopped, exercise apply → rollback → fresh plan → apply and record the result privately. Check Flask health, the website, map and the community reader alongside the operation. This probe establishes GraphQL process/query recovery; it does not certify every resolver, mobile workflow or peak-load behavior. Beanstalk health becoming degraded/severe while the retired instance is stopped is expected.
 
 References: [AWS scaling-process suspension considerations](https://docs.aws.amazon.com/autoscaling/ec2/userguide/suspend-resume-considerations.html), [Beanstalk managed platform updates](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-platform-update-managed.html).

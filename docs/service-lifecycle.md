@@ -1,11 +1,11 @@
 # Service lifecycle decisions
 
-Updated October 8, 2026. This records owner decisions and bounded evidence; absence of a metric is not proof that a feature has no users.
+Updated November 5, 2026. This records owner decisions and bounded evidence; absence of a metric is not proof that a feature has no users.
 
 | Service | Intended state | Current action / unresolved condition |
 | --- | --- | --- |
 | Flask exports | Keep | Used by Manage; capacity and HTTPS unchanged. All 93 regression tests pass on Python 3.8.20, but synthetic export memory peaks make smaller-instance sizing premature; see `flask-sizing-evidence.md`. |
-| GraphQL / Apollo | Retire, per owner | Compute stopped after a successful stop/restart rehearsal, including a read-only query and exact restoration of deployment/scaling controls in approximately 91 seconds. Disk and IP retained. |
+| GraphQL / Apollo | Retire, per owner | Original compute remains stopped with disk/IP retained. Independent private-image restores passed three protocol probes and isolation/EC2 checks in approximately three and five minutes. The November 5 paired rehearsal also verified automatic cleanup. Permanent removal changes the recovery address and still needs owner acceptance; see the [recovery procedure](../ops/graphql-recovery.md). |
 | Map | Retire, per owner | Beanstalk environment and its compute, disk, load balancer and associated resources removed October 8. Verified private image and snapshots retained. Independent recovery passed nine application probes in approximately six minutes; owner accepted recovery at a new URL. |
 | Production serverless exporter | Retire execution | Owner confirmed retirement. Function execution disabled; definition and API retained for rollback. |
 | Production ETL | Retire execution | Owner confirmed retirement. Function execution and daily schedule disabled; definitions retained. |
